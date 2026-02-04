@@ -233,7 +233,7 @@ export default function DashboardLayout({
                             >
                               <Bell className="h-5 w-5" />
                               {notificationCount > 0 && (
-                                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
                                   {notificationCount}
                                 </span>
                               )}
