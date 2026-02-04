@@ -85,28 +85,8 @@ export default function PatronPage() {
                         </TabsContent>
 
                         <TabsContent value="rocket" className="pt-6">
-                            <div className="space-y-4">
-                                <p className="text-sm text-center text-muted-foreground">Click to copy the Rocket 'Send Money' number:</p>
-                                <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
-                                    <p className="text-lg font-bold text-primary tracking-widest">•••••••••••</p>
-                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(rocketNumber, 'Rocket')}>
-                                        <Copy className="h-4 w-4" />
-                                        <span className="sr-only">Copy Rocket number</span>
-                                    </Button>
-                                </div>
-                                <div className="space-y-2 text-center pt-4">
-                                    <Label htmlFor="amount-rocket" className="font-semibold text-base">Amount Donated (BDT)</Label>
-                                    <Input id="amount-rocket" type="number" placeholder="e.g., 500" className="max-w-xs mx-auto text-center text-lg h-12"/>
-                                </div>
-                                 <div className="space-y-2 text-center">
-                                    <Label htmlFor="trx-rocket" className="font-semibold text-base">Transaction ID</Label>
-                                    <Input id="trx-rocket" placeholder="Enter your TrxID" className="max-w-xs mx-auto text-center text-lg h-12"/>
-                                </div>
-                                <div className="text-center pt-4">
-                                    <Button size="lg" className="w-full max-w-xs font-headline">
-                                        Submit
-                                    </Button>
-                                </div>
+                            <div className="text-center text-muted-foreground p-8">
+                                <p>Rocket payment option coming soon!</p>
                             </div>
                         </TabsContent>
 
