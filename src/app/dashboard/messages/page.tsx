@@ -132,7 +132,7 @@ export default function MessagesPage() {
 
   // Admin or eligible user view
   return (
-    <div className="h-[calc(100vh-3.5rem)] md:h-screen border-t md:border-t-0 flex bg-background">
+    <div className="h-[calc(100vh-5.5rem)] flex bg-background">
       {/* Sidebar with conversations */}
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex-col",
@@ -259,9 +259,9 @@ export default function MessagesPage() {
                             }
                          </AvatarFallback>
                        </Avatar>
-                       <div className={cn("max-w-xs lg:max-w-md p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary text-primary-foreground" : "bg-card")}>
-                           <p>{msg.text}</p>
-                           <p className={cn("text-xs mt-2 opacity-70", msg.sender === currentUser.id ? "text-right" : "text-left")}>{msg.timestamp}</p>
+                       <div className={cn("max-w-[80%] md:max-w-[70%] lg:max-w-[60%] p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary text-primary-foreground" : "bg-card")}>
+                           <p className="break-words">{msg.text}</p>
+                           <p className={cn("text-xs mt-1 opacity-70", msg.sender === currentUser.id ? "text-right" : "text-left")}>{msg.timestamp}</p>
                        </div>
                     </div>
                 ))}
