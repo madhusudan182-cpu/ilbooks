@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Book, LogOut, Home, Trophy, BookMarked, Crown, MessageCircle, Users, Grid3x3, Gift, Bell } from 'lucide-react';
+import { Book, LogOut, Home, Trophy, Books, Crown, MessageCircle, Users, Grid3x3, Gift, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -29,7 +29,7 @@ type NavItem = {
 const allNavItems: NavItem[] = [
   { href: '/dashboard', title: 'Home', icon: Home },
   { href: '/dashboard/competition', title: 'Competition', icon: Trophy },
-  { href: '/dashboard/book-shop', title: 'Book Shop', icon: BookMarked },
+  { href: '/dashboard/book-shop', title: 'Book Shop', icon: Books },
   { href: '/dashboard/patron', title: 'Become a Patron', icon: Crown },
   { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
   { href: '/dashboard/social', title: 'Social Circle', icon: Users },
@@ -206,7 +206,7 @@ export default function DashboardLayout({
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link href="/dashboard/book-shop" className="hover:text-primary transition-colors"><BookMarked className="w-5 h-5" /></Link>
+                    <Link href="/dashboard/book-shop" className="hover:text-primary transition-colors"><Books className="w-5 h-5" /></Link>
                   </TooltipTrigger>
                   <TooltipContent><p>Book Shop</p></TooltipContent>
                 </Tooltip>
