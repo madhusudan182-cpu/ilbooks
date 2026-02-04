@@ -63,10 +63,10 @@ export default function DashboardLayout({
                    <Link
                       href="/dashboard"
                       onClick={() => setIsSheetOpen(false)}
-                      className="flex flex-col items-start text-primary transition-all"
+                      className="flex items-center gap-2 text-primary transition-all"
                     >
                       <Book className="h-6 w-6" />
-                      <span className="font-headline text-xl mt-2">ILBooks</span>
+                      <span className="font-headline text-xl">ILBooks</span>
                     </Link>
                 </SheetTitle>
               </SheetHeader>
@@ -89,7 +89,7 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
 
-          <Link href="/dashboard" className="flex flex-col items-start justify-center text-primary mr-auto">
+          <Link href="/dashboard" className="flex items-center gap-2 text-primary mr-auto">
             <Book className="w-6 h-6" />
             <span className="font-headline font-semibold hidden md:block">ILBooks</span>
           </Link>
