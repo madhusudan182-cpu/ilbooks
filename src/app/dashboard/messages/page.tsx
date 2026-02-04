@@ -157,7 +157,7 @@ export default function MessagesPage() {
 
   if (!isClient) {
     return (
-      <div className="h-[calc(100vh-5.5rem)]">
+      <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)]">
         <MessagesPageSkeleton />
       </div>
     );
@@ -165,7 +165,7 @@ export default function MessagesPage() {
   
   if (!isAdmin && userLevel < 0.3) {
     return (
-      <div className="flex items-center justify-center p-4 md:p-6 lg:p-8 h-[calc(100vh-5.5rem)]">
+      <div className="flex items-center justify-center p-4 md:p-6 lg:p-8 h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)]">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
               <div className="mx-auto bg-muted text-muted-foreground rounded-full p-3 w-fit mb-4">
@@ -190,16 +190,16 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex bg-background h-[calc(100vh-5.5rem)]">
+    <div className="flex bg-background h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)]">
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex-col",
         selectedConversation ? "hidden md:flex" : "flex"
         )}>
-        <div className="p-4 border-b flex items-center gap-4">
+        <div className="p-4 border-b flex items-center gap-2">
           <h1 className="text-2xl font-bold font-headline">Chat</h1>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Search chats..." className="pl-9" />
+            <Input placeholder="Search chats..." className="pl-9 h-9" />
           </div>
         </div>
         <ScrollArea className="flex-1">
@@ -220,7 +220,7 @@ export default function MessagesPage() {
                   onClick={() => setSelectedConversation(conv)}
                 >
                   <Avatar className="h-11 w-11 border flex-shrink-0">
-                    { isIlbooks ? (
+                     { isIlbooks ? (
                         <AvatarFallback className="bg-card">
                             <IlbooksLogo className="h-6 w-6" />
                         </AvatarFallback>
@@ -385,12 +385,12 @@ export default function MessagesPage() {
                 </div>
             </ScrollArea>
             <div className="p-4 border-t bg-background">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                <form onSubmit={handleSendMessage} className="flex items-center gap-1">
                     {!isInputFocused && (
                         <div className="flex">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="shrink-0">
+                                    <Button variant="ghost" size="icon" className="shrink-0 w-auto px-2">
                                         <Paperclip className="w-5 h-5"/>
                                         <span className="sr-only">Attach file</span>
                                     </Button>
@@ -423,11 +423,11 @@ export default function MessagesPage() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
-                            <Button variant="ghost" size="icon" className="shrink-0">
+                            <Button variant="ghost" size="icon" className="shrink-0 w-auto px-2">
                                 <Camera className="w-5 h-5" />
                                 <span className="sr-only">Open camera</span>
                             </Button>
-                            <Button variant="ghost" size="icon" className="shrink-0">
+                            <Button variant="ghost" size="icon" className="shrink-0 w-auto px-2">
                                 <Mic className="w-5 h-5" />
                                 <span className="sr-only">Record voice message</span>
                             </Button>
