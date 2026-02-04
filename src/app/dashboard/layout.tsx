@@ -44,6 +44,11 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -205,7 +210,7 @@ export default function DashboardLayout({
           </div>
         </div>
         
-        <div className="hidden md:flex h-12 items-center justify-center gap-x-4 text-sm text-muted-foreground border-t bg-background/70">
+        {isClient && <div className="hidden md:flex h-12 items-center justify-center gap-x-4 text-sm text-muted-foreground border-t bg-background/70">
             <Link href="/dashboard/competition#leaderboard" className="flex items-center gap-2 hover:text-primary transition-colors">
                 <Star className="w-4 h-4" />
                 <span>Leaderboard</span>
@@ -266,7 +271,7 @@ export default function DashboardLayout({
                 <PenSquare className="w-4 h-4" />
                 <span>Write a Post</span>
             </Link>
-        </div>
+        </div>}
 
       </header>
 
