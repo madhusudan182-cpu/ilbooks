@@ -102,6 +102,7 @@ const MessagesPageSkeleton = () => (
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
 
@@ -202,7 +203,7 @@ export default function MessagesPage() {
               <div
                 key={conv.user.id}
                 className={cn(
-                  "flex items-start gap-3 p-3 border-b",
+                  "flex items-start gap-3 p-3 border-b min-w-0",
                   "transition-colors",
                   selectedConversation?.user.id === conv.user.id ? "bg-muted" : "hover:bg-muted/50",
                   isIlbooks && isAdmin && "sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b-2 border-primary"
@@ -379,55 +380,61 @@ export default function MessagesPage() {
             </ScrollArea>
             <div className="p-4 border-t bg-background">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="shrink-0">
-                                <Paperclip className="w-5 h-5"/>
-                                <span className="sr-only">Attach file</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem>
-                                <FileImage className="mr-2 h-4 w-4" />
-                                <span>Image</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <FileAudio className="mr-2 h-4 w-4" />
-                                <span>Audio</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <FileVideoIcon className="mr-2 h-4 w-4" />
-                                <span>Video</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <FileText className="mr-2 h-4 w-4" />
-                                <span>Doc/PDF</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem>
-                                <Sheet className="mr-2 h-4 w-4" />
-                                <span>Excel</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem>
-                                <Presentation className="mr-2 h-4 w-4" />
-                                <span>Powerpoint</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {!isInputFocused && (
+                        <>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="shrink-0">
+                                        <Paperclip className="w-5 h-5"/>
+                                        <span className="sr-only">Attach file</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem>
+                                        <FileImage className="mr-2 h-4 w-4" />
+                                        <span>Image</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <FileAudio className="mr-2 h-4 w-4" />
+                                        <span>Audio</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <FileVideoIcon className="mr-2 h-4 w-4" />
+                                        <span>Video</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        <span>Doc/PDF</span>
+                                    </DropdownMenuItem>
+                                     <DropdownMenuItem>
+                                        <Sheet className="mr-2 h-4 w-4" />
+                                        <span>Excel</span>
+                                    </DropdownMenuItem>
+                                     <DropdownMenuItem>
+                                        <Presentation className="mr-2 h-4 w-4" />
+                                        <span>Powerpoint</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
-                    <Button variant="ghost" size="icon" className="shrink-0">
-                        <Camera className="w-5 h-5" />
-                        <span className="sr-only">Open camera</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" className="shrink-0">
-                        <Mic className="w-5 h-5" />
-                        <span className="sr-only">Record voice message</span>
-                    </Button>
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                                <Camera className="w-5 h-5" />
+                                <span className="sr-only">Open camera</span>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                                <Mic className="w-5 h-5" />
+                                <span className="sr-only">Record voice message</span>
+                            </Button>
+                        </>
+                    )}
                     <div className="relative flex-1">
                       <Input 
                           placeholder="Type a message..." 
                           className="pr-10" 
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
+                          onFocus={() => setIsInputFocused(true)}
+                          onBlur={() => setIsInputFocused(false)}
                       />
                       <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
                           <Smile className="w-5 h-5 text-muted-foreground" />
