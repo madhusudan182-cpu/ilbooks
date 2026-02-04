@@ -98,6 +98,46 @@ export default function DashboardLayout({
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-1 right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <div className="flex flex-col w-full">
+                    <p className="text-sm font-medium">New Competition!</p>
+                    <p className="text-xs text-muted-foreground">Level 2.2 exam is now open.</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <div className="flex flex-col w-full">
+                    <p className="text-sm font-medium">Order Shipped</p>
+                    <p className="text-xs text-muted-foreground">Your book order #1234 has shipped.</p>
+                  </div>
+                </DropdownMenuItem>
+                 <DropdownMenuItem>
+                  <div className="flex flex-col w-full">
+                    <p className="text-sm font-medium">New Follower</p>
+                    <p className="text-xs text-muted-foreground">Ben Carter is now following you.</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                 <DropdownMenuItem asChild>
+                  <Link href="/dashboard/notice-board" className="flex items-center justify-center text-sm text-primary">
+                    View all notifications
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="https://picsum.photos/seed/av1/100/100" alt="User avatar" />
