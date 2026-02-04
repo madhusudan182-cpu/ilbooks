@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockUsers } from "@/lib/data";
 import type { User } from "@/lib/types";
 import { MessageCircle, UserCheck, UserPlus, Users } from "lucide-react";
+import Link from "next/link";
 
 const UserCard = ({ user }: { user: User }) => (
   <Card>
@@ -20,7 +21,11 @@ const UserCard = ({ user }: { user: User }) => (
       <div className="flex items-center gap-2">
         {user.isMutual ? (
           <>
-            <Button variant="ghost" size="icon"><MessageCircle className="h-5 w-5"/></Button>
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={`/dashboard/messages?chatWith=${user.id}`}>
+                <MessageCircle className="h-5 w-5"/>
+              </Link>
+            </Button>
             <Button variant="secondary">Unfollow</Button>
           </>
         ) : user.isFollowing ? (

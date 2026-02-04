@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Book, Lock, MessageCircle, Search, Send } from "lucide-react";
+import { Book, Lock, MessageCircle, Search, Send, ArrowLeft } from "lucide-react";
 import type { User } from '@/lib/types';
 
 // In a real app, you'd get the current user from an auth context.
@@ -51,14 +52,24 @@ const allConversations = [
   }))
 ];
 
+type Conversation = (typeof allConversations)[0];
 
 export default function MessagesPage() {
-  const [selectedConversation, setSelectedConversation] = useState(allConversations.find(c => c.user.isAdmin) || allConversations[0]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const searchParams = useSearchParams();
 
-  const isAdmin = currentUser.isAdmin || false;
-  const userLevel = currentUser.level;
-  
+  useEffect(() => {
+    const chatWithId = searchParams.get('chatWith');
+    const conversation = allConversations.find(c => c.user.id === chatWithId);
+    
+    if (conversation) {
+        setSelectedConversation(conversation);
+    } else {
+        setSelectedConversation(null);
+    }
+  }, [searchParams]);
+
   const handleSendMessage = (e: React.FormEvent) => {
       e.preventDefault();
       if (newMessage.trim() === '') return;
@@ -89,6 +100,9 @@ export default function MessagesPage() {
       }
   };
 
+  const isAdmin = currentUser.isAdmin || false;
+  const userLevel = currentUser.level;
+  
   if (!isAdmin && userLevel < 0.3) {
     return (
       <div className="flex items-center justify-center p-4 md:p-6 lg:p-8 h-[calc(100vh-10rem)]">
@@ -119,7 +133,10 @@ export default function MessagesPage() {
   return (
     <div className="h-[calc(100vh-3.5rem)] md:h-screen border-t md:border-t-0 flex bg-background">
       {/* Sidebar with conversations */}
-      <aside className="w-full md:w-80 lg:w-96 border-r flex flex-col">
+      <aside className={cn(
+        "w-full md:w-80 lg:w-96 border-r flex-col",
+        selectedConversation ? "hidden md:flex" : "flex"
+        )}>
         <div className="p-4 border-b">
           <h1 className="text-2xl font-bold font-headline">Messages</h1>
           <div className="relative mt-4">
@@ -165,10 +182,16 @@ export default function MessagesPage() {
       </aside>
 
       {/* Main chat area */}
-      <main className="flex-1 flex-col hidden md:flex">
+      <main className={cn(
+        "flex-1 flex-col",
+        selectedConversation ? "flex" : "hidden md:flex"
+        )}>
         {selectedConversation ? (
           <>
             <div className="p-4 border-b flex items-center gap-4">
+                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedConversation(null)}>
+                  <ArrowLeft className="h-5 w-5"/>
+                </Button>
                 <Avatar className="h-10 w-10 border">
                     { selectedConversation.user.name === 'ILBooks' ? <Book className="h-5 w-5 text-primary m-auto" /> : <AvatarImage src={selectedConversation.user.avatarUrl} alt={selectedConversation.user.name} />}
                     <AvatarFallback>{selectedConversation.user.name.charAt(0)}</AvatarFallback>
