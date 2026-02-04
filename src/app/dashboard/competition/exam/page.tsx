@@ -121,7 +121,7 @@ export default function ExamPage() {
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="font-headline text-center">Level 0.0 Exam</CardTitle>
           <div className="flex items-center gap-4 pt-4">
             <span className="text-sm font-mono whitespace-nowrap">
@@ -132,8 +132,8 @@ export default function ExamPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="py-2">
-            <p className="text-base md:text-lg font-medium text-center">{currentQuestion.questionText}</p>
+          <div className="pb-2">
+            <p className="text-sm md:text-base font-medium text-center">{currentQuestion.questionText}</p>
           </div>
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
@@ -145,7 +145,7 @@ export default function ExamPage() {
                 <RadioGroupItem value={answer.text} id={`r${index}`} className="peer sr-only" />
                 <Label 
                   htmlFor={`r${index}`}
-                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 text-center text-sm hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-1 text-center text-xs hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                 >
                   {answer.text}
                 </Label>
