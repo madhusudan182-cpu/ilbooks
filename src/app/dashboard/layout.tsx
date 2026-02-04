@@ -58,6 +58,9 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0">
+              <SheetHeader>
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              </SheetHeader>
               <nav className="grid gap-2 p-4 text-lg font-medium">
                 <Link
                   href="/dashboard"
