@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const mainNav: NavItem[] = [
-  { href: '/dashboard', title: 'Home', icon: Home },
+  { href: '/dashboard', title: 'Dashboard', icon: Home },
   { href: '/dashboard/profile', title: 'Profile', icon: CircleUser },
   { href: '/dashboard/competition', title: 'Competition', icon: Sword },
   { href: '/dashboard/book-shop', title: 'Book Shop', icon: BookMarked },
