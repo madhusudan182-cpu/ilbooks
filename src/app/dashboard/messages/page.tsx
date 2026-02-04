@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert, MoreHorizontal, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock } from "lucide-react";
+import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert, MoreHorizontal, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock, Mic } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from '@/lib/types';
 import { IlbooksLogo } from '@/components/ilbooks-logo';
@@ -418,7 +418,10 @@ export default function MessagesPage() {
                         <Camera className="w-5 h-5" />
                         <span className="sr-only">Open camera</span>
                     </Button>
-
+                    <Button variant="ghost" size="icon" className="shrink-0">
+                        <Mic className="w-5 h-5" />
+                        <span className="sr-only">Record voice message</span>
+                    </Button>
                     <Input 
                         placeholder="Type a message..." 
                         className="flex-1" 
