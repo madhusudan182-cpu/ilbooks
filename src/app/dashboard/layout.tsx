@@ -7,6 +7,7 @@ import {
   BookMarked,
   Crown,
   Home,
+  LogOut,
   MessageCircle,
   Search,
   Star,
@@ -139,35 +140,44 @@ export default function DashboardLayout({
 
             <div className="flex-1" />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://picsum.photos/seed/av1/100/100" alt="User avatar" />
-                    <AvatarFallback>YOU</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Alia Rahman</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      alia.r@example.com
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login">Log out</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="https://picsum.photos/seed/av1/100/100" alt="User avatar" />
+                      <AvatarFallback>YOU</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">Alia Rahman</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        alia.r@example.com
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Link href="/dashboard" className="hidden items-center gap-2 md:flex">
+                  <Book className="h-6 w-6 text-primary" />
+              </Link>
+
+              <Button variant="outline" asChild>
+                  <Link href="/login">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log Out
+                  </Link>
+              </Button>
+            </div>
         </header>
         {children}
       </SidebarInset>
