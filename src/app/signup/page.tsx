@@ -46,6 +46,10 @@ export default function SignupPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input id="confirm-password" type="password" />
+            </div>
             <Button type="submit" className="w-full font-headline" asChild>
                 <Link href="/create-profile">Create an account</Link>
             </Button>
