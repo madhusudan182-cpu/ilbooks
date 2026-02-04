@@ -1,11 +1,43 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { HandHeart, Copy } from "lucide-react";
 
 export default function PatronPage() {
+    const { toast } = useToast();
+
+    const bkashNumber = process.env.NEXT_PUBLIC_BKASH_NUMBER || '';
+    const rocketNumber = process.env.NEXT_PUBLIC_ROCKET_NUMBER || '';
+
+    const handleCopy = (text: string, type: string) => {
+        if (!text) {
+             toast({
+                title: "Error",
+                description: `${type} number is not configured.`,
+                variant: "destructive",
+            });
+            return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            toast({
+                title: "Copied to Clipboard",
+                description: `Your ${type} number has been copied.`,
+            });
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            toast({
+                title: "Copy Failed",
+                description: "Could not copy the number. Please try again.",
+                variant: "destructive",
+            });
+        });
+    };
+
     return (
         <div className="p-4 md:p-6 lg:p-8 flex justify-center items-center">
             <Card className="w-full max-w-lg">
@@ -28,11 +60,12 @@ export default function PatronPage() {
 
                         <TabsContent value="bKash" className="pt-6">
                             <div className="space-y-4">
-                                <p className="text-sm text-center text-muted-foreground">Please send your donation using bKash 'Send Money' to:</p>
+                                <p className="text-sm text-center text-muted-foreground">Click to copy the bKash 'Send Money' number:</p>
                                 <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
-                                    <p className="text-lg font-bold text-primary tracking-widest">01xxxxxxxxx</p>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <p className="text-lg font-bold text-primary tracking-widest">•••••••••••</p>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(bkashNumber, 'bKash')}>
                                         <Copy className="h-4 w-4" />
+                                        <span className="sr-only">Copy bKash number</span>
                                     </Button>
                                 </div>
                                 <div className="space-y-2 text-center pt-4">
@@ -53,11 +86,12 @@ export default function PatronPage() {
 
                         <TabsContent value="rocket" className="pt-6">
                             <div className="space-y-4">
-                                <p className="text-sm text-center text-muted-foreground">Please send your donation using Rocket 'Send Money' to:</p>
+                                <p className="text-sm text-center text-muted-foreground">Click to copy the Rocket 'Send Money' number:</p>
                                 <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
-                                    <p className="text-lg font-bold text-primary tracking-widest">01xxxxxxxxx</p>
-                                     <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <p className="text-lg font-bold text-primary tracking-widest">•••••••••••</p>
+                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopy(rocketNumber, 'Rocket')}>
                                         <Copy className="h-4 w-4" />
+                                        <span className="sr-only">Copy Rocket number</span>
                                     </Button>
                                 </div>
                                 <div className="space-y-2 text-center pt-4">
