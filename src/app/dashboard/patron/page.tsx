@@ -35,7 +35,8 @@ export default function PatronPage() {
   };
 
   const handlePinSubmit = () => {
-    if (pin.length === 4) {
+    const pinLength = selectedGateway === 'bkash' ? 5 : 4;
+    if (pin.length === pinLength) {
       // Simulate payment processing
       setTimeout(() => {
         setPaymentStep('success');
@@ -190,9 +191,9 @@ export default function PatronPage() {
                     type="password"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="Enter 4-digit PIN"
+                    placeholder={selectedGateway === 'bkash' ? "Enter 5-digit PIN" : "Enter 4-digit PIN"}
                     className="mt-1"
-                    maxLength={4}
+                    maxLength={selectedGateway === 'bkash' ? 5 : 4}
                   />
                   <p className="text-xs text-gray-500 mt-1">Enter your {selectedGateway === 'bkash' ? 'bKash' : 'Rocket'} PIN</p>
                 </div>
@@ -205,7 +206,7 @@ export default function PatronPage() {
                 <Button 
                   onClick={handlePinSubmit}
                   className={`w-full ${gatewayColors.bg} ${gatewayColors.hover}`}
-                  disabled={pin.length !== 4}
+                  disabled={pin.length !== (selectedGateway === 'bkash' ? 5 : 4)}
                 >
                   Pay TK {amount}
                 </Button>
