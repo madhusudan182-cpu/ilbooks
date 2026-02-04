@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Book, Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert } from "lucide-react";
+import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from '@/lib/types';
+import { IlbooksLogo } from '@/components/ilbooks-logo';
 
 // In a real app, you'd get the current user from an auth context.
 // We simulate by picking a user. mockUsers[0] is an admin.
@@ -160,7 +161,7 @@ export default function MessagesPage() {
                  onClick={() => setSelectedConversation(conv)}
               >
                 <Avatar className="h-11 w-11 border flex-shrink-0">
-                  { isIlbooks ? <Book className="h-6 w-6 text-primary m-auto" /> : <AvatarImage src={conv.user.avatarUrl} alt={conv.user.name} />}
+                  { isIlbooks ? <IlbooksLogo className="h-6 w-6 m-auto" /> : <AvatarImage src={conv.user.avatarUrl} alt={conv.user.name} />}
                   <AvatarFallback>{conv.user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
 
@@ -224,7 +225,7 @@ export default function MessagesPage() {
                   <ArrowLeft className="h-5 w-5"/>
                 </Button>
                 <Avatar className="h-10 w-10 border">
-                    { selectedConversation.user.name === 'ILBooks' ? <Book className="h-5 w-5 text-primary m-auto" /> : <AvatarImage src={selectedConversation.user.avatarUrl} alt={selectedConversation.user.name} />}
+                    { selectedConversation.user.name === 'ILBooks' ? <IlbooksLogo className="h-5 w-5 m-auto" /> : <AvatarImage src={selectedConversation.user.avatarUrl} alt={selectedConversation.user.name} />}
                     <AvatarFallback>{selectedConversation.user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-grow">
@@ -255,7 +256,7 @@ export default function MessagesPage() {
                          <AvatarFallback>
                             {msg.sender === currentUser.id 
                                 ? currentUser.name.charAt(0) 
-                                : (selectedConversation.user.name === 'ILBooks' ? <Book className="h-4 w-4" /> : selectedConversation.user.name.charAt(0))
+                                : (selectedConversation.user.name === 'ILBooks' ? <IlbooksLogo className="h-4 w-4" /> : selectedConversation.user.name.charAt(0))
                             }
                          </AvatarFallback>
                        </Avatar>
