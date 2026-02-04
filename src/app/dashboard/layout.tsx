@@ -199,29 +199,14 @@ export default function DashboardLayout({
           )}
         </div>
         
-        {isClient && <div className="hidden md:flex h-12 items-center justify-center gap-x-4 text-sm text-muted-foreground border-t bg-background/70">
-            <TooltipProvider>
-              <div className="flex items-center gap-x-4">
-                {iconNavItems.map(item => (
-                    <Tooltip key={item.href}>
-                      <TooltipTrigger asChild>
-                        <Link href={item.href} className="hover:text-primary transition-colors"><item.icon className="w-5 h-5" /></Link>
-                      </TooltipTrigger>
-                      <TooltipContent><p>{item.title}</p></TooltipContent>
-                    </Tooltip>
-                ))}
-              </div>
-            </TooltipProvider>
-        </div>}
-
       </header>
 
-      <main className="flex-grow bg-muted/30 pb-16 md:pb-0">
+      <main className="flex-grow bg-muted/30 pb-16">
         {children}
       </main>
 
        {isClient && (
-        <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t">
+        <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t">
             <div className="grid h-full max-w-lg grid-cols-7 mx-auto">
                 {iconNavItems.map(item => (
                     <Link
