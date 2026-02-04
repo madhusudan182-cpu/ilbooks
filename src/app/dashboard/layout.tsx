@@ -232,7 +232,7 @@ export default function DashboardLayout({
                             >
                               <Bell className="h-5 w-5" />
                               {notificationCount > 0 && (
-                                <span className="absolute top-1.5 right-1.5 text-primary text-[10px] font-bold">
+                                <span className="absolute top-1 right-1.5 text-destructive text-[10px] font-bold">
                                   {notificationCount}
                                 </span>
                               )}
@@ -284,7 +284,7 @@ export default function DashboardLayout({
           </div>
         </nav>
 
-      <main className="flex-grow bg-muted/30 pt-[calc(3.5rem+1px)]">
+      <main className="flex-grow bg-muted/30 pt-14">
         {children}
       </main>
 
