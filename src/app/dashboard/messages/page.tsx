@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert } from "lucide-react";
+import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert, MoreHorizontal, Reply, Copy, ThumbsUp, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from '@/lib/types';
 import { IlbooksLogo } from '@/components/ilbooks-logo';
@@ -266,21 +266,53 @@ export default function MessagesPage() {
             <ScrollArea className="flex-1 p-2 sm:p-4 lg:p-6 bg-slate-50/50">
                 <div className="space-y-4">
                 {selectedConversation.messages.map(msg => (
-                    <div key={msg.id} className={cn("flex items-end gap-2", msg.sender === currentUser.id && "flex-row-reverse")}>
-                       <Avatar className="h-8 w-8">
-                         <AvatarImage src={msg.sender === currentUser.id ? currentUser.avatarUrl : (selectedConversation.user.avatarUrl !== 'ilbooks_logo' ? selectedConversation.user.avatarUrl : undefined)} />
-                         <AvatarFallback>
-                            {msg.sender === currentUser.id 
-                                ? currentUser.name.charAt(0) 
-                                : (selectedConversation.user.name === 'ILBooks' ? <IlbooksLogo className="h-4 w-4" /> : selectedConversation.user.name.charAt(0))
-                            }
-                         </AvatarFallback>
-                       </Avatar>
-                       <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary text-primary-foreground" : "bg-card")}>
-                           <p className="break-words">{msg.text}</p>
-                           <p className={cn("text-xs mt-1.5 opacity-75", msg.sender === currentUser.id ? "text-right" : "text-left")}>{msg.timestamp}</p>
-                       </div>
-                    </div>
+                  <div key={msg.id} className={cn("group flex w-full max-w-full items-end gap-2", msg.sender === currentUser.id && "justify-end")}>
+                      <div className={cn("flex items-end gap-2", msg.sender === currentUser.id ? "flex-row-reverse" : "flex-row")}>
+                         <Avatar className="h-8 w-8">
+                           <AvatarImage src={msg.sender === currentUser.id ? currentUser.avatarUrl : (selectedConversation.user.avatarUrl !== 'ilbooks_logo' ? selectedConversation.user.avatarUrl : undefined)} />
+                           <AvatarFallback>
+                              {msg.sender === currentUser.id 
+                                  ? currentUser.name.charAt(0) 
+                                  : (selectedConversation.user.name === 'ILBooks' ? <IlbooksLogo className="h-4 w-4" /> : selectedConversation.user.name.charAt(0))
+                              }
+                           </AvatarFallback>
+                         </Avatar>
+
+                         <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary text-primary-foreground" : "bg-card")}>
+                             <p className="break-words">{msg.text}</p>
+                             <p className={cn("text-xs mt-1.5 opacity-75", msg.sender === currentUser.id ? "text-right" : "text-left")}>{msg.timestamp}</p>
+                         </div>
+                         
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align={msg.sender === currentUser.id ? "end" : "start"}>
+                                <DropdownMenuItem>
+                                    <Reply className="mr-2 h-4 w-4" />
+                                    <span>Reply</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    <span>Copy</span>
+                                </DropdownMenuItem>
+                                {msg.sender === currentUser.id ? (
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                    </DropdownMenuItem>
+                                ) : (
+                                    <DropdownMenuItem>
+                                        <ThumbsUp className="mr-2 h-4 w-4" />
+                                        <span>Like</span>
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                  </div>
                 ))}
                 </div>
             </ScrollArea>
