@@ -29,7 +29,8 @@ export default function PatronPage() {
   };
 
   const handleNumberSubmit = () => {
-    if (phoneNumber.length === 11) {
+    const requiredLength = selectedGateway === 'rocket' ? 12 : 11;
+    if (phoneNumber.length === requiredLength) {
       setPaymentStep('pin');
     }
   };
@@ -158,16 +159,16 @@ export default function PatronPage() {
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="01xxxxxxxxx"
+                    placeholder={selectedGateway === 'rocket' ? "Enter 12-digit number" : "Enter 11-digit number"}
                     className="mt-1"
-                    maxLength={11}
+                    maxLength={selectedGateway === 'rocket' ? 12 : 11}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Enter your 11-digit {selectedGateway === 'bkash' ? 'bKash' : 'Rocket'} number</p>
+                  <p className="text-xs text-gray-500 mt-1">Enter your {selectedGateway === 'rocket' ? 12 : 11}-digit {selectedGateway === 'bkash' ? 'bKash' : 'Rocket'} number</p>
                 </div>
                 <Button 
                   onClick={handleNumberSubmit}
                   className={`w-full ${gatewayColors.bg} ${gatewayColors.hover}`}
-                  disabled={phoneNumber.length !== 11}
+                  disabled={phoneNumber.length !== (selectedGateway === 'rocket' ? 12 : 11)}
                 >
                   Next
                 </Button>
