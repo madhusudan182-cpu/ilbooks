@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Gift, Bell, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +19,8 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { mockUsers } from '@/lib/data';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/alert-dialog';
+
 
 type NavItem = {
   href: string;
@@ -55,6 +57,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
   
@@ -209,12 +212,26 @@ export default function DashboardLayout({
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="outline" size="sm" asChild>
-                    <Link href="/login">
-                        <LogOut className="mr-0 md:mr-2 h-4 w-4" />
-                        <span className="hidden md:inline">Log Out</span>
-                    </Link>
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <LogOut className="mr-0 md:mr-2 h-4 w-4" />
+                      <span className="hidden md:inline">Log Out</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        You will be returned to the login page.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => router.push('/login')}>Yes</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </>
           )}
