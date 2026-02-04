@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Book, LogOut, Home, Trophy, BookMarked, Crown, MessageCircle, Users, Grid3x3, Star, PenSquare, Gift, Bell } from 'lucide-react';
+import { Book, LogOut, Home, Trophy, BookMarked, Crown, MessageCircle, Users, Grid3x3, Gift, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -65,7 +65,7 @@ export default function DashboardLayout({
               </div>
               <div className="ml-auto flex items-center gap-2">
                 <div className="h-8 w-8 rounded-full bg-muted" />
-                <div className="h-9 w-20 rounded-md bg-muted hidden md:block" />
+                <Button variant="outline" size="sm" className="hidden md:block w-24"> </Button>
               </div>
             </>
           )}
@@ -190,13 +190,6 @@ export default function DashboardLayout({
         </div>
         
         {isClient && <div className="hidden md:flex h-12 items-center justify-center gap-x-4 text-sm text-muted-foreground border-t bg-background/70">
-            <Link href="/dashboard/competition#leaderboard" className="flex items-center gap-2 hover:text-primary transition-colors">
-                <Star className="w-4 h-4" />
-                <span>Leaderboard</span>
-            </Link>
-
-            <Separator orientation="vertical" className="h-6" />
-            
             <TooltipProvider>
               <div className="flex items-center gap-x-4">
                 <Tooltip>
@@ -243,13 +236,6 @@ export default function DashboardLayout({
                 </Tooltip>
               </div>
             </TooltipProvider>
-
-            <Separator orientation="vertical" className="h-6" />
-
-            <Link href="/dashboard#post" className="flex items-center gap-2 hover:text-primary transition-colors">
-                <PenSquare className="w-4 h-4" />
-                <span>Write a Post</span>
-            </Link>
         </div>}
 
       </header>
