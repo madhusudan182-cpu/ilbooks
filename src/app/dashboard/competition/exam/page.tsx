@@ -121,7 +121,7 @@ export default function ExamPage() {
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-0">
           <CardTitle className="font-headline text-center">Level 0.0 Exam</CardTitle>
           <div className="flex items-center gap-4 pt-2">
             <span className="text-sm font-mono whitespace-nowrap">
@@ -138,14 +138,14 @@ export default function ExamPage() {
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
             onValueChange={handleAnswerSelect}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
             {currentQuestion.answers.map((answer, index) => (
               <div key={index}>
                 <RadioGroupItem value={answer.text} id={`r${index}`} className="peer sr-only" />
                 <Label 
                   htmlFor={`r${index}`}
-                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 text-center text-sm hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 text-center text-base hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                 >
                   {answer.text}
                 </Label>
@@ -154,7 +154,7 @@ export default function ExamPage() {
           </RadioGroup>
 
           <div className="flex justify-end mt-6 gap-2">
-            <Button variant="outline" onClick={handleNext}>
+            <Button onClick={handleNext}>
               Skip
             </Button>
             <Button onClick={handleNext} disabled={!userAnswers[currentQuestionIndex]}>
