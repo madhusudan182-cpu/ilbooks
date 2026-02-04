@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Crown, Star } from 'lucide-react';
+import { Heart, Crown } from 'lucide-react';
 import { PaymentGateway } from '@/components/payment-gateway';
 
 export default function PatronPage() {
@@ -43,23 +43,6 @@ export default function PatronPage() {
             <CardTitle className="text-2xl">Become a Patron</CardTitle>
           </CardHeader>
         </Card>
-
-        {/* Candle and Quote Section */}
-        <div className="text-center mt-6">
-          <div className="relative inline-block">
-            {/* Candle Flame */}
-            <div className="relative">
-              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                <Star className="w-8 h-8 text-yellow-400 animate-pulse" />
-              </div>
-              {/* Candle Body */}
-              <div className="w-4 h-12 bg-gradient-to-b from-yellow-100 to-yellow-200 mx-auto rounded-t-sm"></div>
-              {/* Candle Base */}
-              <div className="w-6 h-2 bg-yellow-300 mx-auto rounded-sm"></div>
-            </div>
-          </div>
-          <p className="mt-4 text-lg font-serif text-[#722F37] italic">"Let there be light."</p>
-        </div>
 
         <Card className="mt-6">
           <CardHeader>
