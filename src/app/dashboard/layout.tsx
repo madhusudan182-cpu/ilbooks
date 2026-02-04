@@ -198,32 +198,40 @@ export default function DashboardLayout({
             </>
           )}
         </div>
-        
       </header>
 
-      <main className="flex-grow bg-muted/30 pb-16">
+      {isClient && (
+        <nav className="sticky top-16 z-10 w-full border-b bg-background/95 backdrop-blur-sm">
+          <div className="mx-auto flex h-14 items-center justify-center gap-1 p-2">
+            <TooltipProvider>
+              {iconNavItems.map((item) => (
+                <Tooltip key={item.href}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                        pathname === item.href && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span className="sr-only">{item.title}</span>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{item.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </TooltipProvider>
+          </div>
+        </nav>
+      )}
+
+      <main className="flex-grow bg-muted/30">
         {children}
       </main>
 
-       {isClient && (
-        <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t">
-            <div className="grid h-full max-w-lg grid-cols-7 mx-auto">
-                {iconNavItems.map(item => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                            "inline-flex flex-col items-center justify-center px-5 hover:bg-muted group h-full",
-                            pathname === item.href ? "text-primary" : "text-muted-foreground"
-                        )}
-                    >
-                        <item.icon className="w-6 h-6" />
-                        <span className="sr-only">{item.title}</span>
-                    </Link>
-                ))}
-            </div>
-        </div>
-      )}
     </div>
   );
 }
