@@ -26,7 +26,7 @@ export default function HomePage() {
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <Card id="post">
         <CardContent className={cn("p-1 pb-0", !isPosting && "p-1")}>
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-1">
             <Avatar className="h-9 w-9">
               <AvatarImage src="https://picsum.photos/seed/av1/100/100" alt="User" />
               <AvatarFallback>YOU</AvatarFallback>
@@ -35,7 +35,7 @@ export default function HomePage() {
               <form>
                 <Textarea
                   className={cn(
-                    "text-base transition-all duration-200 ease-in-out py-1",
+                    "text-base transition-all duration-200 ease-in-out py-1 px-2",
                      isPosting ? "min-h-[40px]" : "h-9"
                   )}
                   placeholder="What's on your mind, bookworm?"
