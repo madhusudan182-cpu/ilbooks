@@ -43,7 +43,6 @@ const iconNavItems: NavItem[] = [
     { href: '/dashboard/patron', title: 'Become a Patron', icon: Crown },
     { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
     { href: '/dashboard/social', title: 'Social Circle', icon: Users },
-    { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }
 ];
 
 
@@ -219,7 +218,7 @@ export default function DashboardLayout({
       <nav className="sticky top-16 z-10 w-full border-b bg-background/95 backdrop-blur-sm">
           <div className="mx-auto flex h-14 items-center justify-center gap-1 p-2">
             <TooltipProvider>
-              {iconNavItems.map((item) => {
+              {[...iconNavItems, { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }].map((item) => {
                 if (item.title === 'Notifications') {
                   return (
                     <DropdownMenu key="notifications-dropdown">
@@ -233,7 +232,7 @@ export default function DashboardLayout({
                             >
                               <Bell className="h-5 w-5" />
                               {notificationCount > 0 && (
-                                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                <span className="absolute top-1.5 right-1.5 text-primary text-[10px] font-bold">
                                   {notificationCount}
                                 </span>
                               )}
