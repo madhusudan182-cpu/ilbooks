@@ -26,10 +26,6 @@ export default function SignupPage() {
                 <Input id="name" placeholder="Your Name" required />
             </div>
             <div className="grid gap-2">
-                <Label htmlFor="nid">NID/Birth Registration Number</Label>
-                <Input id="nid" required />
-            </div>
-            <div className="grid gap-2">
                 <Label htmlFor="mobile">Mobile Number</Label>
                 <Input id="mobile" type="tel" required />
             </div>
