@@ -9,12 +9,7 @@ import {
   Home,
   LogOut,
   MessageCircle,
-  Search,
-  Star,
   Sword,
-  UserCheck,
-  UserPlus,
-  Users,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -26,7 +21,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarInset,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/lib/types';
@@ -48,11 +42,7 @@ const mainNav: NavItem[] = [
   { href: '/dashboard/competition', title: 'Competition', icon: Sword },
   { href: '/dashboard/book-shop', title: 'Book Shop', icon: BookMarked },
   { href: '/dashboard/patron', title: 'Become a Patron', icon: Crown },
-];
-
-const socialNav: NavItem[] = [
   { href: '/dashboard/messages', title: 'Messages', icon: MessageCircle },
-  { href: '/dashboard/social', title: 'Friends', icon: Users },
 ];
 
 export default function DashboardLayout({
@@ -77,7 +67,6 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarGroup>
-              <SidebarGroupLabel>Menu</SidebarGroupLabel>
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
@@ -93,37 +82,6 @@ export default function DashboardLayout({
               ))}
             </SidebarGroup>
           </SidebarMenu>
-          <div className="mt-auto">
-            <SidebarMenu>
-                <SidebarGroup>
-                <SidebarGroupLabel>Social</SidebarGroupLabel>
-                {socialNav.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                        asChild
-                        tooltip={{ children: item.title }}
-                    >
-                        <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        </Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                        asChild
-                        tooltip={{ children: "Find People" }}
-                    >
-                        <Link href="/dashboard/social">
-                        <Search />
-                        <span>Find People</span>
-                        </Link>
-                    </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarGroup>
-            </SidebarMenu>
-          </div>
         </SidebarContent>
       </Sidebar>
       <SidebarInset className="max-w-screen-2xl mx-auto">
