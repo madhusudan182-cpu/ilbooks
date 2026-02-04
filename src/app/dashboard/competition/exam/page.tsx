@@ -132,20 +132,20 @@ export default function ExamPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="py-2">
+          <div className="py-1">
             <p className="text-sm md:text-base font-medium text-center">{currentQuestion.questionText}</p>
           </div>
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
             onValueChange={handleAnswerSelect}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
           >
             {currentQuestion.answers.map((answer, index) => (
               <div key={index}>
                 <RadioGroupItem value={answer.text} id={`r${index}`} className="peer sr-only" />
                 <Label 
                   htmlFor={`r${index}`}
-                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 text-center text-base hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 text-center text-base hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:bg-accent peer-data-[state=checked]:border-accent peer-data-[state=checked]:text-accent-foreground cursor-pointer"
                 >
                   {answer.text}
                 </Label>
