@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Book, Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, FileSpreadsheet, FilePresentation } from "lucide-react";
+import { Book, Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from '@/lib/types';
 
@@ -264,11 +264,11 @@ export default function MessagesPage() {
                                 <span>Doc/PDF</span>
                             </DropdownMenuItem>
                              <DropdownMenuItem>
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                <Sheet className="mr-2 h-4 w-4" />
                                 <span>Excel</span>
                             </DropdownMenuItem>
                              <DropdownMenuItem>
-                                <FilePresentation className="mr-2 h-4 w-4" />
+                                <Presentation className="mr-2 h-4 w-4" />
                                 <span>Powerpoint</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
