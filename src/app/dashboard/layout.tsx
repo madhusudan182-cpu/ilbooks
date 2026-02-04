@@ -40,12 +40,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
           {/* Mobile Nav */}
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
@@ -63,6 +64,7 @@ export default function DashboardLayout({
               <nav className="grid gap-6 text-lg font-medium">
                 <Link
                   href="/dashboard"
+                  onClick={() => setIsSheetOpen(false)}
                   className="flex items-center gap-2 text-lg font-semibold mb-4"
                 >
                   <Book className="h-6 w-6 text-primary" />
@@ -72,6 +74,7 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setIsSheetOpen(false)}
                   className={cn(
                     "flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
                      pathname === item.href && "bg-muted text-foreground"
