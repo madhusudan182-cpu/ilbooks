@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -65,8 +64,6 @@ export default function ExamPage() {
 
       const subjectResults = Object.keys(syllabus.subjects).map(subjectName => {
           const subjectQuestions = questions.filter(q => q.subject === subjectName);
-          // @ts-ignore
-          const totalMarks = syllabus.subjects[subjectName].marks;
           
           let obtainedMarks = 0;
           subjectQuestions.forEach(q => {
@@ -77,7 +74,7 @@ export default function ExamPage() {
               }
           });
           
-          // There is a mismatch between marks in syllabus and questions, so we calculate based on number of questions
+          // The total marks for a subject is based on the number of available questions.
           const questionBasedTotalMarks = subjectQuestions.length;
           const percentage = questionBasedTotalMarks > 0 ? (obtainedMarks / questionBasedTotalMarks) * 100 : 0;
           const status = percentage >= 60 ? 'Passed' : 'Failed';
@@ -217,7 +214,7 @@ export default function ExamPage() {
         </CardHeader>
         <CardContent>
           <div className="py-2">
-            <p className="text-sm font-medium text-center">{currentQuestion.questionText}</p>
+            <p className="text-center font-medium">{currentQuestion.questionText}</p>
           </div>
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
@@ -243,7 +240,7 @@ export default function ExamPage() {
           </RadioGroup>
 
           <div className="flex justify-end mt-6 gap-2">
-            <Button onClick={handleNext} variant="default">
+            <Button onClick={handleNext} className="bg-primary hover:bg-primary/90">
               Skip
             </Button>
             <Button onClick={handleNext} disabled={!userAnswers[currentQuestionIndex]}>
@@ -255,5 +252,3 @@ export default function ExamPage() {
     </main>
   );
 }
-
-    
