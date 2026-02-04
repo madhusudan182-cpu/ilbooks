@@ -199,7 +199,7 @@ export default function MessagesPage() {
                 <div>
                     <h2 className="font-semibold text-lg font-headline">{selectedConversation.user.name}</h2>
                     <p className="text-sm text-muted-foreground">
-                        {selectedConversation.user.name === 'ILBooks' ? 'Admin Support' : `Level ${selectedConversation.user.level}`}
+                        {selectedConversation.user.name === 'ILBooks' ? 'Admin Support' : `Level: ${selectedConversation.user.level}`}
                     </p>
                 </div>
             </div>

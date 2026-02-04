@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { allQuestions } from '@/lib/questions';
 import type { Answer } from '@/lib/types';
 import { CheckCircle, XCircle, Award } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const TOTAL_TIME_PER_QUESTION = 20; // seconds
 
@@ -19,6 +20,7 @@ export default function ExamPage() {
   const [userAnswers, setUserAnswers] = useState<(string | null)[]>(Array(questions.length).fill(null));
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_PER_QUESTION);
   const [showResults, setShowResults] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -38,6 +40,7 @@ export default function ExamPage() {
   }, [timeLeft, showResults]);
 
   const handleNext = () => {
+    setSelectedOption(null);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setTimeLeft(TOTAL_TIME_PER_QUESTION);
@@ -50,6 +53,7 @@ export default function ExamPage() {
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestionIndex] = answer;
     setUserAnswers(newAnswers);
+    setSelectedOption(answer);
   };
   
   const calculateScore = () => {
@@ -121,8 +125,8 @@ export default function ExamPage() {
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="pb-0">
-          <CardTitle className="font-headline text-center">Level 0.0 Exam</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="font-headline text-center">Level: 0.0 Exam</CardTitle>
           <div className="flex items-center gap-4 pt-2">
             <span className="text-sm font-mono whitespace-nowrap">
               {currentQuestionIndex + 1} / {questions.length}
@@ -131,21 +135,26 @@ export default function ExamPage() {
             <span className="text-sm font-mono font-bold w-12 text-right">{timeLeft}s</span>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           <div className="py-1">
             <p className="text-sm md:text-base font-medium text-center">{currentQuestion.questionText}</p>
           </div>
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
             onValueChange={handleAnswerSelect}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
           >
             {currentQuestion.answers.map((answer, index) => (
               <div key={index}>
                 <RadioGroupItem value={answer.text} id={`r${index}`} className="peer sr-only" />
                 <Label 
                   htmlFor={`r${index}`}
-                  className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 text-center text-base hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:bg-accent peer-data-[state=checked]:border-accent peer-data-[state=checked]:text-accent-foreground cursor-pointer"
+                  className={cn(
+                    "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-3 text-center hover:bg-accent hover:text-accent-foreground cursor-pointer text-base",
+                     selectedOption === answer.text
+                        ? "bg-orange-400 border-orange-500 text-white"
+                        : "peer-data-[state=checked]:bg-accent peer-data-[state=checked]:border-accent peer-data-[state=checked]:text-accent-foreground"
+                  )}
                 >
                   {answer.text}
                 </Label>
@@ -154,7 +163,7 @@ export default function ExamPage() {
           </RadioGroup>
 
           <div className="flex justify-end mt-6 gap-2">
-            <Button onClick={handleNext}>
+            <Button onClick={handleNext} variant="default">
               Skip
             </Button>
             <Button onClick={handleNext} disabled={!userAnswers[currentQuestionIndex]}>

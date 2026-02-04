@@ -26,7 +26,7 @@ const UserCard = ({ user }: { user: User }) => {
           <Link href={profileUrl} className="hover:underline">
             <p className="font-semibold font-headline">{user.name}</p>
           </Link>
-          <p className="text-sm text-muted-foreground">Level {user.level}</p>
+          <p className="text-sm text-muted-foreground">Level: {user.level}</p>
         </div>
         <div className="flex items-center gap-2">
           {!isCurrentUser && (

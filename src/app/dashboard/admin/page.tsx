@@ -55,7 +55,7 @@ export default function AdminPage() {
                     const syllabus = allSyllabi.find(s => s.level === level);
                     return (
                         <AccordionItem value={`level-${level}`} key={level}>
-                            <AccordionTrigger className="font-semibold">Syllabus for Level {level}</AccordionTrigger>
+                            <AccordionTrigger className="font-semibold">Syllabus for Level: {level}</AccordionTrigger>
                             <AccordionContent>
                                 {syllabus ? (
                                     Object.entries(syllabus.subjects).map(([subjectName, details]) => (
@@ -89,7 +89,7 @@ export default function AdminPage() {
                       return (
                           <AccordionItem value={`level-q-${level}`} key={`level-q-${level}`}>
                               <AccordionTrigger className="text-left font-semibold">
-                                  Questions for Level {level}
+                                  Questions for Level: {level}
                                   <span className="text-sm font-normal text-muted-foreground ml-2">({questionsForLevel.length} questions)</span>
                               </AccordionTrigger>
                               <AccordionContent>

@@ -28,7 +28,7 @@ export default function LevelsPage() {
             return (
                  <Card key={groupNum}>
                     <CardHeader>
-                        <CardTitle>Level {groupNum}</CardTitle>
+                        <CardTitle>Level: {groupNum}</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-wrap gap-2">
                         {levelGroups[groupNum].map(level => (

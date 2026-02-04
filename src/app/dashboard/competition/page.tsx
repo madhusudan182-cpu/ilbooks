@@ -19,7 +19,7 @@ export default function CompetitionPage() {
     // In a real app, you'd get the current user from an auth context.
     // We simulate by picking a user. mockUsers[0] is an admin.
     // To see the client view, you can change this to mockUsers[1].
-    const currentUser = mockUsers[0]; 
+    const currentUser = mockUsers[1]; 
     const userLevel = currentUser.level.toString();
     const userSyllabus = allSyllabi.find(s => s.level === userLevel);
 
@@ -76,7 +76,7 @@ export default function CompetitionPage() {
                     
                     <Card className="lg:col-span-1 md:col-span-2">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3"><Book className="text-accent"/> Syllabus for Level {userLevel}</CardTitle>
+                            <CardTitle className="flex items-center gap-3"><Book className="text-accent"/> Syllabus for Level: {userLevel}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {userSyllabus ? (

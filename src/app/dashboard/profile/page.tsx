@@ -21,7 +21,7 @@ export default function ProfilePage() {
     setRecommendations(null);
     try {
       const result = await getPersonalizedBookRecommendations({
-        readingLevel: `Level ${user.level}`,
+        readingLevel: `Level: ${user.level}`,
         interests: user.hobbies.join(', '),
         pastActivity: "Read 'One Hundred Years of Solitude', 'Dune'.",
       });
@@ -49,7 +49,7 @@ export default function ProfilePage() {
           <div className="flex-grow">
             <div className="flex items-baseline gap-4">
               <h1 className="text-3xl font-bold font-headline">{user.name}</h1>
-              <Badge className="text-sm">Level {user.level}</Badge>
+              <Badge className="text-sm">Level: {user.level}</Badge>
             </div>
             <p className="text-muted-foreground mt-1">{user.institution}</p>
             <div className="flex items-center text-muted-foreground text-sm mt-2">

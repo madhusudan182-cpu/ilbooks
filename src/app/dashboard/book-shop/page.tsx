@@ -53,7 +53,7 @@ export default function BookShopPage() {
                     <div className="lg:col-span-2">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Books for Your Level</CardTitle>
+                                <CardTitle>Books for Your Level:</CardTitle>
                                 <CardDescription>Handpicked books to help you prepare for the next level.</CardDescription>
                             </CardHeader>
                             <CardContent className="grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
