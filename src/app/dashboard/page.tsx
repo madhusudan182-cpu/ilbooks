@@ -34,7 +34,10 @@ export default function HomePage() {
             <div className="w-full">
               <form>
                 <Textarea
-                  className="text-base min-h-[2.5rem]"
+                  className={cn(
+                    "text-base transition-all duration-200 ease-in-out",
+                     isPosting ? "min-h-[80px]" : "h-10"
+                  )}
                   placeholder="What's on your mind, bookworm?"
                   onFocus={() => setIsPosting(true)}
                   value={postContent}
