@@ -33,7 +33,7 @@ const allNavItems: NavItem[] = [
   { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
   { href: '/dashboard/social', title: 'Social Circle', icon: Users },
   { href: '/dashboard/new-arrivals', title: 'New Arrivals', icon: Gift },
-  { href: '/dashboard/notice-board', title: 'Notice Board', icon: Bell }
+  { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }
 ];
 
 const iconNavItems: NavItem[] = [
@@ -204,7 +204,55 @@ export default function DashboardLayout({
         <nav className="sticky top-16 z-10 w-full border-b bg-background/95 backdrop-blur-sm">
           <div className="mx-auto flex h-14 items-center justify-center gap-1 p-2">
             <TooltipProvider>
-              {iconNavItems.map((item) => (
+              {iconNavItems.map((item) => {
+                if (item.title === 'Notifications') {
+                  return (
+                    <DropdownMenu key="notifications-dropdown">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            >
+                              <Bell className="h-5 w-5" />
+                              <span className="absolute top-2 right-2 flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                              </span>
+                              <span className="sr-only">Notifications</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>Notifications</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <DropdownMenuContent align="end" className="w-80">
+                        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="flex-col items-start gap-1">
+                          <p className="font-medium">New Follower</p>
+                          <p className="text-xs text-muted-foreground">Ben Carter started following you.</p>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex-col items-start gap-1">
+                           <p className="font-medium">Post Activity</p>
+                          <p className="text-xs text-muted-foreground">Your post got 10 new likes.</p>
+                        </DropdownMenuItem>
+                         <DropdownMenuItem className="flex-col items-start gap-1">
+                           <p className="font-medium">New Books!</p>
+                           <p className="text-xs text-muted-foreground">New arrivals are in the Book Shop.</p>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard/notice-board" className='justify-center'>View all notifications</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )
+                }
+                return (
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>
                     <Link
@@ -222,7 +270,7 @@ export default function DashboardLayout({
                     <p>{item.title}</p>
                   </TooltipContent>
                 </Tooltip>
-              ))}
+              )})}
             </TooltipProvider>
           </div>
         </nav>
