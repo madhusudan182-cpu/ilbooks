@@ -46,51 +46,50 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full flex-col">
+       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="fixed top-4 left-4 z-20 shrink-0 md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle navigation menu</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0">
+          <SheetHeader className="border-b p-4">
+              <SheetTitle>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsSheetOpen(false)}
+                  className="flex items-center gap-2 text-primary transition-all"
+                >
+                  <Book className="h-6 w-6" />
+                  <span className="font-headline text-xl">ILBooks</span>
+                </Link>
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="grid gap-2 p-4 text-lg font-medium">
+            {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsSheetOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                  pathname === item.href && "bg-muted text-primary"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.title}
+            </Link>
+          ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="flex h-16 items-center gap-4 px-4 md:px-6">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0 md:hidden"
-              >
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0">
-              <SheetHeader className="border-b p-4">
-                 <SheetTitle>
-                   <Link
-                      href="/dashboard"
-                      onClick={() => setIsSheetOpen(false)}
-                      className="flex items-center gap-2 text-primary transition-all"
-                    >
-                      <Book className="h-6 w-6" />
-                      <span className="font-headline text-xl">ILBooks</span>
-                    </Link>
-                </SheetTitle>
-              </SheetHeader>
-              <nav className="grid gap-2 p-4 text-lg font-medium">
-                {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsSheetOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                     pathname === item.href && "bg-muted text-primary"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.title}
-                </Link>
-              ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
-
           <Link href="/dashboard" className="flex items-center gap-2 text-primary mr-auto">
             <Book className="w-6 h-6" />
             <span className="font-headline font-semibold hidden md:block">ILBooks</span>
