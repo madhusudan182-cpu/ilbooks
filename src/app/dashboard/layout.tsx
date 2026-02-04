@@ -44,8 +44,8 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
-          {/* Mobile Nav */}
+       <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+        <header className="flex h-16 items-center gap-4 px-4 md:px-6">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
@@ -57,18 +57,15 @@ export default function DashboardLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader className="sr-only">
-                  <SheetTitle>Menu</SheetTitle>
-              </SheetHeader>
-              <nav className="grid gap-6 text-lg font-medium">
+            <SheetContent side="left" className="p-0">
+              <nav className="grid gap-2 p-4 text-lg font-medium">
                 <Link
                   href="/dashboard"
                   onClick={() => setIsSheetOpen(false)}
-                  className="flex items-center gap-2 text-lg font-semibold mb-4"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-primary transition-all"
                 >
-                  <Book className="h-6 w-6 text-primary" />
-                  <span className="font-headline">ILBooks</span>
+                  <Book className="h-6 w-6" />
+                  <span className="font-headline text-xl">ILBooks</span>
                 </Link>
                 {navItems.map((item) => (
                 <Link
@@ -76,8 +73,8 @@ export default function DashboardLayout({
                   href={item.href}
                   onClick={() => setIsSheetOpen(false)}
                   className={cn(
-                    "flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground",
-                     pathname === item.href && "bg-muted text-foreground"
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                     pathname === item.href && "bg-muted text-primary"
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -88,30 +85,12 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
 
-          <Link href="/dashboard" className="flex items-center gap-2 font-headline font-semibold text-primary mr-6">
+          <Link href="/dashboard" className="flex items-center gap-2 font-headline font-semibold text-primary mr-auto">
             <Book className="w-6 h-6" />
-            <h1 className="text-lg">ILBooks</h1>
+            <h1 className="text-lg hidden md:block">ILBooks</h1>
           </Link>
           
-          <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2 transition-colors hover:text-foreground",
-                  pathname === item.href ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span>{item.title}</span>
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4 justify-end">
-            <div className="flex-1 md:flex-initial" />
-            
+          <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -138,15 +117,33 @@ export default function DashboardLayout({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="outline" asChild>
+            <Button variant="outline" size="sm" asChild>
                 <Link href="/login">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log Out
+                    <LogOut className="mr-0 md:mr-2 h-4 w-4" />
+                    <span className="hidden md:inline">Log Out</span>
                 </Link>
             </Button>
           </div>
-      </header>
-      <main className="flex-grow">
+        </header>
+
+        <nav className="hidden h-14 items-center justify-center gap-8 bg-background/80 px-6 text-sm font-medium md:flex">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2 transition-colors hover:text-primary",
+                  pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                <span>{item.title}</span>
+              </Link>
+            ))}
+        </nav>
+      </div>
+
+      <main className="flex-grow bg-muted/30">
         {children}
       </main>
     </div>
