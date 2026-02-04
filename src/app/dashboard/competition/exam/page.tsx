@@ -133,7 +133,7 @@ export default function ExamPage() {
         </CardHeader>
         <CardContent>
           <div className="py-6">
-            <p className="text-xl md:text-2xl font-medium text-center">{currentQuestion.questionText}</p>
+            <p className="text-lg md:text-xl font-medium text-center">{currentQuestion.questionText}</p>
           </div>
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
