@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Book, LogOut, Home, Trophy, Library, Crown, MessageCircle, Users, Grid3x3, Gift, Bell } from 'lucide-react';
+import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Gift, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -28,7 +28,7 @@ type NavItem = {
 const allNavItems: NavItem[] = [
   { href: '/dashboard', title: 'Home', icon: Home },
   { href: '/dashboard/competition', title: 'Competition', icon: Trophy },
-  { href: '/dashboard/book-shop', title: 'Book Shop', icon: Library },
+  { href: '/dashboard/book-shop', title: 'Book Shop', icon: BookOpen },
   { href: '/dashboard/patron', title: 'Become a Patron', icon: Crown },
   { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
   { href: '/dashboard/social', title: 'Social Circle', icon: Users },
@@ -39,7 +39,7 @@ const allNavItems: NavItem[] = [
 const iconNavItems: NavItem[] = [
     { href: '/dashboard', title: 'Home', icon: Home },
     { href: '/dashboard/competition', title: 'Competition', icon: Trophy },
-    { href: '/dashboard/book-shop', title: 'Book Shop', icon: Library },
+    { href: '/dashboard/book-shop', title: 'Book Shop', icon: BookOpen },
     { href: '/dashboard/patron', title: 'Become a Patron', icon: Crown },
     { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
     { href: '/dashboard/social', title: 'Social Circle', icon: Users },
@@ -69,8 +69,8 @@ export default function DashboardLayout({
               {/* Static placeholder for SSR to prevent layout shift */}
               <div className="flex items-center gap-2">
                  <Link href="/dashboard" className="flex items-center gap-2 text-primary">
-                    <Book className="w-6 h-6" />
-                    <span className="font-headline font-semibold hidden md:block">ILBooks</span>
+                    <BookOpen className="w-6 h-6" />
+                    <span className="font-headline font-semibold">ILBooks</span>
                  </Link>
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -100,7 +100,7 @@ export default function DashboardLayout({
                           onClick={() => setIsSheetOpen(false)}
                           className="flex items-center gap-2 text-primary transition-all"
                         >
-                          <Book className="h-6 w-6" />
+                          <BookOpen className="h-6 w-6" />
                           <span className="font-headline text-xl">ILBooks</span>
                         </Link>
                     </SheetTitle>
@@ -126,8 +126,8 @@ export default function DashboardLayout({
               
               <div className="flex items-center gap-2">
                 <Link href="/dashboard" className="flex items-center gap-2 text-primary">
-                  <Book className="w-6 h-6" />
-                  <span className="font-headline font-semibold hidden md:block">ILBooks</span>
+                  <BookOpen className="w-6 h-6" />
+                  <span className="font-headline font-semibold">ILBooks</span>
                 </Link>
 
                 <DropdownMenu>
@@ -228,7 +228,7 @@ export default function DashboardLayout({
         </nav>
       )}
 
-      <main className="flex-grow bg-muted/30">
+      <main className="flex-grow bg-muted/30 pt-[calc(3.5rem+1px)]">
         {children}
       </main>
 
