@@ -7,6 +7,7 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow read, list: if true;
       allow create: if request.resource.data.userId is string;
+      allow update: if true;
     }
   }
 }

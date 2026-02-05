@@ -1,19 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Package } from 'lucide-react';
-import type { Order } from '@/lib/types';
+import { Package, User as UserIcon } from 'lucide-react';
+import type { Order, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { mockUsers } from '@/lib/data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminOrdersPage() {
     const firestore = useFirestore();
     const [ordersQuery, setOrdersQuery] = useState<any>(null);
+    const { toast } = useToast();
 
     useEffect(() => {
         if (firestore) {
@@ -22,6 +28,26 @@ export default function AdminOrdersPage() {
     }, [firestore]);
     
     const { data: orders, loading } = useCollection<Order>(ordersQuery);
+
+    const usersById = mockUsers.reduce((acc, user) => {
+        acc[user.id] = user;
+        return acc;
+    }, {} as Record<string, User>);
+
+    const handleStatusChange = async (orderId: string, newStatus: 'Shipped' | 'Delivered') => {
+        if (!firestore) {
+            toast({ title: "Database not connected", variant: "destructive" });
+            return;
+        }
+        const orderRef = doc(firestore, 'orders', orderId);
+        try {
+            await updateDoc(orderRef, { status: newStatus });
+            toast({ title: `Order marked as ${newStatus}` });
+        } catch (error) {
+            console.error("Error updating status:", error);
+            toast({ title: "Failed to update status", variant: "destructive" });
+        }
+    };
 
     if (loading) {
         return (
@@ -60,13 +86,33 @@ export default function AdminOrdersPage() {
                         <p className="text-muted-foreground text-center py-10">No orders found.</p>
                     ) : (
                         <Accordion type="multiple" className="w-full">
-                            {orders.map(order => (
+                            {orders.map(order => {
+                                const user = usersById[order.userId];
+                                return (
                                 <AccordionItem value={order.id} key={order.id}>
                                     <AccordionTrigger>
-                                        <div className="flex justify-between w-full pr-4">
-                                            <div className="text-left">
-                                                <p className="font-semibold">{order.customerName}</p>
-                                                <p className="text-sm text-muted-foreground">Order ID: {order.id}</p>
+                                        <div className="flex justify-between items-center w-full pr-4">
+                                            <div className="flex items-center gap-4 text-left">
+                                                {user ? (
+                                                    <Avatar className="h-10 w-10 hidden sm:flex">
+                                                        <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                ) : (
+                                                    <div className="h-10 w-10 hidden sm:flex items-center justify-center bg-muted rounded-full">
+                                                        <UserIcon className="w-5 h-5" />
+                                                    </div>
+                                                )}
+                                                <div className="grid gap-0">
+                                                    <p className="font-semibold">{order.customerName}</p>
+                                                    {user ? (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {user.name} &bull; Level: {user.level}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">User ID: {order.userId}</p>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="text-right">
                                                 <p className="font-bold text-primary">Tk {order.totalAmount}</p>
@@ -84,6 +130,11 @@ export default function AdminOrdersPage() {
                                                     Address: {order.deliveryAddress} <br />
                                                     Mobile: {order.mobileNumber}
                                                 </p>
+                                                {user && (
+                                                    <p className="text-sm text-muted-foreground mt-2">
+                                                        Profile: <Link href={`/dashboard/user/${user.id}`} className="text-primary underline">{user.name}</Link>
+                                                    </p>
+                                                )}
                                             </div>
                                             <div>
                                                 <h4 className="font-semibold">Ordered Books</h4>
@@ -110,13 +161,19 @@ export default function AdminOrdersPage() {
                                                     </TableBody>
                                                 </Table>
                                             </div>
-                                            <div>
+                                            <div className="flex items-center gap-4">
                                                 <Badge>{order.status}</Badge>
+                                                {order.status === 'Paid' && (
+                                                    <Button size="sm" variant="outline" onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</Button>
+                                                )}
+                                                {order.status === 'Shipped' && (
+                                                    <Button size="sm" variant="outline" onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</Button>
+                                                )}
                                             </div>
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
-                            ))}
+                            )})}
                         </Accordion>
                     )}
                 </CardContent>
