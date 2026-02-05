@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -108,6 +107,13 @@ export default function MessagesPage() {
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+
+  const truncateMessage = (message: string, maxLength = 30): string => {
+    if (message.length <= maxLength) {
+      return message;
+    }
+    return `${message.substring(0, maxLength)}....`;
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -262,7 +268,7 @@ export default function MessagesPage() {
                 
                 <div className="flex-1 min-w-0">
                     <p className="font-semibold font-headline truncate">{conv.user.name}</p>
-                    {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
+                    {!isIlbooks && <p className="text-sm text-muted-foreground">{truncateMessage(conv.lastMessage)}</p>}
                 </div>
                 
                 <div className="flex flex-col items-end flex-shrink-0">
