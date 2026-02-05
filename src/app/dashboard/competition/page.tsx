@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,13 @@ import { ArrowRight, Book, Award, Percent, DollarSign, Edit } from "lucide-react
 import { PaymentGateway } from '@/components/payment-gateway';
 import { allSyllabi } from '@/lib/syllabus';
 import { mockUsers } from '@/lib/data';
+import { allQuestions } from '@/lib/questions';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 export default function CompetitionPage() {
     const [showPayment, setShowPayment] = useState(false);
+    const [showComingSoonDialog, setShowComingSoonDialog] = useState(false);
     const router = useRouter();
     const examFee = 20;
 
@@ -23,11 +27,29 @@ export default function CompetitionPage() {
     const userLevel = currentUser.level.toString();
     const userSyllabus = allSyllabi.find(s => s.level === userLevel);
 
+    useEffect(() => {
+        if (showComingSoonDialog) {
+            const timer = setTimeout(() => {
+                setShowComingSoonDialog(false);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [showComingSoonDialog]);
+
 
     const handlePaymentSuccess = () => {
         console.log("Payment successful, starting exam...");
-        router.push('/dashboard/competition/exam');
+        router.push(`/dashboard/competition/exam?level=${userLevel}`);
     };
+    
+    const handleStartExamClick = () => {
+        const hasQuestionsForLevel = allQuestions.some(q => q.level === userLevel);
+        if (hasQuestionsForLevel) {
+            setShowPayment(true);
+        } else {
+            setShowComingSoonDialog(true);
+        }
+    }
 
     return (
         <>
@@ -38,6 +60,18 @@ export default function CompetitionPage() {
                 onClose={() => setShowPayment(false)}
                 onSuccess={handlePaymentSuccess}
             />
+
+            <AlertDialog open={showComingSoonDialog} onOpenChange={setShowComingSoonDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Coming Soon!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            We are still working on this Level. You will be notified when we are done!
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <div className="p-4 md:p-6 lg:p-8 space-y-8">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold font-headline">Competition</h1>
@@ -96,7 +130,7 @@ export default function CompetitionPage() {
                 </div>
                 
                 <div className="text-center mt-8">
-                     <Button size="lg" className="font-headline" onClick={() => setShowPayment(true)}>
+                     <Button size="lg" className="font-headline" onClick={handleStartExamClick}>
                         Proceed to Payment & Start Exam <ArrowRight className="ml-2 w-5 h-5"/>
                      </Button>
                      <p className="text-xs text-muted-foreground mt-2">Exam duration: 20 seconds per question.</p>

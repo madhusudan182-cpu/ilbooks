@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -10,23 +11,37 @@ import { Progress } from '@/components/ui/progress';
 import { allQuestions } from '@/lib/questions';
 import { allSyllabi } from '@/lib/syllabus';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, Award } from 'lucide-react';
+import { Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const TOTAL_TIME_PER_QUESTION = 20; // seconds
 
-export default function ExamPage() {
+function ExamContent() {
+  const searchParams = useSearchParams();
+  const level = searchParams.get('level') || '0.0';
+
+  const [questions, setQuestions] = useState(allQuestions.filter(q => q.level === level));
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const questions = allQuestions.filter(q => q.level === '0.0');
   const [userAnswers, setUserAnswers] = useState<(string | null)[]>(Array(questions.length).fill(null));
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_PER_QUESTION);
   const [showResults, setShowResults] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
+  useEffect(() => {
+    const filteredQuestions = allQuestions.filter(q => q.level === level);
+    setQuestions(filteredQuestions);
+    setUserAnswers(Array(filteredQuestions.length).fill(null));
+    setCurrentQuestionIndex(0);
+    setShowResults(false);
+    setTimeLeft(TOTAL_TIME_PER_QUESTION);
+    setSelectedOption(null);
+  }, [level]);
+
   const currentQuestion = questions[currentQuestionIndex];
 
   useEffect(() => {
-    if (showResults) return;
+    if (showResults || questions.length === 0) return;
 
     if (timeLeft === 0) {
       handleNext();
@@ -38,7 +53,7 @@ export default function ExamPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, showResults]);
+  }, [timeLeft, showResults, questions.length]);
 
   const handleNext = () => {
     setSelectedOption(null);
@@ -58,8 +73,7 @@ export default function ExamPage() {
   };
   
   const calculateResults = () => {
-      const currentLevel = '0.0';
-      const syllabus = allSyllabi.find(s => s.level === currentLevel);
+      const syllabus = allSyllabi.find(s => s.level === level);
       if (!syllabus) return null;
 
       const subjectResults = Object.keys(syllabus.subjects).map(subjectName => {
@@ -68,13 +82,14 @@ export default function ExamPage() {
           let obtainedMarks = 0;
           subjectQuestions.forEach(q => {
               const questionIndex = questions.findIndex(originalQ => originalQ.id === q.id);
-              const correctAnswer = q.answers.find(a => a.isCorrect)?.text;
-              if (userAnswers[questionIndex] === correctAnswer) {
-                  obtainedMarks++;
+              if (questionIndex !== -1) {
+                const correctAnswer = q.answers.find(a => a.isCorrect)?.text;
+                if (userAnswers[questionIndex] === correctAnswer) {
+                    obtainedMarks++;
+                }
               }
           });
           
-          // The total marks for a subject is based on the number of available questions.
           const questionBasedTotalMarks = subjectQuestions.length;
           const percentage = questionBasedTotalMarks > 0 ? (obtainedMarks / questionBasedTotalMarks) * 100 : 0;
           const status = percentage >= 60 ? 'Passed' : 'Failed';
@@ -105,11 +120,26 @@ export default function ExamPage() {
       };
   };
 
+  if (questions.length === 0) {
+    return (
+        <main className="flex items-center justify-center min-h-screen bg-background p-4">
+            <Card className="w-full max-w-2xl text-center">
+                <CardHeader>
+                    <CardTitle>Exam Not Ready</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">There are currently no questions available for Level {level}. Please check back later.</p>
+                    <Button asChild className="mt-4"><Link href="/dashboard/competition">Back to Competition</Link></Button>
+                </CardContent>
+            </Card>
+        </main>
+    );
+  }
+
   if (showResults) {
     const results = calculateResults();
     
     if (!results) {
-        // Handle case where syllabus is not found
         return (
             <main className="flex items-center justify-center min-h-screen bg-background p-4">
                 <Card className="w-full max-w-2xl text-center">
@@ -117,7 +147,7 @@ export default function ExamPage() {
                         <CardTitle>Error</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p>Could not load exam results. Syllabus not found.</p>
+                        <p>Could not load exam results. Syllabus not found for Level {level}.</p>
                         <Button asChild className="mt-4"><Link href="/dashboard/competition">Back to Competition</Link></Button>
                     </CardContent>
                 </Card>
@@ -133,7 +163,7 @@ export default function ExamPage() {
             <Card className="w-full max-w-4xl text-center">
                 <CardHeader>
                     <CardTitle className="text-2xl font-headline flex items-center justify-center gap-3">
-                        Your Exam Result of Level: 0.0
+                        Your Exam Result of Level: {level}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -203,7 +233,7 @@ export default function ExamPage() {
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="pb-2">
-          <CardTitle className="font-headline text-center">Level: 0.0 Exam</CardTitle>
+          <CardTitle className="font-headline text-center">Level: {level} Exam</CardTitle>
           <div className="flex items-center gap-4 pt-2">
             <span className="text-sm font-mono whitespace-nowrap">
               {currentQuestionIndex + 1} / {questions.length}
@@ -250,5 +280,17 @@ export default function ExamPage() {
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export default function ExamPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex items-center justify-center min-h-screen bg-background p-4">
+        <Skeleton className="h-[500px] w-full max-w-2xl" />
+      </main>
+    }>
+      <ExamContent />
+    </Suspense>
   );
 }
