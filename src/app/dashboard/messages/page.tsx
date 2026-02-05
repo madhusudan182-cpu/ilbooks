@@ -109,6 +109,7 @@ export default function MessagesPage() {
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const truncateMessage = (message: string, maxLength = 20): string => {
     if (message.length <= maxLength) {
@@ -139,6 +140,12 @@ export default function MessagesPage() {
         setSelectedConversation(null);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView();
+    }
+  }, [selectedConversation?.messages]);
 
   const handleSelectConversation = (conv: Conversation) => {
       setSelectedConversation(conv);
@@ -418,6 +425,7 @@ export default function MessagesPage() {
                       </div>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
                 </div>
             </ScrollArea>
             <div className="px-1 border-t bg-background">
