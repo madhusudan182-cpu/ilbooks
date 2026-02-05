@@ -44,6 +44,7 @@ export default function BookShopPage() {
       setOrderedBooks([...orderedBooks, book]);
       toast({
         title: `${book.title} added to your order.`,
+        duration: 2000,
       });
     } else {
       toast({
