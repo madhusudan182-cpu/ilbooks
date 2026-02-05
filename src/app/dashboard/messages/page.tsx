@@ -113,14 +113,7 @@ export default function MessagesPage() {
   useEffect(() => {
     const chatWithId = searchParams.get('chatWith');
     const conversation = allConversations.find(c => c.user.id === chatWithId);
-    
-    if (conversation) {
-        setSelectedConversation(conversation);
-    } else {
-        // Find ILBooks admin chat by default if no chat is selected
-        const adminChat = allConversations.find(c => c.user.id === 'ilbooks-admin');
-        setSelectedConversation(adminChat || null);
-    }
+    setSelectedConversation(conversation || null);
   }, [searchParams]);
 
   const handleSendMessage = (e: React.FormEvent) => {
