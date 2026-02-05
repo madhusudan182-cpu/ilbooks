@@ -207,11 +207,11 @@ export default function MessagesPage() {
         "w-full md:w-80 lg:w-96 border-r flex-col",
         selectedConversation ? "hidden md:flex" : "flex"
         )}>
-        <div className="p-2 border-b flex items-center gap-2">
-          <h1 className="text-xl font-bold font-headline">Chat</h1>
+        <div className="p-1 border-b flex items-center gap-1">
+          <h1 className="text-lg font-bold font-headline px-2">Chat</h1>
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Search chats..." className="pl-9 h-9" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input placeholder="Search chats..." className="pl-8 h-8" />
           </div>
         </div>
         <ScrollArea className="flex-1">
