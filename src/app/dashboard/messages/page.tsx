@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -223,7 +224,13 @@ export default function MessagesPage() {
                 key={conv.user.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => handleSelectConversation(conv)}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
+                    e.stopPropagation();
+                    return;
+                  }
+                  handleSelectConversation(conv);
+                }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -231,61 +238,64 @@ export default function MessagesPage() {
                     }
                 }}
                 className={cn(
-                  "flex items-center gap-2 p-2 border-b min-w-0 cursor-pointer",
+                  "flex items-center gap-2 p-2 border-b cursor-pointer",
                   "transition-colors",
                   selectedConversation?.user.id === conv.user.id ? "bg-muted" : "hover:bg-muted/50",
                   isIlbooks && isAdmin && "sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b-2 border-primary"
                 )}
               >
-                  <Avatar className="h-8 w-8 border flex-shrink-0">
-                     { isIlbooks ? (
-                        <AvatarFallback className="bg-card">
-                            <IlbooksLogo className="h-5 w-5" />
-                        </AvatarFallback>
-                    ) : (
-                      <>
-                        <AvatarImage src={conv.user.avatarUrl} alt={conv.user.name} />
-                        <AvatarFallback>{conv.user.name.charAt(0)}</AvatarFallback>
-                      </>
-                    )}
-                  </Avatar>
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                      <p className="font-semibold font-headline truncate">{conv.user.name}</p>
-                      {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
-                  </div>
-                <div className="flex-shrink-0 flex flex-col items-end text-right">
-                    <p className="text-xs text-muted-foreground whitespace-nowrap">{conv.timestamp}</p>
-                    <div className="h-5 flex items-center">
-                      {conv.unread > 0 ? (
-                          <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 font-bold">
-                              {conv.unread}
-                          </span>
-                      ) : !isIlbooks ? (
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost" size="icon" className="h-5 w-5 -mr-1">
-                                      <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                  <DropdownMenuItem>
-                                      <UserX className="mr-2 h-4 w-4" />
-                                      <span>Unfollow</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                      <UserX className="mr-2 h-4 w-4" />
-                                      <span>Block</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
-                                      <ShieldAlert className="mr-2 h-4 w-4" />
-                                      <span>Report</span>
-                                  </DropdownMenuItem>
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-                      ) : (
-                          <div className="w-5" />
-                      )}
+                <Avatar className="h-8 w-8 border flex-shrink-0">
+                    { isIlbooks ? (
+                    <AvatarFallback className="bg-card">
+                        <IlbooksLogo className="h-5 w-5" />
+                    </AvatarFallback>
+                ) : (
+                    <>
+                    <AvatarImage src={conv.user.avatarUrl} alt={conv.user.name} />
+                    <AvatarFallback>{conv.user.name.charAt(0)}</AvatarFallback>
+                    </>
+                )}
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                        <p className="font-semibold font-headline truncate">{conv.user.name}</p>
+                        <p className="text-xs text-muted-foreground whitespace-nowrap ml-2 flex-shrink-0">{conv.timestamp}</p>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
+                        {isIlbooks && <div className="flex-1"></div>}
+                        <div className="h-5 flex items-center flex-shrink-0">
+                        {conv.unread > 0 ? (
+                            <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 font-bold">
+                                {conv.unread}
+                            </span>
+                        ) : !isIlbooks ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-5 w-5 -mr-1">
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem>
+                                        <UserX className="mr-2 h-4 w-4" />
+                                        <span>Unfollow</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <UserX className="mr-2 h-4 w-4" />
+                                        <span>Block</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
+                                        <ShieldAlert className="mr-2 h-4 w-4" />
+                                        <span>Report</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <div className="w-5" />
+                        )}
+                        </div>
                     </div>
                 </div>
               </div>
