@@ -197,8 +197,13 @@ export default function BookShopPage() {
       <div className="p-2 md:p-4">
         <h1 className="text-4xl font-bold font-headline mb-2 text-center">Book Shop</h1>
         <p className="text-lg font-bold text-primary text-center mb-4">
-            You're in Level: {userLevel}.
+            You're in Level: {userLevel}
         </p>
+        <div className="flex justify-center gap-2 mb-6">
+          <Button>Books for your Level</Button>
+          <Button variant="outline">Vocabulary & Grammar</Button>
+          <Button variant="outline">Popular</Button>
+        </div>
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
