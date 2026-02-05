@@ -221,25 +221,22 @@ export default function MessagesPage() {
             return (
               <div
                 key={conv.user.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => handleSelectConversation(conv)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelectConversation(conv);
+                    }
+                }}
                 className={cn(
-                  "flex items-center gap-1 px-1 py-2 border-b min-w-0",
+                  "flex items-center gap-2 p-2 border-b min-w-0 cursor-pointer",
                   "transition-colors",
                   selectedConversation?.user.id === conv.user.id ? "bg-muted" : "hover:bg-muted/50",
                   isIlbooks && isAdmin && "sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b-2 border-primary"
                 )}
               >
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="flex flex-1 items-center gap-1 text-left min-w-0 cursor-pointer rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                  onClick={() => handleSelectConversation(conv)}
-                  onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleSelectConversation(conv);
-                      }
-                  }}
-                >
                   <Avatar className="h-8 w-8 border flex-shrink-0">
                      { isIlbooks ? (
                         <AvatarFallback className="bg-card">
@@ -256,7 +253,6 @@ export default function MessagesPage() {
                       <p className="font-semibold font-headline truncate">{conv.user.name}</p>
                       {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
                   </div>
-                </div>
                 <div className="flex-shrink-0 flex flex-col items-end text-right">
                     <p className="text-xs text-muted-foreground whitespace-nowrap">{conv.timestamp}</p>
                     <div className="h-5 flex items-center">
@@ -266,8 +262,8 @@ export default function MessagesPage() {
                           </span>
                       ) : !isIlbooks ? (
                           <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-5 w-5">
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="h-5 w-5 -mr-1">
                                       <MoreVertical className="h-4 w-4" />
                                   </Button>
                               </DropdownMenuTrigger>
