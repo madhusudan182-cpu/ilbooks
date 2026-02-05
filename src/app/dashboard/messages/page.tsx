@@ -233,6 +233,9 @@ export default function MessagesPage() {
                 }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
+                        if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
+                            return;
+                        }
                         e.preventDefault();
                         handleSelectConversation(conv);
                     }
@@ -256,48 +259,48 @@ export default function MessagesPage() {
                     </>
                 )}
                 </Avatar>
+                
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                        <p className="font-semibold font-headline truncate">{conv.user.name}</p>
-                        <p className="text-xs text-muted-foreground whitespace-nowrap ml-2 flex-shrink-0">{conv.timestamp}</p>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
-                        {isIlbooks && <div className="flex-1"></div>}
-                        <div className="h-5 flex items-center flex-shrink-0">
-                        {conv.unread > 0 ? (
-                            <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 font-bold">
-                                {conv.unread}
-                            </span>
-                        ) : !isIlbooks ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-5 w-5 -mr-1">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>
-                                        <UserX className="mr-2 h-4 w-4" />
-                                        <span>Unfollow</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        <UserX className="mr-2 h-4 w-4" />
-                                        <span>Block</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
-                                        <ShieldAlert className="mr-2 h-4 w-4" />
-                                        <span>Report</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                            <div className="w-5" />
-                        )}
-                        </div>
-                    </div>
+                    <p className="font-semibold font-headline truncate">{conv.user.name}</p>
+                    {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
                 </div>
+                
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">{conv.timestamp}</p>
+                  <div className="h-5 flex items-center">
+                  {conv.unread > 0 ? (
+                      <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 font-bold">
+                          {conv.unread}
+                      </span>
+                  ) : !isIlbooks ? (
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 -mr-1">
+                                  <MoreVertical className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                  <UserX className="mr-2 h-4 w-4" />
+                                  <span>Unfollow</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                  <UserX className="mr-2 h-4 w-4" />
+                                  <span>Block</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">
+                                  <ShieldAlert className="mr-2 h-4 w-4" />
+                                  <span>Report</span>
+                              </DropdownMenuItem>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                  ) : (
+                      <div className="w-5" />
+                  )}
+                  </div>
+                </div>
+
               </div>
             )
           })}
