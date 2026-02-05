@@ -113,7 +113,9 @@ export default function MessagesPage() {
   useEffect(() => {
     const chatWithId = searchParams.get('chatWith');
     const conversation = allConversations.find(c => c.user.id === chatWithId);
-    setSelectedConversation(conversation || null);
+    if (chatWithId) {
+      setSelectedConversation(conversation || null);
+    }
   }, [searchParams]);
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -278,11 +280,11 @@ export default function MessagesPage() {
         )}>
         {selectedConversation ? (
           <>
-            <div className="p-4 border-b flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedConversation(null)}>
+            <div className="p-2 border-b flex items-center gap-3">
+                <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-9 w-9" onClick={() => setSelectedConversation(null)}>
                   <ArrowLeft className="h-5 w-5"/>
                 </Button>
-                <Avatar className="h-10 w-10 border">
+                <Avatar className="h-9 w-9 border flex-shrink-0">
                     {selectedConversation.user.name === 'ILBooks' ? (
                         <AvatarFallback className="bg-card">
                             <IlbooksLogo className="h-5 w-5" />
@@ -294,19 +296,19 @@ export default function MessagesPage() {
                         </>
                     )}
                 </Avatar>
-                <div className="flex-grow">
-                    <h2 className="font-semibold text-lg font-headline">{selectedConversation.user.name}</h2>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex-grow min-w-0">
+                    <h2 className="font-semibold text-base font-headline leading-tight truncate">{selectedConversation.user.name}</h2>
+                    <p className="text-xs text-muted-foreground leading-tight">
                         {selectedConversation.user.name === 'ILBooks' ? 'Admin Support' : `Level: ${selectedConversation.user.level}`}
                     </p>
                 </div>
                 {selectedConversation.user.name !== 'ILBooks' && (
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon">
+                    <div className="flex items-center flex-shrink-0">
+                        <Button variant="ghost" size="icon" className="h-9 w-9">
                             <Phone className="w-5 h-5" />
                             <span className="sr-only">Audio Call</span>
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="h-9 w-9">
                             <Video className="w-5 h-5" />
                             <span className="sr-only">Video Call</span>
                         </Button>
