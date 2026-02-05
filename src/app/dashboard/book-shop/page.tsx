@@ -56,15 +56,13 @@ export default function BookShopPage() {
       />
       <div className="p-2 md:p-4">
         <h1 className="text-4xl font-bold font-headline mb-2 text-center">Book Shop</h1>
+        <p className="text-lg font-bold text-primary text-center mb-4">
+            You're in Level: {userLevel}. Here are the books for your level.
+        </p>
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-primary">
-                  You're in Level: {userLevel}. Here are the books for your level.
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <CardContent className="grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
                 {booksForLevel.length > 0 ? (
                   booksForLevel.map((book) => (
                     <Card key={book.id} className="overflow-hidden flex flex-col">
