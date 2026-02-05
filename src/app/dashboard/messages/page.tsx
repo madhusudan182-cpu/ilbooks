@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, FileAudio, FileVideo as FileVideoIcon, FileText, Sheet, Presentation, MoreVertical, UserX, ShieldAlert, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock, Mic, Smile } from "lucide-react";
+import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, Mic, Smile, UserX, ShieldAlert } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from '@/lib/types';
 import { IlbooksLogo } from '@/components/ilbooks-logo';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MoreVertical, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock } from "lucide-react";
 
 // In a real app, you'd get the current user from an auth context.
 // We simulate by picking a user. mockUsers[0] is an admin.
@@ -253,7 +254,7 @@ export default function MessagesPage() {
                   isIlbooks && isAdmin && "sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b-2 border-primary"
                 )}
               >
-                <Avatar className="h-12 w-12 border flex-shrink-0">
+                <Avatar className="h-10 w-10 border flex-shrink-0">
                     { isIlbooks ? (
                     <AvatarFallback className="bg-card">
                         <IlbooksLogo className="h-6 w-6" />
@@ -369,7 +370,7 @@ export default function MessagesPage() {
                          )}
 
                          <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary/10" : "bg-card")}>
-                             <p className="break-words text-sm font-sans">{msg.text}</p>
+                             <p className="break-words font-sans text-sm">{msg.text}</p>
                             {msg.sender === currentUser.id ? (
                                 <div className="flex justify-end items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
                                     {msg.status === 'pending' && <span className="italic">Pending</span>}
@@ -419,7 +420,7 @@ export default function MessagesPage() {
             </ScrollArea>
             <div className="p-1 border-t bg-background">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-1">
-                    <div className="flex items-center">
+                    <div className="flex items-center -ml-2">
                         <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
                             <Paperclip className="w-4 h-4"/>
                             <span className="sr-only">Attach file</span>
@@ -439,7 +440,7 @@ export default function MessagesPage() {
                     </div>
                     <div className="relative flex-1">
                       <Input 
-                          placeholder="Type a message..." 
+                          placeholder="Message" 
                           className="pr-10 h-9 rounded-full bg-muted" 
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
