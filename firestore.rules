@@ -6,7 +6,7 @@ service cloud.firestore {
     }
     match /orders/{orderId} {
       allow read, list: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
+      allow create: if request.resource.data.userId is string;
     }
   }
 }
