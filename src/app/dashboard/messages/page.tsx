@@ -418,21 +418,21 @@ export default function MessagesPage() {
                 </div>
             </ScrollArea>
             <div className="p-1 border-t bg-background">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-1">
-                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
-                        <Paperclip className="w-5 h-5"/>
+                <form onSubmit={handleSendMessage} className="flex items-center gap-0">
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
+                        <Paperclip className="w-4 h-4"/>
                         <span className="sr-only">Attach file</span>
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
-                        <Camera className="w-5 h-5"/>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
+                        <Camera className="w-4 h-4"/>
                         <span className="sr-only">Take a photo</span>
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
-                        <FileImage className="w-5 h-5"/>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
+                        <FileImage className="w-4 h-4"/>
                         <span className="sr-only">Attach an image</span>
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
-                        <Mic className="w-5 h-5"/>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
+                        <Mic className="w-4 h-4"/>
                         <span className="sr-only">Record a voice message</span>
                     </Button>
                     <div className="relative flex-1">
@@ -445,11 +445,11 @@ export default function MessagesPage() {
                           onBlur={() => setIsInputFocused(false)}
                       />
                       <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
-                          <Smile className="w-5 h-5 text-muted-foreground" />
+                          <Smile className="w-4 h-4 text-muted-foreground" />
                           <span className="sr-only">Add emoji</span>
                       </Button>
                     </div>
-                    <Button type="submit" size="icon" aria-label="Send Message" className="shrink-0">
+                    <Button type="submit" size="icon" aria-label="Send Message" className="shrink-0 h-9 w-9">
                         <Send className="w-4 h-4"/>
                     </Button>
                 </form>
