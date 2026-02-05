@@ -110,7 +110,7 @@ export default function CompetitionPage() {
                     
                     <Card className="lg:col-span-1 md:col-span-2">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-3"><Book className="text-accent"/> Syllabus for Level: {userLevel}</CardTitle>
+                            <CardTitle className="text-lg">Syllabus for Level: {userLevel}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {userSyllabus ? (
