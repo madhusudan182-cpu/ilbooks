@@ -5,10 +5,20 @@ import { allSyllabi } from '@/lib/syllabus';
 import { allQuestions } from '@/lib/questions';
 import { cn } from '@/lib/utils';
 import type { Question, Book as BookType } from '@/lib/types';
-import { mockBooks } from "@/lib/data";
+import { mockBooks, mockUsers } from "@/lib/data";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 
 export default function AdminPage() {
+    // In a real app, this user would come from an authentication session.
+    // We are using mockUsers[0] which is an admin. 
+    // To test non-admin protection, you could change this to mockUsers[1] and attempt to access /dashboard/admin.
+    const currentUser = mockUsers[0];
+    
+    if (!currentUser.isAdmin) {
+        redirect('/dashboard');
+    }
+
     const allLevels: string[] = [];
     for (let i = 0; i <= 19; i++) {
         if (i === 1) continue; // Skip level 1.x
