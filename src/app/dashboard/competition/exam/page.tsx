@@ -15,7 +15,7 @@ import { Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const TOTAL_TIME_PER_QUESTION = 20; // seconds
+const TOTAL_TIME_PER_QUESTION = 15; // seconds
 
 function ExamContent() {
   const searchParams = useSearchParams();
@@ -25,7 +25,7 @@ function ExamContent() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(string | null)[]>(Array(questions.length).fill(null));
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_PER_QUESTION);
-  const [showResults, setShowResults] = useState(true);
+  const [showResults, setShowResults] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   useEffect(() => {
