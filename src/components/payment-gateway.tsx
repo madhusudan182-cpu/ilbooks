@@ -18,9 +18,10 @@ interface PaymentGatewayProps {
 
 export function PaymentGateway({ amount, productName, show, onClose, onSuccess }: PaymentGatewayProps) {
   const [selectedGateway, setSelectedGateway] = useState<'bkash' | 'rocket' | null>(null);
-  const [paymentStep, setPaymentStep] = useState<'gateway' | 'number' | 'pin' | 'success'>('gateway');
+  const [paymentStep, setPaymentStep] = useState<'gateway' | 'number' | 'pin' | 'otp' | 'success'>('gateway');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [pin, setPin] = useState('');
+  const [otp, setOtp] = useState('');
   const { toast } = useToast();
 
   const resetState = () => {
@@ -28,6 +29,7 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
     setPaymentStep('gateway');
     setPhoneNumber('');
     setPin('');
+    setOtp('');
   };
 
   const handleClose = () => {
@@ -50,6 +52,12 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
   const handlePinSubmit = () => {
     const pinLength = selectedGateway === 'bkash' ? 5 : 4;
     if (pin.length === pinLength) {
+      setPaymentStep('otp');
+    }
+  };
+
+  const handleOtpSubmit = () => {
+    if (otp.length === 6) {
       setPaymentStep('success');
       setTimeout(() => {
         toast({
@@ -64,7 +72,10 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
   };
 
   const handleBack = () => {
-    if (paymentStep === 'pin') {
+    if (paymentStep === 'otp') {
+        setPaymentStep('pin');
+        setOtp('');
+    } else if (paymentStep === 'pin') {
       setPaymentStep('number');
       setPin('');
     } else if (paymentStep === 'number') {
@@ -118,7 +129,7 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
               </p>
             </>
           )}
-          {(paymentStep === 'number' || paymentStep === 'pin' || paymentStep === 'success') && selectedGateway && (
+          {(paymentStep === 'number' || paymentStep === 'pin' || paymentStep === 'otp' || paymentStep === 'success') && selectedGateway && (
             <>
               <div className={`w-16 h-16 ${gatewayColors.iconBg} rounded-full mx-auto mb-4 flex items-center justify-center`}>
                 <span className="text-white font-bold text-xl capitalize">{selectedGateway}</span>
@@ -221,6 +232,44 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
                 onClick={handlePinSubmit}
                 className={`w-full ${gatewayColors.bg} ${gatewayColors.hover}`}
                 disabled={pin.length !== (selectedGateway === 'bkash' ? 5 : 4)}
+              >
+                Next
+              </Button>
+              <Button variant="outline" onClick={handleBack} className="w-full">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            </>
+          )}
+
+          {paymentStep === 'otp' && selectedGateway && (
+            <>
+              <div>
+                <Label htmlFor="otp">
+                  One-Time Password (OTP)
+                </Label>
+                <Input
+                  id="otp"
+                  type="tel"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Enter 6-digit OTP"
+                  className="mt-1"
+                  maxLength={6}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  An OTP has been sent to your mobile number.
+                </p>
+              </div>
+               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                <p className="font-semibold text-yellow-800">Confirm Payment:</p>
+                <p className="text-muted-foreground">Amount: TK {amount}</p>
+                <p className="text-muted-foreground">To: ILBooks {productName}</p>
+              </div>
+              <Button
+                onClick={handleOtpSubmit}
+                className={`w-full ${gatewayColors.bg} ${gatewayColors.hover}`}
+                disabled={otp.length !== 6}
               >
                 Pay TK {amount}
               </Button>
