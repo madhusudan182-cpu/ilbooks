@@ -130,7 +130,7 @@ export default function CompetitionPage() {
                 </div>
                 
                 <div className="text-center mt-8">
-                     <Button size="lg" className="font-headline" onClick={handleStartExamClick}>
+                     <Button size="lg" className="font-headline px-4 md:px-8" onClick={handleStartExamClick}>
                         Proceed to Payment & Start Exam <ArrowRight className="ml-2 w-5 h-5"/>
                      </Button>
                      <p className="text-xs text-muted-foreground mt-2">Exam duration: 15 seconds per question.</p>
