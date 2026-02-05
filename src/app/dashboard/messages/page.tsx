@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,7 @@ export default function MessagesPage() {
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const truncateMessage = (message: string, maxLength = 20): string => {
     if (message.length <= maxLength) {
@@ -170,6 +171,7 @@ export default function MessagesPage() {
             allConversations[convIndex] = updatedConversation;
         }
         setNewMessage('');
+        inputRef.current?.blur();
       }
   };
 
@@ -420,7 +422,7 @@ export default function MessagesPage() {
             </ScrollArea>
             <div className="px-1 border-t bg-background">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-1">
-                    <div className="flex items-center -ml-2">
+                    <div className={cn("flex items-center transition-all duration-300", isInputFocused ? "w-0 -ml-2 overflow-hidden opacity-0" : "w-auto ml-0 opacity-100")}>
                         <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
                             <Paperclip className="w-4 h-4"/>
                             <span className="sr-only">Attach file</span>
@@ -440,6 +442,7 @@ export default function MessagesPage() {
                     </div>
                     <div className="relative flex-1">
                       <Input 
+                          ref={inputRef}
                           placeholder="Message" 
                           className="pr-10 h-9 rounded-full bg-muted" 
                           value={newMessage}
