@@ -66,10 +66,10 @@ const MessagesPageSkeleton = () => (
     <div className="h-full flex bg-background">
       <aside className="w-full md:w-80 lg:w-96 border-r flex flex-col">
         <div className="p-1 border-b flex items-center gap-1">
-          <h1 className="text-base font-bold font-headline px-2">Chat</h1>
+          <h1 className="text-xs font-bold font-headline px-2">Chat</h1>
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Search chats..." className="pl-8 h-8" />
+            <Input placeholder="Search chats..." className="pl-8 h-7" />
           </div>
         </div>
         <div className="flex-1 p-3 space-y-4">
@@ -209,10 +209,10 @@ export default function MessagesPage() {
         selectedConversation ? "hidden md:flex" : "flex"
         )}>
         <div className="p-1 border-b flex items-center gap-1">
-          <h1 className="text-base font-bold font-headline px-2">Chat</h1>
+          <h1 className="text-xs font-bold font-headline px-2">Chat</h1>
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Search chats..." className="pl-8 h-8" />
+            <Input placeholder="Search chats..." className="pl-8 h-7" />
           </div>
         </div>
         <ScrollArea className="flex-1">
@@ -246,6 +246,7 @@ export default function MessagesPage() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                       <p className="font-semibold font-headline truncate">{conv.user.name}</p>
+                      {!isIlbooks && <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>}
                   </div>
                 </button>
                 <div className="flex-shrink-0 flex flex-col items-end text-right">
@@ -396,51 +397,40 @@ export default function MessagesPage() {
             </ScrollArea>
             <div className="p-1 border-t bg-background">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-1">
-                    <div className="flex">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="shrink-0 w-auto px-2">
-                                    <Paperclip className="w-5 h-5"/>
-                                    <span className="sr-only">Attach file</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem>
-                                    <FileImage className="mr-2 h-4 w-4" />
-                                    <span>Image</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <FileAudio className="mr-2 h-4 w-4" />
-                                    <span>Audio</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <FileVideoIcon className="mr-2 h-4 w-4" />
-                                    <span>Video</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    <span>Doc/PDF</span>
-                                </DropdownMenuItem>
-                                 <DropdownMenuItem>
-                                    <Sheet className="mr-2 h-4 w-4" />
-                                    <span>Excel</span>
-                                </DropdownMenuItem>
-                                 <DropdownMenuItem>
-                                    <Presentation className="mr-2 h-4 w-4" />
-                                    <span>Powerpoint</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <Button variant="ghost" size="icon" className="shrink-0 w-auto px-2">
-                            <Camera className="w-5 h-5" />
-                            <span className="sr-only">Open camera</span>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="shrink-0 w-auto px-2">
-                            <Mic className="w-5 h-5" />
-                            <span className="sr-only">Record voice message</span>
-                        </Button>
-                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                                <Paperclip className="w-5 h-5"/>
+                                <span className="sr-only">Attach file</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem>
+                                <FileImage className="mr-2 h-4 w-4" />
+                                <span>Image</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <FileAudio className="mr-2 h-4 w-4" />
+                                <span>Audio</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <FileVideoIcon className="mr-2 h-4 w-4" />
+                                <span>Video</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <FileText className="mr-2 h-4 w-4" />
+                                <span>Doc/PDF</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem>
+                                <Sheet className="mr-2 h-4 w-4" />
+                                <span>Excel</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem>
+                                <Presentation className="mr-2 h-4 w-4" />
+                                <span>Powerpoint</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <div className="relative flex-1">
                       <Input 
                           placeholder="Type a message..." 
@@ -455,7 +445,7 @@ export default function MessagesPage() {
                           <span className="sr-only">Add emoji</span>
                       </Button>
                     </div>
-                    <Button type="submit" size="icon" aria-label="Send Message" className="shrink-0 h-9 w-9">
+                    <Button type="submit" size="icon" aria-label="Send Message" className="shrink-0">
                         <Send className="w-4 h-4"/>
                     </Button>
                 </form>
