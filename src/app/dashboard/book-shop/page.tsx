@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { mockBooks } from "@/lib/data";
+import { mockBooks, mockUsers } from "@/lib/data";
 import { ShoppingCart, CreditCard } from "lucide-react";
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,14 @@ export default function BookShopPage() {
     const [orderedBooks, setOrderedBooks] = useState<Book[]>([]);
     const [showPayment, setShowPayment] = useState(false);
     const { toast } = useToast();
+
+    // In a real app, this would be the authenticated user.
+    // For demonstration, we'll use a user at level 0.0 to show available books.
+    const currentUser = { ...mockUsers[1], level: 0.0 };
+    const userLevel = currentUser.level.toString();
+
+    // Filter books to show only those relevant to the user's level.
+    const booksForLevel = mockBooks.filter(book => book.level === userLevel);
 
     const total = orderedBooks.reduce((sum, book) => sum + book.price, 0);
 
@@ -53,27 +61,34 @@ export default function BookShopPage() {
                     <div className="lg:col-span-2">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Books for Your Level:</CardTitle>
-                                <CardDescription>Handpicked books to help you prepare for the next level.</CardDescription>
+                                <CardTitle>You're in Level: {userLevel}</CardTitle>
+                                <CardDescription>Here are the books for your level.</CardDescription>
                             </CardHeader>
                             <CardContent className="grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {mockBooks.map(book => (
-                                    <Card key={book.id} className="overflow-hidden flex flex-col">
-                                        <div className="relative aspect-[2/3] w-full">
-                                            <Image src={book.coverUrl} alt={book.title} fill className="object-cover" data-ai-hint="book cover" />
-                                        </div>
-                                        <div className="p-4 flex flex-col flex-grow">
-                                            <h3 className="font-semibold font-headline flex-grow">{book.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{book.author}</p>
-                                            <div className="flex justify-between items-center mt-4">
-                                                <p className="font-bold text-lg text-primary">Tk {book.price}</p>
-                                                <Button size="sm" onClick={() => handleBuy(book)}>
-                                                    <ShoppingCart className="mr-2 h-4 w-4"/> Buy
-                                                </Button>
+                                {booksForLevel.length > 0 ? (
+                                    booksForLevel.map(book => (
+                                        <Card key={book.id} className="overflow-hidden flex flex-col">
+                                            <div className="relative aspect-[2/3] w-full">
+                                                <Image src={book.coverUrl} alt={book.title} fill className="object-cover" data-ai-hint="book cover" />
                                             </div>
-                                        </div>
-                                    </Card>
-                                ))}
+                                            <div className="p-4 flex flex-col flex-grow">
+                                                <h3 className="font-semibold font-headline flex-grow">{book.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{book.author}</p>
+                                                <div className="flex justify-between items-center mt-4">
+                                                    <p className="font-bold text-lg text-primary">Tk {book.price}</p>
+                                                    <Button size="sm" onClick={() => handleBuy(book)}>
+                                                        <ShoppingCart className="mr-2 h-4 w-4"/> Buy
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center text-muted-foreground py-10">
+                                        <p>There are no books specifically recommended for your current level ({userLevel}) yet.</p>
+                                        <p>Check back soon!</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
