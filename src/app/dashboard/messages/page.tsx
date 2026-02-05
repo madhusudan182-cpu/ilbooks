@@ -323,7 +323,7 @@ export default function MessagesPage() {
                 <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={() => router.back()}>
                   <ArrowLeft className="h-4 w-4"/>
                 </Button>
-                <Avatar className="h-10 w-10 border flex-shrink-0">
+                <Avatar className="h-8 w-8 border flex-shrink-0">
                     {selectedConversation.user.name === 'ILBooks' ? (
                         <AvatarFallback className="bg-card">
                             <IlbooksLogo className="h-6 w-6" />
@@ -368,7 +368,7 @@ export default function MessagesPage() {
                            </Avatar>
                          )}
 
-                         <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary/20 text-primary" : "bg-card")}>
+                         <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm font-sans", msg.sender === currentUser.id ? "bg-primary/10 text-primary-foreground" : "bg-card")}>
                              <p className="break-words text-sm">{msg.text}</p>
                             {msg.sender === currentUser.id ? (
                                 <div className="flex justify-end items-center gap-1.5 mt-1.5 text-xs opacity-80">
@@ -419,40 +419,22 @@ export default function MessagesPage() {
             </ScrollArea>
             <div className="p-1 border-t bg-background">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-1">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="shrink-0">
-                                <Paperclip className="w-5 h-5"/>
-                                <span className="sr-only">Attach file</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem>
-                                <FileImage className="mr-2 h-4 w-4" />
-                                <span>Image</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <FileAudio className="mr-2 h-4 w-4" />
-                                <span>Audio</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <FileVideoIcon className="mr-2 h-4 w-4" />
-                                <span>Video</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <FileText className="mr-2 h-4 w-4" />
-                                <span>Doc/PDF</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem>
-                                <Sheet className="mr-2 h-4 w-4" />
-                                <span>Excel</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem>
-                                <Presentation className="mr-2 h-4 w-4" />
-                                <span>Powerpoint</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
+                        <Paperclip className="w-5 h-5"/>
+                        <span className="sr-only">Attach file</span>
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
+                        <Camera className="w-5 h-5"/>
+                        <span className="sr-only">Take a photo</span>
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
+                        <FileImage className="w-5 h-5"/>
+                        <span className="sr-only">Attach an image</span>
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0">
+                        <Mic className="w-5 h-5"/>
+                        <span className="sr-only">Record a voice message</span>
+                    </Button>
                     <div className="relative flex-1">
                       <Input 
                           placeholder="Type a message..." 
