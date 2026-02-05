@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,10 +16,20 @@ export default function HomePage() {
   const currentUser = mockUsers[0];
   const [postContent, setPostContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const handleCancel = () => {
     setPostContent("");
     setIsPosting(false);
+  };
+
+  const handleImageClick = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleVideoClick = () => {
+    videoInputRef.current?.click();
   };
 
   return (
@@ -52,11 +62,13 @@ export default function HomePage() {
         {isPosting && (
           <CardFooter className="flex items-center justify-between p-1 border-t">
             <div className="flex">
-                <Button variant="ghost" size="icon">
+                <input type="file" ref={imageInputRef} accept="image/*" className="hidden" />
+                <input type="file" ref={videoInputRef} accept="video/*" className="hidden" />
+                <Button variant="ghost" size="icon" onClick={handleImageClick}>
                     <ImageIcon className="h-5 w-5 text-muted-foreground" />
                     <span className="sr-only">Add image</span>
                 </Button>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" onClick={handleVideoClick}>
                     <Video className="h-5 w-5 text-muted-foreground" />
                     <span className="sr-only">Add video</span>
                 </Button>
