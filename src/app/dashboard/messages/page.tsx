@@ -253,7 +253,7 @@ export default function MessagesPage() {
                   isIlbooks && isAdmin && "sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b-2 border-primary"
                 )}
               >
-                <Avatar className="h-12 w-12 border flex-shrink-0">
+                <Avatar className="h-10 w-10 border flex-shrink-0">
                     { isIlbooks ? (
                     <AvatarFallback className="bg-card">
                         <IlbooksLogo className="h-6 w-6" />
@@ -323,7 +323,7 @@ export default function MessagesPage() {
                 <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={() => router.back()}>
                   <ArrowLeft className="h-4 w-4"/>
                 </Button>
-                <Avatar className="h-12 w-12 border flex-shrink-0">
+                <Avatar className="h-10 w-10 border flex-shrink-0">
                     {selectedConversation.user.name === 'ILBooks' ? (
                         <AvatarFallback className="bg-card">
                             <IlbooksLogo className="h-6 w-6" />
@@ -360,7 +360,7 @@ export default function MessagesPage() {
                   <div key={msg.id} className={cn("group flex w-full max-w-full items-end gap-2", msg.sender === currentUser.id && "justify-end")}>
                       <div className={cn("flex items-end gap-2", msg.sender === currentUser.id ? "flex-row-reverse" : "flex-row")}>
                          {msg.sender !== currentUser.id && (
-                           <Avatar className="h-12 w-12">
+                           <Avatar className="h-8 w-8">
                              <AvatarImage src={selectedConversation.user.avatarUrl !== 'ilbooks_logo' ? selectedConversation.user.avatarUrl : undefined} />
                              <AvatarFallback>
                                 {selectedConversation.user.name === 'ILBooks' ? <IlbooksLogo className="h-6 w-6" /> : selectedConversation.user.name.charAt(0)}
@@ -368,8 +368,8 @@ export default function MessagesPage() {
                            </Avatar>
                          )}
 
-                         <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary text-primary-foreground" : "bg-card")}>
-                             <p className="font-sans break-words text-sm">{msg.text}</p>
+                         <div className={cn("max-w-[85%] sm:max-w-[80%] md:max-w-[75%] lg:max-w-[70%] p-2 md:p-3 rounded-lg shadow-sm", msg.sender === currentUser.id ? "bg-primary/20 text-primary" : "bg-card")}>
+                             <p className="break-words text-sm">{msg.text}</p>
                             {msg.sender === currentUser.id ? (
                                 <div className="flex justify-end items-center gap-1.5 mt-1.5 text-xs opacity-80">
                                     {msg.status === 'pending' && <span className="italic">Pending</span>}
