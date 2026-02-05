@@ -10,11 +10,24 @@ import { ShoppingCart, CreditCard } from 'lucide-react';
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useToast } from '@/hooks/use-toast';
 import type { Book } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function BookShopPage() {
   const [orderedBooks, setOrderedBooks] = useState<Book[]>([]);
   const [showPayment, setShowPayment] = useState(false);
   const { toast } = useToast();
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const [address, setAddress] = useState('');
+  const [mobile, setMobile] = useState('');
 
   // In a real app, this would be the authenticated user.
   // For demonstration, we'll use a user at level 0.0 to show available books.
@@ -41,8 +54,22 @@ export default function BookShopPage() {
   };
 
   const handlePaymentSuccess = () => {
-    // Clear the cart after successful payment
+    setShowAddressDialog(true);
+  };
+
+  const handleAddressSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowAddressDialog(false);
+
+    toast({
+      title: 'Thanks for your information!',
+      duration: 2000,
+    });
+
+    // Clear the cart and form fields after submission
     setOrderedBooks([]);
+    setAddress('');
+    setMobile('');
   };
 
   return (
@@ -54,6 +81,52 @@ export default function BookShopPage() {
         onClose={() => setShowPayment(false)}
         onSuccess={handlePaymentSuccess}
       />
+
+      <Dialog open={showAddressDialog} onOpenChange={setShowAddressDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delivery Information</DialogTitle>
+            <DialogDescription>
+              Please provide your address and mobile number for delivery.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddressSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="address" className="text-right">
+                  Your Address
+                </Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="col-span-3"
+                  placeholder="Your full address"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="mobile" className="text-right">
+                  Mobile Number
+                </Label>
+                <Input
+                  id="mobile"
+                  type="tel"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                  className="col-span-3"
+                  placeholder="Your mobile number"
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Submit</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="p-2 md:p-4">
         <h1 className="text-4xl font-bold font-headline mb-2 text-center">Book Shop</h1>
         <p className="text-lg font-bold text-primary text-center mb-4">
@@ -62,7 +135,7 @@ export default function BookShopPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
-              <CardContent className="grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pt-6">
+              <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pt-6">
                 {booksForLevel.length > 0 ? (
                   booksForLevel.map((book) => (
                     <Card key={book.id} className="overflow-hidden flex flex-col">
@@ -76,10 +149,10 @@ export default function BookShopPage() {
                         />
                       </div>
                       <div className="p-2 flex flex-col flex-grow">
-                        <h3 className="font-semibold font-headline text-sm flex-grow">{book.title}</h3>
+                        <h3 className="font-semibold font-headline text-xs flex-grow">{book.title}</h3>
                         <p className="text-xs text-muted-foreground">{book.author}</p>
                         <div className="flex justify-between items-center mt-2">
-                          <p className="font-bold text-base text-primary">Tk {book.price}</p>
+                          <p className="font-bold text-sm text-primary">Tk {book.price}</p>
                           <Button size="sm" onClick={() => handleBuy(book)}>
                             <ShoppingCart className="mr-2 h-4 w-4" /> Buy
                           </Button>
@@ -130,6 +203,7 @@ export default function BookShopPage() {
                       className="w-full mt-6 font-headline"
                       size="lg"
                       onClick={() => setShowPayment(true)}
+                      disabled={orderedBooks.length === 0}
                     >
                       <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
                     </Button>
