@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { mockBooks, mockUsers } from '@/lib/data';
+import { mockBooks } from '@/lib/data';
 import { ShoppingCart, CreditCard, Plus, Minus, Trash2 } from 'lucide-react';
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
+import { currentUser } from '@/lib/auth';
 
 type CartItem = Book & { quantity: number };
 
@@ -39,7 +40,6 @@ export default function BookShopPage() {
   const firestore = useFirestore();
   const [activeCategory, setActiveCategory] = useState<'level' | 'vocab' | 'popular'>('level');
 
-  const currentUser = mockUsers[1];
   const userLevel = currentUser.level.toFixed(1);
 
   const displayedBooks = (() => {

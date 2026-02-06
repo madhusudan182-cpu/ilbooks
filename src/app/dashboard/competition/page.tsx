@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Book, Award, Percent, DollarSign, Edit } from "lucide-react";
 import { PaymentGateway } from '@/components/payment-gateway';
 import { allSyllabi } from '@/lib/syllabus';
-import { mockUsers } from '@/lib/data';
+import { currentUser } from '@/lib/auth';
 import { allQuestions } from '@/lib/questions';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -21,9 +21,7 @@ export default function CompetitionPage() {
     const examFee = 20;
 
     // In a real app, you'd get the current user from an auth context.
-    // We simulate by picking a user. mockUsers[0] is an admin.
-    // To see the client view, you can change this to mockUsers[1].
-    const currentUser = mockUsers[1]; 
+    // To see the client view, you can now change the user in src/lib/auth.ts
     const userLevel = currentUser.level.toString();
     const userSyllabus = allSyllabi.find(s => s.level === userLevel);
 

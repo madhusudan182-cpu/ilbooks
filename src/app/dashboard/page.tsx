@@ -8,12 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { mockPosts, mockUsers } from "@/lib/data";
+import { mockPosts } from "@/lib/data";
 import { MessageCircle, Heart, Share2, Image as ImageIcon, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { currentUser } from "@/lib/auth";
 
 export default function HomePage() {
-  const currentUser = mockUsers[0];
   const [postContent, setPostContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -40,8 +40,8 @@ export default function HomePage() {
           <div className="flex items-center gap-0">
             <div className="p-1">
                 <Avatar className="h-8 w-8">
-                <AvatarImage src="https://picsum.photos/seed/av1/100/100" alt="User" />
-                <AvatarFallback>YOU</AvatarFallback>
+                <AvatarImage src={currentUser.avatarUrl} alt="User" />
+                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                 </Avatar>
             </div>
             <div className="w-full">

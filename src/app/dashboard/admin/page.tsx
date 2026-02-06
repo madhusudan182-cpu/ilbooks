@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { mockUsers } from "@/lib/data";
+import { currentUser } from "@/lib/auth";
 
 export default function AdminPage() {
     const router = useRouter();
     // In a real app, this user would come from an authentication session.
-    // We are using mockUsers[0] which is an admin. 
-    // To test non-admin protection, you could change this to mockUsers[1] and attempt to access /dashboard/admin.
-    const currentUser = mockUsers[0];
+    // To test non-admin protection, you can now change the user in src/lib/auth.ts
     const [isClient, setIsClient] = useState(false);
     
     useEffect(() => {
@@ -21,7 +19,7 @@ export default function AdminPage() {
         if (!currentUser.isAdmin) {
             router.push('/dashboard');
         }
-    }, [currentUser.isAdmin, router]);
+    }, [router]);
     
     if (!currentUser.isAdmin || !isClient) {
         return null; // Or a loading spinner while redirecting

@@ -16,12 +16,11 @@ import { IlbooksLogo } from '@/components/ilbooks-logo';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MoreVertical, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
+import { currentUser } from '@/lib/auth';
 
 // In a real app, you'd get the current user from an auth context.
-// We simulate by picking a user. mockUsers[0] is an admin.
-const currentUser = mockUsers[0]; 
-// To test client view (level > 0.3): const currentUser = mockUsers[3]; 
-// To test locked view (level < 0.3): const currentUser = { ...mockUsers[3], level: 0.2, isAdmin: false }; 
+// To test client view (level > 0.3): you can change user in src/lib/auth.ts
+// To test locked view (level < 0.3): you can change user in src/lib/auth.ts
 
 const allConversations = [
   {

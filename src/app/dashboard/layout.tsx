@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { mockUsers } from '@/lib/data';
+import { currentUser } from '@/lib/auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -63,7 +63,6 @@ export default function DashboardLayout({
   const [isClient, setIsClient] = React.useState(false);
   const [isMainMenuOpen, setIsMainMenuOpen] = React.useState(false);
   
-  const currentUser = mockUsers[0]; // In a real app, this would come from an auth context
   const isAdmin = currentUser.isAdmin || false;
 
   React.useEffect(() => {
@@ -214,17 +213,17 @@ export default function DashboardLayout({
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="https://picsum.photos/seed/av1/100/100" alt="User avatar" />
-                        <AvatarFallback>YOU</AvatarFallback>
+                        <AvatarImage src={currentUser.avatarUrl} alt="User avatar" />
+                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Alia Rahman</p>
+                        <p className="text-sm font-medium leading-none">{currentUser.name}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          alia.r@example.com
+                          {currentUser.id}@example.com
                         </p>
                       </div>
                     </DropdownMenuLabel>

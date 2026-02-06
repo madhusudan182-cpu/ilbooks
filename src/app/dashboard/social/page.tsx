@@ -6,8 +6,7 @@ import { mockUsers } from "@/lib/data";
 import type { User } from "@/lib/types";
 import { MessageCircle, UserCheck, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
-
-const currentUser = mockUsers[0];
+import { currentUser } from "@/lib/auth";
 
 const UserCard = ({ user }: { user: User }) => {
   const isCurrentUser = user.id === currentUser.id;
