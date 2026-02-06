@@ -26,7 +26,7 @@ const DetailedResultTable = ({ result }: { result: ExamResult }) => (
                         <TableHead className="font-bold text-black text-xs px-1 sm:px-2 py-1">Subject</TableHead>
                         <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Total</TableHead>
                         <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Obtained</TableHead>
-                        <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">%</TableHead>
+                        <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Percentage</TableHead>
                         <TableHead className="font-bold text-black text-xs text-right px-1 sm:px-2 py-1">Status</TableHead>
                     </TableRow>
                 </TableHeader>
