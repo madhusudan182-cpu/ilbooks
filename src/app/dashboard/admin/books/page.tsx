@@ -266,13 +266,8 @@ function BooksPageContent() {
                 </CardHeader>
                 <CardContent>
                      {isClient ? (
-                        <Tabs defaultValue={tab}>
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="levels">All Levels</TabsTrigger>
-                                <TabsTrigger value="vocab">Vocabulary & Grammar</TabsTrigger>
-                                <TabsTrigger value="popular">Popular</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="levels" className="mt-4">
+                        <div className="mt-4">
+                            {tab === 'levels' && (
                                 <Accordion type="single" collapsible className="w-full max-h-[60rem] overflow-y-auto">
                                     {allLevels.map((level) => {
                                         const booksForLevel = booksByLevel[level] || [];
@@ -325,8 +320,9 @@ function BooksPageContent() {
                                         )
                                     })}
                                 </Accordion>
-                            </TabsContent>
-                             <TabsContent value="vocab" className="mt-4">
+                            )}
+                            {tab === 'vocab' && (
+                                <>
                                 {isEditingVocab ? (
                                     <div className="p-4 bg-muted/50 rounded-lg">
                                         <div className="flex justify-end mb-4">
@@ -355,8 +351,10 @@ function BooksPageContent() {
                                         ) : <p className="text-muted-foreground">No books in this category.</p>}
                                     </div>
                                 )}
-                            </TabsContent>
-                            <TabsContent value="popular" className="mt-4">
+                                </>
+                            )}
+                            {tab === 'popular' && (
+                                <>
                                 {isEditingPopular ? (
                                      <div className="p-4 bg-muted/50 rounded-lg">
                                         <div className="flex justify-end mb-4">
@@ -385,8 +383,9 @@ function BooksPageContent() {
                                         ) : <p className="text-muted-foreground">No books in this category.</p>}
                                     </div>
                                 )}
-                            </TabsContent>
-                        </Tabs>
+                                </>
+                            )}
+                        </div>
                      ) : null}
                 </CardContent>
             </Card>
