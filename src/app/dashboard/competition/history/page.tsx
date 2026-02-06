@@ -74,6 +74,14 @@ function ExamHistoryContent() {
         }
     }, [searchParams]);
 
+    const handleBackClick = () => {
+        if (activeView) {
+            setActiveView(null);
+        } else {
+            router.back();
+        }
+    };
+
 
     return (
         <div className="p-2 md:p-4 lg:p-6">
@@ -140,7 +148,7 @@ function ExamHistoryContent() {
                 </CardContent>
             </Card>
             <div className="mt-4 flex justify-center">
-                <Button onClick={() => router.back()}>Back</Button>
+                <Button onClick={handleBackClick}>Back</Button>
             </div>
         </div>
     );
