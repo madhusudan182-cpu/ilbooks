@@ -17,9 +17,9 @@ const UserCard = ({ user }: { user: User }) => {
   
   return (
     <Card>
-      <CardContent className="p-4 flex items-center gap-4">
+      <CardContent className="p-2 flex items-center gap-3">
         <Link href={profileUrl}>
-          <Avatar className="h-12 w-12">
+          <Avatar className="h-10 w-10">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
@@ -28,24 +28,24 @@ const UserCard = ({ user }: { user: User }) => {
           <Link href={profileUrl} className="hover:underline">
             <p className="font-semibold font-headline">{user.name}</p>
           </Link>
-          <p className="text-sm text-muted-foreground">Level: {user.level}</p>
+          <p className="text-xs text-muted-foreground">Level: {user.level}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {!isCurrentUser && (
             <>
               {user.isMutual ? (
                 <>
-                  <Button variant="ghost" size="icon" asChild>
+                  <Button variant="ghost" size="icon" asChild className="h-8 w-8">
                     <Link href={`/dashboard/messages?chatWith=${user.id}`}>
-                      <MessageCircle className="h-5 w-5"/>
+                      <MessageCircle className="h-4 w-4"/>
                     </Link>
                   </Button>
-                  <Button variant="secondary">Unfollow</Button>
+                  <Button variant="secondary" size="sm">Unfollow</Button>
                 </>
               ) : user.isFollowing ? (
-                <Button variant="secondary">Unfollow</Button>
+                <Button variant="secondary" size="sm">Unfollow</Button>
               ) : (
-                <Button>
+                <Button size="sm">
                   <UserPlus className="mr-2 h-4 w-4"/> Follow
                 </Button>
               )}
@@ -58,7 +58,7 @@ const UserCard = ({ user }: { user: User }) => {
 };
 
 const UserList = ({ users }: { users: User[] }) => (
-  <div className="space-y-4">
+  <div className="space-y-2">
     {users.map(user => <UserCard key={user.id} user={user} />)}
   </div>
 );
