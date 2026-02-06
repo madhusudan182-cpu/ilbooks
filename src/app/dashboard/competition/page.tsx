@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,25 +13,6 @@ import { allSyllabi } from '@/lib/syllabus';
 import { currentUser } from '@/lib/auth';
 import { allQuestions } from '@/lib/questions';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { mockExamResults } from '@/lib/data';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { format } from "date-fns";
-import { cn } from '@/lib/utils';
 
 
 export default function CompetitionPage() {
@@ -43,8 +25,7 @@ export default function CompetitionPage() {
     // To see the client view, you can now change the user in src/lib/auth.ts
     const userLevel = currentUser.level.toString();
     const userSyllabus = allSyllabi.find(s => s.level === userLevel);
-    const userExamHistory = mockExamResults.filter(result => result.userId === currentUser.id);
-
+    
     useEffect(() => {
         if (showComingSoonDialog) {
             const timer = setTimeout(() => {
@@ -96,52 +77,12 @@ export default function CompetitionPage() {
                     <p className="text-muted-foreground mt-2">Test your knowledge, level up, and win prizes!</p>
                     <div className="flex justify-center items-center gap-2 mt-4">
                         <Badge className="text-base">Your Current Level: {userLevel}</Badge>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="bg-blue-800 text-blue-100 border-blue-900 hover:bg-blue-900 hover:text-blue-50">
-                                    <History className="mr-2 h-4 w-4" />
-                                    See Your Exam History
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
-                                <DialogHeader>
-                                    <DialogTitle>Your Exam History</DialogTitle>
-                                    <DialogDescription>
-                                        Here's a list of your past exam attempts.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                {userExamHistory.length > 0 ? (
-                                    <div className="max-h-[60vh] overflow-y-auto">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Level</TableHead>
-                                                    <TableHead>Score</TableHead>
-                                                    <TableHead className="text-right">Status</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {userExamHistory.sort((a,b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime()).map(result => (
-                                                    <TableRow key={result.id}>
-                                                        <TableCell>{format(new Date(result.examDate), 'dd/MM/yyyy')}</TableCell>
-                                                        <TableCell>{result.level}</TableCell>
-                                                        <TableCell className="font-medium">{result.totalObtainedMarks}/{result.totalMarks}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Badge className={cn(result.overallStatus === 'Passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')}>
-                                                                {result.overallStatus}
-                                                            </Badge>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                ) : (
-                                    <p className="text-muted-foreground text-center py-8">You have no exam history yet.</p>
-                                )}
-                            </DialogContent>
-                        </Dialog>
+                        <Button asChild variant="outline" size="sm" className="bg-blue-800 text-blue-100 border-blue-900 hover:bg-blue-900 hover:text-blue-50">
+                            <Link href="/dashboard/competition/history">
+                                <History className="mr-2 h-4 w-4" />
+                                See Your Exam History
+                            </Link>
+                        </Button>
                     </div>
                 </div>
 
