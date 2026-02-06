@@ -152,6 +152,7 @@ export const mockBooks: Book[] = [
         coverUrl: "https://picsum.photos/seed/bc7/400/600",
         level: 'all',
         category: 'vocab_grammar',
+        pdfUrl: '/sample.pdf',
     },
     {
         id: 'book-8',

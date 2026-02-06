@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { mockBooks } from '@/lib/data';
-import { ShoppingCart, CreditCard, Plus, Minus, Trash2 } from 'lucide-react';
+import { ShoppingCart, CreditCard, Plus, Minus, Trash2, Download, BookOpen as BookIcon } from 'lucide-react';
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useToast } from '@/hooks/use-toast';
 import type { Book } from '@/lib/types';
@@ -45,7 +46,7 @@ export default function BookShopPage() {
   const displayedBooks = (() => {
     switch (activeCategory) {
       case 'level':
-        return mockBooks.filter((book) => book.level === userLevel);
+        return mockBooks.filter((book) => !book.category && book.level === userLevel);
       case 'vocab':
         return mockBooks.filter((book) => book.category === 'vocab_grammar');
       case 'popular':
@@ -261,12 +262,29 @@ export default function BookShopPage() {
                       <div className="p-2 flex flex-col flex-grow">
                         <h3 className="font-semibold font-headline text-xs flex-grow">{book.title}</h3>
                         <p className="text-xs text-muted-foreground">{book.author}</p>
-                        <div className="flex justify-between items-center mt-2">
-                          <p className="font-bold text-sm text-primary">Tk {book.price}</p>
-                          <Button size="sm" onClick={() => handleAddToCart(book)}>
-                            <ShoppingCart className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {book.pdfUrl ? (
+                            <div className="flex justify-between items-center mt-2 w-full gap-2">
+                                <Button size="sm" asChild className="flex-1">
+                                    <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                        <BookIcon className="mr-2 h-4 w-4" />
+                                        Read
+                                    </Link>
+                                </Button>
+                                <Button size="sm" variant="secondary" asChild className="flex-1">
+                                    <Link href={book.pdfUrl} download>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download
+                                    </Link>
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="flex justify-between items-center mt-2 w-full">
+                                <p className="font-bold text-sm text-primary">Tk {book.price}</p>
+                                <Button size="sm" onClick={() => handleAddToCart(book)}>
+                                    <ShoppingCart className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                       </div>
                     </Card>
                   ))
