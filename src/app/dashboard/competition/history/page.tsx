@@ -35,7 +35,7 @@ export default function ExamHistoryPage() {
                         <Button asChild>
                             <Link href="#">Last Exam Result</Link>
                         </Button>
-                        <Button asChild variant="outline">
+                        <Button asChild>
                             <Link href="#">Previous Exam Result</Link>
                         </Button>
                     </div>
