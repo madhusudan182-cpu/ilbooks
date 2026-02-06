@@ -49,11 +49,11 @@ export default function AdminTransactionsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>User</TableHead>
-                                    <TableHead className="text-right">Amount (TK)</TableHead>
-                                    <TableHead className="text-right">Cumulative Amount (TK)</TableHead>
+                                    <TableHead className="text-center">Date</TableHead>
+                                    <TableHead className="text-center">Type</TableHead>
+                                    <TableHead className="text-center">User</TableHead>
+                                    <TableHead className="text-center">Amount (TK)</TableHead>
+                                    <TableHead className="text-center">Cumulative Amount (TK)</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -61,21 +61,21 @@ export default function AdminTransactionsPage() {
                                     cumulativeAmount += transaction.amount;
                                     return (
                                     <TableRow key={transaction.id}>
-                                        <TableCell className="text-muted-foreground">{format(new Date(transaction.date), 'dd/MM/yyyy')}</TableCell>
+                                        <TableCell className="text-muted-foreground text-center">{format(new Date(transaction.date), 'dd/MM/yyyy')}</TableCell>
                                         <TableCell>
-                                            <div className="flex items-center">
+                                            <div className="flex items-center justify-center">
                                                 {getIconForType(transaction.type)}
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="text-center">
                                             <Link href={`/dashboard/user/${transaction.userId}`} className="hover:underline">
                                                 {transaction.userName}
                                             </Link>
                                         </TableCell>
-                                        <TableCell className="text-right font-medium">
+                                        <TableCell className="text-center font-medium">
                                             {transaction.amount.toFixed(2)}
                                         </TableCell>
-                                        <TableCell className="text-right font-medium">
+                                        <TableCell className="text-center font-medium">
                                             {cumulativeAmount.toFixed(2)}
                                         </TableCell>
                                     </TableRow>
