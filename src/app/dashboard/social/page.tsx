@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +9,7 @@ import type { User } from "@/lib/types";
 import { MessageCircle, UserCheck, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth";
+import { useEffect, useState } from "react";
 
 const UserCard = ({ user }: { user: User }) => {
   const isCurrentUser = user.id === currentUser.id;
@@ -61,6 +64,12 @@ const UserList = ({ users }: { users: User[] }) => (
 );
 
 export default function SocialPage() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
   const following = mockUsers.filter(u => u.isFollowing);
   const followers = [...mockUsers.filter(u => u.isMutual), mockUsers[2]];
   const mutual = mockUsers.filter(u => u.isMutual);
@@ -68,26 +77,28 @@ export default function SocialPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <h1 className="text-2xl font-bold font-headline mb-6 text-center">Social Circle</h1>
-      <Tabs defaultValue="find">
-        <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 gap-1">
-          <TabsTrigger value="find" className="bg-blue-500 text-white data-[state=active]:bg-blue-600">Find People</TabsTrigger>
-          <TabsTrigger value="following" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400"><UserCheck className="w-4 h-4 mr-2" />Following</TabsTrigger>
-          <TabsTrigger value="followers" className="bg-blue-500 text-white data-[state=active]:bg-blue-600"><UserPlus className="w-4 h-4 mr-2" />Followers</TabsTrigger>
-          <TabsTrigger value="mutual" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400"><Users className="w-4 h-4 mr-2" />Mutual</TabsTrigger>
-        </TabsList>
-        <TabsContent value="find" className="mt-6">
-          <UserList users={mockUsers} />
-        </TabsContent>
-        <TabsContent value="following" className="mt-6">
-          <UserList users={following} />
-        </TabsContent>
-        <TabsContent value="followers" className="mt-6">
-          <UserList users={followers} />
-        </TabsContent>
-        <TabsContent value="mutual" className="mt-6">
-           <UserList users={mutual} />
-        </TabsContent>
-      </Tabs>
+      {isClient ? (
+        <Tabs defaultValue="find">
+          <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 gap-1">
+            <TabsTrigger value="find" className="bg-blue-500 text-white data-[state=active]:bg-blue-600">Find People</TabsTrigger>
+            <TabsTrigger value="following" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400"><UserCheck className="w-4 h-4 mr-2" />Following</TabsTrigger>
+            <TabsTrigger value="followers" className="bg-blue-500 text-white data-[state=active]:bg-blue-600"><UserPlus className="w-4 h-4 mr-2" />Followers</TabsTrigger>
+            <TabsTrigger value="mutual" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400"><Users className="w-4 h-4 mr-2" />Mutual</TabsTrigger>
+          </TabsList>
+          <TabsContent value="find" className="mt-6">
+            <UserList users={mockUsers} />
+          </TabsContent>
+          <TabsContent value="following" className="mt-6">
+            <UserList users={following} />
+          </TabsContent>
+          <TabsContent value="followers" className="mt-6">
+            <UserList users={followers} />
+          </TabsContent>
+          <TabsContent value="mutual" className="mt-6">
+            <UserList users={mutual} />
+          </TabsContent>
+        </Tabs>
+      ) : null}
     </div>
   );
 }
