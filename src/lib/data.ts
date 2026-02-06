@@ -201,6 +201,38 @@ export const mockExamResults: ExamResult[] = [
     ],
     examDate: '2024-07-19',
   },
+  {
+    id: 'result-4',
+    userId: 'user-1',
+    userName: 'Alia Rahman',
+    userAvatarUrl: 'https://picsum.photos/seed/av1/100/100',
+    level: '2.0',
+    totalMarks: 20,
+    totalObtainedMarks: 18,
+    totalPercentage: 90,
+    overallStatus: 'Passed',
+    subjects: [
+      { subject: 'Bengali', totalMarks: 10, obtainedMarks: 9, percentage: 90, status: 'Passed' },
+      { subject: 'English', totalMarks: 10, obtainedMarks: 9, percentage: 90, status: 'Passed' },
+    ],
+    examDate: '2024-07-25',
+  },
+  {
+    id: 'result-5',
+    userId: 'user-1',
+    userName: 'Alia Rahman',
+    userAvatarUrl: 'https://picsum.photos/seed/av1/100/100',
+    level: '1.9',
+    totalMarks: 20,
+    totalObtainedMarks: 11,
+    totalPercentage: 55,
+    overallStatus: 'Failed',
+    subjects: [
+      { subject: 'Bengali', totalMarks: 10, obtainedMarks: 6, percentage: 60, status: 'Passed' },
+      { subject: 'English', totalMarks: 10, obtainedMarks: 5, percentage: 50, status: 'Failed' },
+    ],
+    examDate: '2024-07-20',
+  },
 ];
 
 export const mockTransactions: Transaction[] = [
