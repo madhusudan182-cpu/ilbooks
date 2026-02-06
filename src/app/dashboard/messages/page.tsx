@@ -438,19 +438,19 @@ export default function MessagesPage() {
                 <form onSubmit={handleSendMessage} className="flex items-center gap-1">
                     <div className={cn("flex items-center transition-all duration-300", isInputFocused ? "w-0 -ml-2 overflow-hidden opacity-0" : "w-auto ml-0 opacity-100")}>
                         <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9">
-                            <Paperclip className="w-4 h-4"/>
+                            <Paperclip className="w-5 h-5"/>
                             <span className="sr-only">Attach file</span>
                         </Button>
                         <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9 -ml-2">
-                            <Camera className="w-4 h-4"/>
+                            <Camera className="w-5 h-5"/>
                             <span className="sr-only">Take a photo</span>
                         </Button>
                         <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9 -ml-2">
-                            <FileImage className="w-4 h-4"/>
+                            <FileImage className="w-5 h-5"/>
                             <span className="sr-only">Attach an image</span>
                         </Button>
                         <Button type="button" variant="ghost" size="icon" className="shrink-0 h-9 w-9 -ml-2">
-                            <Mic className="w-4 h-4"/>
+                            <Mic className="w-5 h-5"/>
                             <span className="sr-only">Record a voice message</span>
                         </Button>
                     </div>
