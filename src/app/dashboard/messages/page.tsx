@@ -267,10 +267,10 @@ export default function MessagesPage() {
                   isIlbooks && isAdmin && "sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b-2 border-primary"
                 )}
               >
-                <Avatar className="h-12 w-12 border flex-shrink-0">
+                <Avatar className="h-14 w-14 border flex-shrink-0">
                     { isIlbooks ? (
                     <AvatarFallback className="bg-card">
-                        <IlbooksLogo className="h-6 w-6" />
+                        <IlbooksLogo className="h-8 w-8" />
                     </AvatarFallback>
                 ) : (
                     <>
