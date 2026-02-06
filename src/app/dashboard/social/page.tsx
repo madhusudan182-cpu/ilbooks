@@ -10,6 +10,7 @@ import { MessageCircle, UserCheck, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const UserCard = ({ user }: { user: User }) => {
   const isCurrentUser = user.id === currentUser.id;
@@ -17,16 +18,16 @@ const UserCard = ({ user }: { user: User }) => {
   
   return (
     <Card>
-      <CardContent className="p-2 flex items-center gap-3">
+      <CardContent className="p-1 flex items-center gap-2">
         <Link href={profileUrl}>
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-grow">
           <Link href={profileUrl} className="hover:underline">
-            <p className="font-semibold font-headline">{user.name}</p>
+            <p className="font-semibold font-headline text-sm">{user.name}</p>
           </Link>
           <p className="text-xs text-muted-foreground">Level: {user.level}</p>
         </div>
@@ -35,18 +36,18 @@ const UserCard = ({ user }: { user: User }) => {
             <>
               {user.isMutual ? (
                 <>
-                  <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                  <Button variant="ghost" size="icon" asChild className="h-7 w-7">
                     <Link href={`/dashboard/messages?chatWith=${user.id}`}>
                       <MessageCircle className="h-4 w-4"/>
                     </Link>
                   </Button>
-                  <Button variant="secondary" size="sm">Unfollow</Button>
+                  <Button variant="secondary" size="sm" className="h-7 px-2 text-xs">Unfollow</Button>
                 </>
               ) : user.isFollowing ? (
-                <Button variant="secondary" size="sm">Unfollow</Button>
+                <Button variant="secondary" size="sm" className="h-7 px-2 text-xs">Unfollow</Button>
               ) : (
-                <Button size="sm">
-                  <UserPlus className="mr-2 h-4 w-4"/> Follow
+                <Button size="sm" className="h-7 px-2 text-xs">
+                  <UserPlus className="mr-1 h-3 w-3"/> Follow
                 </Button>
               )}
             </>
@@ -58,7 +59,7 @@ const UserCard = ({ user }: { user: User }) => {
 };
 
 const UserList = ({ users }: { users: User[] }) => (
-  <div className="space-y-2">
+  <div className="space-y-1">
     {users.map(user => <UserCard key={user.id} user={user} />)}
   </div>
 );
@@ -76,16 +77,16 @@ export default function SocialPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <h1 className="text-2xl font-bold font-headline mb-6 text-center">Social Circle</h1>
+      <h1 className="text-2xl font-bold font-headline mb-4 text-center">Social Circle</h1>
       {isClient ? (
-        <Tabs defaultValue="find">
+        <Tabs defaultValue="search">
           <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 gap-1">
-            <TabsTrigger value="find" className="bg-blue-500 text-white data-[state=active]:bg-blue-600">Search</TabsTrigger>
+            <TabsTrigger value="search" className="bg-blue-500 text-white data-[state=active]:bg-blue-600">Search</TabsTrigger>
             <TabsTrigger value="following" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400"><UserCheck className="w-4 h-4 mr-2" />Following</TabsTrigger>
             <TabsTrigger value="followers" className="bg-blue-500 text-white data-[state=active]:bg-blue-600"><UserPlus className="w-4 h-4 mr-2" />Followers</TabsTrigger>
             <TabsTrigger value="mutual" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400"><Users className="w-4 h-4 mr-2" />Mutual</TabsTrigger>
           </TabsList>
-          <TabsContent value="find" className="mt-6">
+          <TabsContent value="search" className="mt-6">
             <UserList users={mockUsers} />
           </TabsContent>
           <TabsContent value="following" className="mt-6">
