@@ -31,6 +31,7 @@ export type Book = {
   author: string;
   price: number;
   coverUrl: string;
+  pdfUrl?: string;
   level: string;
   category?: 'vocab_grammar' | 'popular';
 };
