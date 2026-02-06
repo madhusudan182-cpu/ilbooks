@@ -155,9 +155,6 @@ export default function MessagesPage() {
   const handleSendMessage = (e: React.FormEvent) => {
       e.preventDefault();
       
-      // Always blur on submit to hide keyboard
-      inputRef.current?.blur();
-
       if (newMessage.trim() === '') {
           setNewMessage(''); // Clear any whitespace
           return;
@@ -336,7 +333,13 @@ export default function MessagesPage() {
         {selectedConversation ? (
           <>
             <div className="p-1 border-b flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={() => router.back()}>
+                <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0 h-8 w-8" onClick={() => {
+                    if (document.activeElement === inputRef.current) {
+                        inputRef.current?.blur();
+                    } else {
+                        router.back();
+                    }
+                }}>
                   <ArrowLeft className="h-4 w-4"/>
                 </Button>
                 <Avatar className="h-8 w-8 border flex-shrink-0">
