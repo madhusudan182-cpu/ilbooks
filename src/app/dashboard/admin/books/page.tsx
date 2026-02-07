@@ -107,7 +107,6 @@ function BooksPageContent() {
 
     const allLevels: string[] = [];
     for (let i = 0; i <= 19; i++) {
-        if (i === 1) continue;
         for (let j = 0; j <= 9; j++) {
             allLevels.push(`${i}.${j}`);
         }

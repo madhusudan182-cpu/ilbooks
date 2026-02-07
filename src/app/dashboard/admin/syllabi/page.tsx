@@ -27,7 +27,6 @@ export default function AllSyllabiPage() {
 
     const allLevels: string[] = [];
     for (let i = 0; i <= 19; i++) {
-        if (i === 1) continue; // Skip level 1.x
         for (let j = 0; j <= 9; j++) {
             allLevels.push(`${i}.${j}`);
         }
@@ -153,7 +152,7 @@ export default function AllSyllabiPage() {
                                            {!isEditing && (
                                                 <div role="button"
                                                     onClick={(e) => { e.stopPropagation(); handleEditClick(level); }}
-                                                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), "mr-4 h-8 px-3")}>
+                                                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), "mr-4 h-8 px-3 flex items-center gap-2")}>
                                                     <Edit />
                                                     Edit
                                                 </div>
