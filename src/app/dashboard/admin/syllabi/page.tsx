@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { allSyllabi } from '@/lib/syllabus';
 import type { Syllabus, SyllabusTopic } from '@/lib/types';
 import { Book, ArrowLeft, Edit, Save, X, PlusCircle, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -13,6 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface EditableSubject extends SyllabusTopic {
     id: string; // for stable key
@@ -20,15 +24,12 @@ interface EditableSubject extends SyllabusTopic {
 }
 
 export default function AllSyllabiPage() {
-    const [isClient, setIsClient] = useState(false);
-    const [syllabi, setSyllabi] = useState<Syllabus[]>(() => JSON.parse(JSON.stringify(allSyllabi))); // Deep copy for safety
+    const firestore = useFirestore();
+    const { data: syllabi, loading: syllabiLoading } = useCollection<Syllabus>(firestore ? collection(firestore, 'syllabi') : null);
+    
     const [editingLevel, setEditingLevel] = useState<string | null>(null);
     const [editedSubjects, setEditedSubjects] = useState<EditableSubject[]>([]);
     const { toast } = useToast();
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
 
     const allLevels: string[] = [];
     for (let i = 0; i <= 19; i++) {
@@ -37,8 +38,13 @@ export default function AllSyllabiPage() {
         }
     }
     
+    const syllabiByLevel = syllabi?.reduce((acc, s) => {
+        acc[s.level] = s;
+        return acc;
+    }, {} as Record<string, Syllabus>) || {};
+
     const handleEditClick = (level: string) => {
-        const syllabusToEdit = syllabi.find(s => s.level === level) || { level, subjects: {} };
+        const syllabusToEdit = syllabiByLevel[level] || { level, subjects: {} };
         setEditingLevel(level);
         const subjectsAsArray = Object.entries(syllabusToEdit.subjects).map(([name, details], index) => ({
             id: `${level}-${name.replace(/\s+/g, '-')}-${index}`,
@@ -53,8 +59,8 @@ export default function AllSyllabiPage() {
         setEditedSubjects([]);
     };
 
-    const handleSaveClick = () => {
-        if (!editingLevel) return;
+    const handleSaveClick = async () => {
+        if (!editingLevel || !firestore) return;
 
         const newSubjectsObject: { [subjectName: string]: Omit<SyllabusTopic, 'id' | 'name'> } = {};
         let hasError = false;
@@ -81,27 +87,32 @@ export default function AllSyllabiPage() {
 
         if (hasError) return;
 
-        const finalSyllabus: Syllabus = {
+        const finalSyllabus: Omit<Syllabus, 'id'> = {
             level: editingLevel,
             subjects: newSubjectsObject,
         };
+        
+        try {
+            const docRef = doc(firestore, 'syllabi', editingLevel);
+            await setDoc(docRef, finalSyllabus);
 
-        setSyllabi(currentSyllabi => {
-            const newSyllabi = [...currentSyllabi];
-            const existingIndex = newSyllabi.findIndex(s => s.level === editingLevel);
-
-            if (existingIndex > -1) {
-                newSyllabi[existingIndex] = finalSyllabus;
-            } else {
-                newSyllabi.push(finalSyllabus);
-            }
-            
-            return newSyllabi.sort((a,b) => parseFloat(a.level) - parseFloat(b.level));
-        });
-
-        toast({ title: "Syllabus saved!", description: `Changes for Level ${editingLevel} have been saved for this session.` });
-        setEditingLevel(null);
-        setEditedSubjects([]);
+            toast({ title: "Syllabus saved!", description: `Changes for Level ${editingLevel} have been saved permanently.` });
+            setEditingLevel(null);
+            setEditedSubjects([]);
+        } catch (serverError) {
+             console.error("Error saving syllabus:", serverError);
+             const permissionError = new FirestorePermissionError({
+                path: `syllabi/${editingLevel}`,
+                operation: 'write',
+                requestResourceData: finalSyllabus
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({
+                title: "Uh oh! Something went wrong.",
+                description: "Could not save the syllabus. Please try again.",
+                variant: "destructive",
+            });
+        }
     };
     
     const handleEditedSubjectChange = (id: string, field: 'name' | 'marks' | 'topics', value: string | number) => {
@@ -135,7 +146,6 @@ export default function AllSyllabiPage() {
         setEditedSubjects(current => current.filter(s => s.id !== id));
     };
 
-
     return (
         <div className="p-4 md:p-6 lg:p-8">
             <div className="mb-4">
@@ -153,14 +163,20 @@ export default function AllSyllabiPage() {
                         All Syllabi
                     </CardTitle>
                     <CardDescription>
-                        View and manage all competition syllabi from Level 0.0 to 19.9. Changes are saved for the current session.
+                        View and manage all competition syllabi from Level 0.0 to 19.9. Changes are saved permanently.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isClient ? (
+                    {syllabiLoading ? (
+                        <div className="space-y-2">
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                        </div>
+                    ) : (
                     <Accordion type="single" collapsible className="w-full max-h-[60rem] overflow-y-auto">
                         {allLevels.map((level) => {
-                            const syllabus = syllabi.find(s => s.level === level);
+                            const syllabus = syllabiByLevel[level];
                             const isEditing = editingLevel === level;
                             
                             return (
@@ -243,7 +259,7 @@ export default function AllSyllabiPage() {
                             )
                         })}
                     </Accordion>
-                    ) : null}
+                    )}
                 </CardContent>
             </Card>
         </div>

@@ -9,5 +9,9 @@ service cloud.firestore {
       allow create: if request.resource.data.userId is string;
       allow update: if true;
     }
+    match /syllabi/{level} {
+      allow read: if true;
+      allow write: if true; // In a real app, you'd restrict this to admins
+    }
   }
 }

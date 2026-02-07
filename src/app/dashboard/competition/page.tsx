@@ -9,11 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Book, Award, Percent, DollarSign, Edit, ClipboardList } from "lucide-react";
 import { PaymentGateway } from '@/components/payment-gateway';
-import { allSyllabi } from '@/lib/syllabus';
 import { currentUser } from '@/lib/auth';
 import { allQuestions } from '@/lib/questions';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { Syllabus } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const examSchedules: { [key: number]: { day: number, start: number, end: number } } = {
     1: { day: 5, start: 9, end: 10 },    // Fri 9am-10am
@@ -70,6 +73,7 @@ export default function CompetitionPage() {
     const [userLevel, setUserLevel] = useState(currentUser.level.toFixed(1));
     const [isRegistered, setIsRegistered] = useState(false);
     const [isExamTime, setIsExamTime] = useState(false);
+    const firestore = useFirestore();
 
     useEffect(() => {
         const savedLevel = sessionStorage.getItem('currentUserLevel');
@@ -79,8 +83,17 @@ export default function CompetitionPage() {
     }, []);
 
     const competitionLevel = userLevel.startsWith('0.') ? '0.0' : userLevel;
-    const userSyllabus = allSyllabi.find(s => s.level === competitionLevel);
     
+    const [syllabusQuery, setSyllabusQuery] = useState<any>(null);
+    useEffect(() => {
+        if(firestore) {
+            setSyllabusQuery(query(collection(firestore, 'syllabi'), where('level', '==', competitionLevel)));
+        }
+    }, [firestore, competitionLevel]);
+
+    const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
+    const userSyllabus = userSyllabusArr?.[0];
+
     useEffect(() => {
         const registrationStatus = sessionStorage.getItem(`examRegistered_${competitionLevel}`);
         setIsRegistered(registrationStatus === 'true');
@@ -296,7 +309,13 @@ export default function CompetitionPage() {
                             <CardTitle className="text-lg">Syllabus for Level: {competitionLevel}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {userSyllabus ? (
+                            {syllabusLoading ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                    <Skeleton className="h-4 w-5/6" />
+                                </div>
+                            ) : userSyllabus ? (
                                 Object.entries(userSyllabus.subjects).map(([subjectName, details]) => (
                                     <div key={subjectName} className="mb-4 last:mb-0">
                                         <h4 className="font-semibold">{subjectName} ({details.marks} Marks)</h4>

@@ -40,6 +40,36 @@
         "status": { "type": "string", "enum": ["Paid", "Shipped", "Delivered"] }
       },
       "required": ["userId", "customerName", "deliveryAddress", "mobileNumber", "books", "totalAmount", "orderDate", "status"]
+    },
+    "SyllabusTopic": {
+      "title": "Syllabus Topic",
+      "description": "Defines the topics and marks for a single subject within a syllabus.",
+      "type": "object",
+      "properties": {
+        "marks": { "type": "number", "description": "Total marks for the subject." },
+        "topics": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of topics covered in the subject."
+        }
+      },
+      "required": ["marks", "topics"]
+    },
+    "Syllabus": {
+      "title": "Syllabus",
+      "description": "Represents the syllabus for a specific competition level.",
+      "type": "object",
+      "properties": {
+        "level": { "type": "string", "description": "The competition level this syllabus applies to (e.g., '0.0', '1.5')." },
+        "subjects": {
+          "type": "object",
+          "description": "A map of subject names to their topic details.",
+          "additionalProperties": {
+            "$ref": "#/backend/entities/SyllabusTopic"
+          }
+        }
+      },
+      "required": ["level", "subjects"]
     }
   },
   "auth": {
@@ -53,6 +83,10 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/backend/entities/Order" },
       "description": "Stores customer book orders."
+    },
+    "/syllabi/{level}": {
+      "schema": { "$ref": "#/backend/entities/Syllabus" },
+      "description": "Stores the syllabus for each competition level."
     }
   }
 }

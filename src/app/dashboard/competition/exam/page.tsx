@@ -11,9 +11,10 @@ import { Progress } from '@/components/ui/progress';
 import { allQuestions } from '@/lib/questions';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { allSyllabi } from '@/lib/syllabus';
 import { currentUser } from '@/lib/auth';
-import type { ExamResult, SubjectResult } from '@/lib/types';
+import type { ExamResult, SubjectResult, Syllabus } from '@/lib/types';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 
 const TOTAL_TIME_PER_QUESTION = 15; // seconds
@@ -22,12 +23,23 @@ function ExamContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const level = searchParams.get('level') || '0.0';
+  const firestore = useFirestore();
 
   const [questions, setQuestions] = useState(allQuestions.filter(q => q.level === level));
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(string | null)[]>(Array(questions.length).fill(null));
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_PER_QUESTION);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+
+  const [syllabusQuery, setSyllabusQuery] = useState<any>(null);
+  useEffect(() => {
+      if (firestore) {
+          setSyllabusQuery(query(collection(firestore, 'syllabi'), where('level', '==', level)));
+      }
+  }, [firestore, level]);
+
+  const { data: userSyllabusArr } = useCollection<Syllabus>(syllabusQuery);
+  const syllabus = userSyllabusArr?.[0];
 
   useEffect(() => {
     const filteredQuestions = allQuestions.filter(q => q.level === level);
@@ -39,7 +51,6 @@ function ExamContent() {
   }, [level]);
   
   const handleFinishExam = useCallback(() => {
-    const syllabus = allSyllabi.find(s => s.level === level);
     if (!syllabus) {
       console.error("Syllabus not found for level:", level);
       router.push('/dashboard/competition/exam/result');
@@ -130,7 +141,7 @@ function ExamContent() {
 
     router.push('/dashboard/competition/exam/result');
 
-  }, [level, questions, userAnswers, router]);
+  }, [level, questions, userAnswers, router, syllabus]);
 
   const handleNext = useCallback(() => {
     setSelectedOption(null);
