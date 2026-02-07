@@ -37,6 +37,29 @@ const examSchedules: { [key: number]: { day: number, start: number, end: number 
     19: { day: 4, start: 22, end: 23 },  // Thu 10pm-11pm
 };
 
+const examScheduleMessages: { [key: number]: string } = {
+    1: "The exam of this Level will take place on every Friday from 9 a.m. to 10 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    2: "The exam of this Level will take place on Friday from 10 a.m. to 11 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    3: "The exam of this Level will take place on Friday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    4: "The exam of this Level will take place on Friday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    5: "The exam of this Level will take place on Saturday from 9 a.m. to 10 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    6: "The exam of this Level will take place on Saturday from 10 a.m. to 11 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    7: "The exam of this Level will take place on Saturday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    8: "The exam of this Level will take place on Saturday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    9: "The exam of this Level will take place on Sunday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    10: "The exam of this Level will take place on Sunday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    11: "The exam of this Level will take place on Monday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    12: "The exam of this Level will take place on Monday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    13: "The exam of this Level will take place on Tuesday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    14: "The exam of this Level will take place on Tuesday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    15: "The exam of this Level will take place on Wednesday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    16: "The exam of this Level will take place on Wednesday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    17: "The exam of this Level will take place on Thursday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    18: "The exam of this Level will take place on Thursday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    19: "The exam of this Level will take place on Thursday from 10 p.m. to 11 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+};
+
+
 export default function CompetitionPage() {
     const [showPayment, setShowPayment] = useState(false);
     const [showComingSoonDialog, setShowComingSoonDialog] = useState(false);
@@ -187,6 +210,8 @@ export default function CompetitionPage() {
 
     const [majorLevel] = userLevel.split('.').map(Number);
     const buttonText = majorLevel < 1 ? "Proceed to Payment & Start Exam" : "Register for the Exam";
+    const scheduleMessage = examScheduleMessages[majorLevel];
+
 
     return (
         <>
@@ -288,6 +313,9 @@ export default function CompetitionPage() {
                 </div>
                 
                 <div className="text-center mt-8">
+                     {scheduleMessage && (
+                        <p className="text-red-600 font-bold text-lg mb-4">{scheduleMessage}</p>
+                    )}
                      {(!isRegistered || majorLevel < 1) && (
                         <Button size="lg" className="font-headline px-4 md:px-8" onClick={handleStartExamClick}>
                            {buttonText} <ArrowRight className="ml-2 w-5 h-5"/>
