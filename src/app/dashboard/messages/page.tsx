@@ -187,7 +187,6 @@ export default function MessagesPage() {
   };
 
   const isAdmin = currentUser.isAdmin || false;
-  const userLevel = currentUser.level;
 
   if (!isClient) {
     return (
@@ -197,32 +196,6 @@ export default function MessagesPage() {
     );
   }
   
-  if (!isAdmin && userLevel < 0.3) {
-    return (
-      <div className="flex items-center justify-center p-4 md:p-6 lg:p-8 h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)]">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-              <div className="mx-auto bg-muted text-muted-foreground rounded-full p-3 w-fit mb-4">
-                  <Lock className="w-8 h-8"/>
-              </div>
-            <CardTitle className="flex items-center justify-center gap-2 text-2xl font-headline">
-              <MessageCircle />
-              Chat Locked
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              You can use this tab once you have passed Level 0.3.
-            </p>
-            <p className="mt-4 font-semibold">
-              Keep reading and competing to unlock chat!
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="flex bg-background h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)]">
       <aside className={cn(
