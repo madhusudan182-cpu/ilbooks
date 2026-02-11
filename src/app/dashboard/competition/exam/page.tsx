@@ -228,6 +228,15 @@ function ExamContent() {
     setSelectedOption(answer);
   };
   
+  const getFontSizeClass = (text: string) => {
+    const length = text.length;
+    if (length > 250) return 'text-sm'; 
+    if (length > 150) return 'text-base';
+    if (length > 70) return 'text-lg'; 
+    return 'text-xl';
+  };
+  const fontSizeClass = getFontSizeClass(currentQuestion?.questionText || '');
+
   if (questionsLoading || !examQuestions) {
     return (
        <main className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -317,8 +326,8 @@ function ExamContent() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="py-2">
-            <p className="text-center font-medium">{currentQuestion?.questionText}</p>
+          <div className="h-36 flex items-center justify-center text-center p-2 mb-4 border-b">
+            <p className={cn("font-medium", fontSizeClass)}>{currentQuestion?.questionText}</p>
           </div>
           <RadioGroup 
             value={userAnswers[currentQuestionIndex] || ''}
