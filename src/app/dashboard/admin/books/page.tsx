@@ -205,6 +205,7 @@ function BooksPageContent() {
     
     const handleAddNewBook = () => {
         if (!editingMode) return;
+
         const newBook: BookType = {
             id: `book-${Date.now()}`,
             title: 'New Book Title',
@@ -212,8 +213,14 @@ function BooksPageContent() {
             price: 0,
             coverUrl: `https://picsum.photos/seed/new-${Date.now()}/400/600`,
             level: editingMode.type === 'levels' ? editingMode.identifier : 'all',
-            category: editingMode.type !== 'levels' ? editingMode.type : undefined
         };
+
+        if (editingMode.type === 'vocab') {
+            newBook.category = 'vocab_grammar';
+        } else if (editingMode.type === 'popular') {
+            newBook.category = 'popular';
+        }
+
         setEditedBooks(current => [...current, newBook]);
     };
 
