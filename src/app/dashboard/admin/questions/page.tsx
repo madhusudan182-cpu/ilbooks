@@ -218,7 +218,7 @@ export default function AllQuestionsPage() {
                                         {isEditing ? (
                                             <div className="p-4 bg-muted/50 rounded-lg">
                                                 <div className="space-y-6 mb-6">
-                                                    {editedQuestions.map((q, qIndex) => (
+                                                    {editedQuestions.sort((a, b) => a.subject === 'Bengali' ? -1 : b.subject === 'Bengali' ? 1 : 0).map((q, qIndex) => (
                                                         <Card key={q.id} className="p-4 relative">
                                                             <Button variant="destructive" size="icon" className="absolute -top-3 -right-3 h-7 w-7 z-10" onClick={() => handleRemoveQuestion(q.id)}>
                                                                 <Trash2 className="h-4 w-4" />
@@ -276,7 +276,7 @@ export default function AllQuestionsPage() {
                                             </div>
                                         ) : questionsForLevel.length > 0 ? (
                                             <Accordion type="multiple" className="w-full">
-                                                {questionsForLevel.map((q, index) => (
+                                                {questionsForLevel.sort((a, b) => a.subject === 'Bengali' ? -1 : b.subject === 'Bengali' ? 1 : 0).map((q, index) => (
                                                     <AccordionItem value={`item-${level}-${index}`} key={q.id}>
                                                         <AccordionTrigger className="text-left text-sm font-normal">({index + 1}) {q.questionText}</AccordionTrigger>
                                                         <AccordionContent>

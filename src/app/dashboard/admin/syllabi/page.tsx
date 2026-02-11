@@ -47,7 +47,11 @@ export default function AllSyllabiPage() {
     const handleEditClick = (level: string) => {
         const syllabusToEdit = syllabiByLevel[level] || { level, subjects: {} };
         setEditingLevel(level);
-        const subjectsAsArray = Object.entries(syllabusToEdit.subjects).map(([name, details], index) => ({
+        const subjectsAsArray = Object.entries(syllabusToEdit.subjects).sort(([a], [b]) => {
+            if (a === 'Bengali') return -1;
+            if (b === 'Bengali') return 1;
+            return 0;
+        }).map(([name, details], index) => ({
             id: `${level}-${name.replace(/\s+/g, '-')}-${index}`,
             name,
             ...details
@@ -244,7 +248,11 @@ export default function AllSyllabiPage() {
                                                 </div>
                                             </div>
                                         ) : syllabus && Object.keys(syllabus.subjects).length > 0 ? (
-                                            Object.entries(syllabus.subjects).map(([subjectName, details]) => (
+                                            Object.entries(syllabus.subjects).sort(([a], [b]) => {
+                                                if (a === 'Bengali') return -1;
+                                                if (b === 'Bengali') return 1;
+                                                return 0;
+                                            }).map(([subjectName, details]) => (
                                                 <div key={subjectName} className="mb-4 last:mb-0">
                                                     <h4 className="font-semibold">{subjectName} ({details.marks} Marks)</h4>
                                                     <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground">
