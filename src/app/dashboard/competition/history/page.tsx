@@ -72,10 +72,14 @@ function ExamHistoryContent() {
         if (lastResultString) {
             try {
                 const lastResult = JSON.parse(lastResultString);
-                // Prepend the new result if it's not already in the history
-                if (!userExamHistory.some(r => r.id === lastResult.id)) {
-                    setUserExamHistory(prev => [lastResult, ...prev].sort((a, b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime()));
-                }
+                setUserExamHistory(prev => {
+                    // Check for duplicates against the *previous* state
+                    if (prev.some(r => r.id === lastResult.id)) {
+                        return prev; // If it's already there, do nothing
+                    }
+                    // Otherwise, add it and re-sort
+                    return [lastResult, ...prev].sort((a, b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime());
+                });
             } catch (e) {
                 console.error("Failed to parse last exam result from session storage", e);
             }
