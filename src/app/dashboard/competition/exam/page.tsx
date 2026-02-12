@@ -38,16 +38,16 @@ function ExamContent() {
   const isLevelZero = level === '0.0';
 
   const questionsQuery = useMemo(() => {
-    if (!firestore || isLevelZero) return null;
+    if (!firestore) return null; // Always create a query
     return query(collection(firestore, 'questions'), where('level', '==', level));
-  }, [firestore, level, isLevelZero]);
+  }, [firestore, level]);
 
   const { data: allQuestionsFromDB, loading: questionsLoading } = useCollection<Question>(questionsQuery);
   
   const syllabusQuery = useMemo(() => {
-      if (!firestore || isLevelZero) return null;
+      if (!firestore) return null;
       return query(collection(firestore, 'syllabi'), where('level', '==', level));
-  }, [firestore, level, isLevelZero]);
+  }, [firestore, level]);
 
   const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
   const syllabus = userSyllabusArr?.[0];
@@ -59,51 +59,45 @@ function ExamContent() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   useEffect(() => {
-    // --- PATH A: Special, isolated logic for Level 0.0 ---
+    // This effect determines the source of questions (DB vs local) and selects them.
     if (isLevelZero) {
-      const bengali = shuffleArray([...newBengaliLevel0Questions]).slice(0, 10).map((q, i) => ({ ...q, id: `b-local-${Date.now()}-${i}` }));
-      const english = shuffleArray([...newEnglishLevel0Questions]).slice(0, 10).map((q, i) => ({ ...q, id: `e-local-${Date.now()}-${i}` }));
-      const finalQuestions = shuffleArray([...bengali, ...english]);
-      
-      if (finalQuestions.length === 0) {
-        console.error("Local fallback questions for Level 0.0 are empty!");
-      }
+        // --- PATH A: Special logic for Level 0.0 ---
+        const bengali = shuffleArray([...newBengaliLevel0Questions]).slice(0, 10).map((q, i) => ({ ...q, id: `b-local-${Date.now()}-${i}` }));
+        const english = shuffleArray([...newEnglishLevel0Questions]).slice(0, 10).map((q, i) => ({ ...q, id: `e-local-${Date.now()}-${i}` }));
+        const finalQuestions = shuffleArray([...bengali, ...english]);
+        setExamQuestions(finalQuestions);
+    } else {
+        // --- PATH B: Logic for all other levels (> 0.0) ---
+        if (questionsLoading || syllabusLoading) {
+            return; // Wait for DB data to be loaded
+        }
+        
+        const questionPool: Question[] = allQuestionsFromDB || [];
+        let finalQuestions: Question[] = [];
 
-      setExamQuestions(finalQuestions);
-      return; // IMPORTANT: Exit the effect here for Level 0.0
-    }
+        if (questionPool.length > 0) {
+            const syllabusToUse = syllabus && Object.keys(syllabus.subjects).length > 0 ? syllabus : null;
 
-    // --- PATH B: Logic for all other levels (> 0.0) ---
-    if (questionsLoading || syllabusLoading) {
-      return; // Wait for DB data to be loaded
-    }
-    
-    const questionPool: Question[] = allQuestionsFromDB || [];
-    let finalQuestions: Question[] = [];
-
-    if (questionPool.length > 0) {
-        const syllabusToUse = syllabus && Object.keys(syllabus.subjects).length > 0 ? syllabus : null;
-        if (syllabusToUse) {
-            // Select questions from the pool based on the syllabus marks
-            for (const subjectName in syllabusToUse.subjects) {
-                const subjectSyllabus = syllabusToUse.subjects[subjectName];
-                const questionsForSubject = questionPool.filter(q => q.subject === subjectName);
-                const shuffled = shuffleArray([...questionsForSubject]);
-                const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
-                finalQuestions.push(...shuffled.slice(0, questionsToTake));
+            if (syllabusToUse) {
+                // A syllabus exists, so we MUST follow it.
+                for (const subjectName in syllabusToUse.subjects) {
+                    const subjectSyllabus = syllabusToUse.subjects[subjectName];
+                    const questionsForSubject = questionPool.filter(q => q.subject === subjectName);
+                    const shuffled = shuffleArray([...questionsForSubject]);
+                    // We take the number of questions specified in the syllabus, but not more than are available.
+                    const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
+                    finalQuestions.push(...shuffled.slice(0, questionsToTake));
+                }
+            } else {
+                // No syllabus found. For levels > 0.0, a syllabus is required to structure the exam.
+                // We will result in an empty finalQuestions array, which the UI correctly handles by showing "Exam Not Ready".
+                console.warn(`No syllabus found for level ${level}. Cannot prepare exam.`);
             }
         }
         
-        // Fallback: If syllabus filtering yields no questions, but a pool exists, use the pool.
-        if (finalQuestions.length === 0) {
-            console.warn("Syllabus filtering yielded no questions or no syllabus was found. Falling back to use all available questions for this level.");
-            finalQuestions = questionPool;
-        }
+        setExamQuestions(shuffleArray(finalQuestions));
     }
-    
-    setExamQuestions(shuffleArray(finalQuestions));
-
-  }, [isLevelZero, allQuestionsFromDB, syllabus, questionsLoading, syllabusLoading]);
+  }, [isLevelZero, allQuestionsFromDB, syllabus, questionsLoading, syllabusLoading, level]);
 
 
   useEffect(() => {
@@ -319,7 +313,7 @@ function ExamContent() {
     )
   }
 
-  // This state is hit when the effect has run but found no questions for levels > 0.0
+  // This state is hit when the effect has run but found no questions for the current level.
   if (examQuestions.length === 0) {
     const majorLevel = Math.floor(parseFloat(level));
     const examSchedules: { [key: number]: string } = {
