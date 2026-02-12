@@ -14,6 +14,8 @@ import { currentUser } from '@/lib/auth';
 import type { ExamResult, SubjectResult, Syllabus, Question, SyllabusTopic } from '@/lib/types';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import { newBengaliLevel0Questions } from '@/lib/level-0-bengali-questions';
+import { newEnglishLevel0Questions } from '@/lib/level-0-english-questions';
 
 
 const TOTAL_TIME_PER_QUESTION = 15; // seconds
@@ -51,9 +53,18 @@ function ExamContent() {
   const syllabus = userSyllabusArr?.[0];
 
   useEffect(() => {
-    // This effect runs once when all questions and syllabus are loaded.
-    // It selects a random subset of questions for the exam.
-    if (allQuestions && allQuestions.length > 0) {
+    if (questionsLoading) return; // Don't run until Firestore query is complete
+
+    let questionsToUse: Question[] = allQuestions || [];
+
+    // Fallback for Level 0.0 if Firestore returns no questions
+    if (level === '0.0' && questionsToUse.length === 0) {
+      const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
+      const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
+      questionsToUse = [...localBengali, ...localEnglish];
+    }
+    
+    if (questionsToUse.length > 0) {
       
       const shuffleArray = (array: any[]) => {
         for (let i = array.length - 1; i > 0; i--) {
@@ -65,27 +76,23 @@ function ExamContent() {
 
       let selectedQuestions: Question[] = [];
       
-      // If a syllabus exists and has subjects, use it to select questions.
       if (syllabus && Object.keys(syllabus.subjects).length > 0) {
         for (const subjectName in syllabus.subjects) {
           const subjectSyllabus = syllabus.subjects[subjectName];
-          const questionsForSubject = allQuestions.filter(q => q.subject === subjectName);
+          const questionsForSubject = questionsToUse.filter(q => q.subject === subjectName);
           const shuffled = shuffleArray([...questionsForSubject]);
           const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
           selectedQuestions.push(...shuffled.slice(0, questionsToTake));
         }
       } else {
-        // Fallback: If no syllabus or no subjects in syllabus, use all available questions for the level.
-        selectedQuestions = [...allQuestions];
+        selectedQuestions = [...questionsToUse];
       }
 
-      // Shuffle the final list so questions from different subjects are mixed
       setExamQuestions(shuffleArray(selectedQuestions));
-    } else if (allQuestions) {
-        // If there are no questions but the query has finished, set an empty array
-        setExamQuestions([]);
+    } else {
+      setExamQuestions([]);
     }
-  }, [allQuestions, syllabus]);
+  }, [allQuestions, syllabus, level, questionsLoading]);
 
 
   useEffect(() => {
