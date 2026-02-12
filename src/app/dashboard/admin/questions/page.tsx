@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { newBengaliLevel0Questions } from "@/lib/level-0-bengali-questions";
 import { newEnglishLevel0Questions } from "@/lib/level-0-english-questions";
 import { newBengaliLevel1Questions } from "@/lib/level-0-1-bengali-questions";
+import { newEnglishLevel1Questions } from "@/lib/level-0-1-english-questions";
 
 export default function AllQuestionsPage() {
     const firestore = useFirestore();
@@ -78,6 +79,15 @@ export default function AllQuestionsPage() {
                     id: `new-bengali-question-0-1-${Date.now()}-${index}`
                 }));
             questionsToEdit.push(...bengaliQuestionsToAdd);
+            
+            const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
+            const englishQuestionsToAdd = newEnglishLevel1Questions
+                .filter(newQ => !existingEnglishTexts.has(newQ.questionText))
+                .map((q, index) => ({
+                    ...q,
+                    id: `new-english-question-0-1-${Date.now()}-${index}`
+                }));
+            questionsToEdit.push(...englishQuestionsToAdd);
         }
 
         questionsToEdit.forEach((q: Question) => {
