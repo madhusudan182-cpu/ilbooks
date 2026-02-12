@@ -20,6 +20,15 @@ import { newEnglishLevel0Questions } from '@/lib/level-0-english-questions';
 
 const TOTAL_TIME_PER_QUESTION = 15; // seconds
 
+const shuffleArray = (array: any[]) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
+
+
 function ExamContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -31,7 +40,7 @@ function ExamContent() {
     return query(collection(firestore, 'questions'), where('level', '==', level));
   }, [firestore, level]);
 
-  const { data: allQuestions, loading: questionsLoading } = useCollection<Question>(questionsQuery);
+  const { data: allQuestionsFromDB, loading: questionsLoading } = useCollection<Question>(questionsQuery);
   
   const [examQuestions, setExamQuestions] = useState<Question[] | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -48,60 +57,60 @@ function ExamContent() {
   const syllabus = userSyllabusArr?.[0];
 
   useEffect(() => {
-    const shuffleArray = (array: any[]) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
-
     if (questionsLoading || syllabusLoading) {
-      return; // Wait for all data to load
+      return; // Wait for all data to load before doing anything
     }
 
-    let finalQuestions: Question[] = [];
-    const dbQuestions = allQuestions;
-    const dbSyllabus = syllabus;
-    const hasDbQuestions = dbQuestions && dbQuestions.length > 0;
-    const hasDbSyllabus = dbSyllabus && Object.keys(dbSyllabus.subjects).length > 0;
+    // --- STAGE 1: Determine the source pool of questions ---
+    let questionSource: Question[] = [];
+    const hasDbQuestions = allQuestionsFromDB && allQuestionsFromDB.length > 0;
 
     if (hasDbQuestions) {
-        // DB is the source of truth
+      // If questions exist in the DB for this level, they are the source of truth.
+      questionSource = allQuestionsFromDB;
+    } else if (level === '0.0') {
+      // If no DB questions, and it's level 0.0, use the local fallback files.
+      questionSource = [
+        ...newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` })),
+        ...newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }))
+      ];
+    }
+    // If not level 0.0 and no DB questions, questionSource remains [], which is the correct "Not Ready" state.
+
+    // --- STAGE 2: Select the final questions for the exam from the source pool ---
+    let finalQuestions: Question[] = [];
+    if (questionSource.length > 0) {
+      const dbSyllabus = syllabus;
+      const hasDbSyllabus = dbSyllabus && Object.keys(dbSyllabus.subjects).length > 0;
+
+      if (hasDbSyllabus) {
+        // A syllabus exists, so select questions based on its rules.
         let selectedQuestions: Question[] = [];
-        if (hasDbSyllabus) {
-            // Select based on DB syllabus
-            for (const subjectName in dbSyllabus.subjects) {
-                const subjectSyllabus = dbSyllabus.subjects[subjectName];
-                const questionsForSubject = dbQuestions.filter(q => q.subject === subjectName);
-                const shuffled = shuffleArray([...questionsForSubject]);
-                const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
-                selectedQuestions.push(...shuffled.slice(0, questionsToTake));
-            }
-        } else if (level === '0.0') {
-            // Fallback for Level 0.0 if there are questions but no syllabus
-            const shuffledBengali = shuffleArray(dbQuestions.filter(q => q.subject === 'Bengali')).slice(0, 10);
-            const shuffledEnglish = shuffleArray(dbQuestions.filter(q => q.subject === 'English')).slice(0, 10);
-            selectedQuestions = [...shuffledBengali, ...shuffledEnglish];
-        } else {
-            // Fallback for other levels: use all questions
-            selectedQuestions = dbQuestions;
+        for (const subjectName in dbSyllabus.subjects) {
+          const subjectSyllabus = dbSyllabus.subjects[subjectName];
+          const questionsForSubject = questionSource.filter(q => q.subject === subjectName);
+          const shuffled = shuffleArray([...questionsForSubject]);
+          const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
+          selectedQuestions.push(...shuffled.slice(0, questionsToTake));
         }
         finalQuestions = selectedQuestions;
-    } else if (level === '0.0') {
-        // No DB questions for Level 0.0, use local fallback
-        const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
-        const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
-        const shuffledBengali = shuffleArray(localBengali).slice(0, 10);
-        const shuffledEnglish = shuffleArray(localEnglish).slice(0, 10);
-        finalQuestions = [...shuffledBengali, ...shuffledEnglish];
+      } else {
+        // No syllabus exists. Use default selection logic.
+        if (level === '0.0') {
+          // For level 0.0, default to 10 Bengali and 10 English.
+          const shuffledBengali = shuffleArray(questionSource.filter(q => q.subject === 'Bengali')).slice(0, 10);
+          const shuffledEnglish = shuffleArray(questionSource.filter(q => q.subject === 'English')).slice(0, 10);
+          finalQuestions = [...shuffledBengali, ...shuffledEnglish];
+        } else {
+          // For other levels without a syllabus, just use all available questions from the source.
+          finalQuestions = questionSource;
+        }
+      }
     }
-    
-    // For levels > 0.0 with no DB questions, finalQuestions remains []
-    
+
     setExamQuestions(shuffleArray(finalQuestions));
 
-  }, [allQuestions, userSyllabusArr, level, questionsLoading, syllabusLoading, syllabus]);
+  }, [allQuestionsFromDB, userSyllabusArr, level, questionsLoading, syllabusLoading, syllabus]);
 
 
   useEffect(() => {
