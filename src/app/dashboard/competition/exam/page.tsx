@@ -58,45 +58,49 @@ function ExamContent() {
       return array;
     };
 
-    // Hardcoded, guaranteed logic for Level 0.0
-    if (level === '0.0') {
-      const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
-      const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
-      const localQuestions = [...localBengali, ...localEnglish];
-      setExamQuestions(shuffleArray(localQuestions));
-      return; // Return immediately to avoid database logic for 0.0
-    }
-
-    // Logic for all other levels (1.0 and above)
-    if (questionsLoading || syllabusLoading) {
-      return; // Wait for data to load
+    // Wait for data to load for levels other than 0.0
+    if (level !== '0.0' && (questionsLoading || syllabusLoading)) {
+      return;
     }
 
     let potentialQuestions: Question[] = [];
-    if (allQuestions && allQuestions.length > 0) {
-      potentialQuestions = allQuestions;
+    if (level === '0.0') {
+        // For Level 0.0, we use the local files as the question pool
+        const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
+        const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
+        potentialQuestions = [...localBengali, ...localEnglish];
+    } else if (allQuestions) {
+        // For other levels, use questions from Firestore
+        potentialQuestions = allQuestions;
+    }
+    
+    // If there are no questions from any source (and we're not loading), we can't proceed.
+    if (potentialQuestions.length === 0 && !questionsLoading) {
+      setExamQuestions([]);
+      return;
     }
 
     let finalQuestions: Question[] = [];
     const hasSyllabus = syllabus && Object.keys(syllabus.subjects).length > 0;
 
-    if (potentialQuestions.length > 0) {
-      if (hasSyllabus) {
-        let selectedQuestions: Question[] = [];
-        for (const subjectName in syllabus.subjects) {
-          const subjectSyllabus = syllabus.subjects[subjectName];
-          const questionsForSubject = potentialQuestions.filter(q => q.subject === subjectName);
-          const shuffled = shuffleArray([...questionsForSubject]);
-          const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
-          selectedQuestions.push(...shuffled.slice(0, questionsToTake));
-        }
-        finalQuestions = selectedQuestions;
-      } else {
-        // If no syllabus, use all available questions for that level
-        finalQuestions = potentialQuestions;
+    if (hasSyllabus) {
+      let selectedQuestions: Question[] = [];
+      for (const subjectName in syllabus.subjects) {
+        const subjectSyllabus = syllabus.subjects[subjectName];
+        const questionsForSubject = potentialQuestions.filter(q => q.subject === subjectName);
+        
+        // Shuffle and take the number of questions specified by 'marks' in the syllabus
+        const shuffled = shuffleArray([...questionsForSubject]);
+        const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
+        selectedQuestions.push(...shuffled.slice(0, questionsToTake));
       }
+      finalQuestions = selectedQuestions;
+    } else {
+      // Fallback if no syllabus: use all available questions for that level.
+      finalQuestions = potentialQuestions;
     }
-
+    
+    // Shuffle the final list of questions to mix subjects together
     setExamQuestions(shuffleArray(finalQuestions));
   }, [allQuestions, userSyllabusArr, level, questionsLoading, syllabusLoading, syllabus]);
 
@@ -139,6 +143,7 @@ function ExamContent() {
         }
         
         finalSyllabus = {
+            id: `temp-syllabus-${level}`,
             level: level,
             subjects: subjects
         };
