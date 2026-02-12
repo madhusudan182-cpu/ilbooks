@@ -18,6 +18,7 @@ import { collection, doc, writeBatch } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
+import { newBengaliLevel0Questions } from "@/lib/level-0-bengali-questions";
 
 export default function AllQuestionsPage() {
     const firestore = useFirestore();
@@ -44,8 +45,19 @@ export default function AllQuestionsPage() {
     }, {} as Record<string, Question[]>) || {}, [questions]);
     
     const handleEditClick = (level: string) => {
-        const questionsToEdit = JSON.parse(JSON.stringify(questionsByLevel[level] || []));
+        let questionsToEdit = JSON.parse(JSON.stringify(questionsByLevel[level] || []));
         
+        if (level === '0.0') {
+            const existingQuestionTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
+            const questionsToAdd = newBengaliLevel0Questions
+                .filter(newQ => !existingQuestionTexts.has(newQ.questionText))
+                .map((q, index) => ({
+                    ...q,
+                    id: `new-question-${Date.now()}-${index}`
+                }));
+            questionsToEdit.push(...questionsToAdd);
+        }
+
         questionsToEdit.forEach((q: Question) => {
             while (q.answers.length < 4) {
                 q.answers.push({ text: 'New Answer', isCorrect: false });
