@@ -96,7 +96,7 @@ export default function SocialPage() {
       <h1 className="text-2xl font-bold font-headline text-center mb-4">Social Circle</h1>
       {isClient ? (
         <Tabs defaultValue="search">
-          <div className="grid w-full grid-cols-4 bg-transparent p-0 gap-1">
+          <div className="grid w-full grid-cols-4 items-center bg-transparent p-0 gap-1">
             <TabsList className="col-span-3 grid w-full grid-cols-3 bg-transparent p-0 gap-1">
                 <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs">Search</TabsTrigger>
                 <TabsTrigger value="following" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-8 text-xs"><UserCheck className="w-4 h-4 mr-1" />Following</TabsTrigger>
