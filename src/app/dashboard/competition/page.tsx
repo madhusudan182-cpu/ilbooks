@@ -226,17 +226,24 @@ export default function CompetitionPage() {
     };
     
     const handleStartExamClick = () => {
-        const [majorLevel] = userLevel.split('.').map(Number);
-        
-        if (majorLevel >= 1) {
+        // For level 0.0, always allow proceeding.
+        // The exam page has local fallback questions.
+        if (competitionLevel === '0.0') {
+            setShowPayment(true);
+            return;
+        }
+
+        // For all other levels, check if questions exist in Firestore before allowing payment.
+        const hasQuestionsForLevel = questionsForLevel && questionsForLevel.length > 0;
+        if (hasQuestionsForLevel) {
             setShowPayment(true);
         } else {
-            const hasQuestionsForLevel = questionsForLevel && questionsForLevel.length > 0;
-            if (hasQuestionsForLevel) {
-                setShowPayment(true);
-            } else {
-                setShowComingSoonDialog(true);
-            }
+            // Let the user know questions aren't ready for this level's exam.
+            toast({
+                title: "Exam Not Ready",
+                description: `Questions for Level ${competitionLevel} are not available yet. Please check back later.`,
+                variant: "destructive",
+            });
         }
     }
 
