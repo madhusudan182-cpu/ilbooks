@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { currentUser } from '@/lib/auth';
-import type { ExamResult, SubjectResult, Syllabus, Question } from '@/lib/types';
+import type { ExamResult, SubjectResult, Syllabus, Question, SyllabusTopic } from '@/lib/types';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
@@ -53,7 +53,7 @@ function ExamContent() {
   useEffect(() => {
     // This effect runs once when all questions and syllabus are loaded.
     // It selects a random subset of questions for the exam.
-    if (allQuestions && syllabus && allQuestions.length > 0) {
+    if (allQuestions && allQuestions.length > 0) {
       
       const shuffleArray = (array: any[]) => {
         for (let i = array.length - 1; i > 0; i--) {
@@ -63,19 +63,20 @@ function ExamContent() {
         return array;
       };
 
-      const selectedQuestions: Question[] = [];
+      let selectedQuestions: Question[] = [];
       
-      // For each subject in the syllabus, select a random set of questions
-      for (const subjectName in syllabus.subjects) {
-        const subjectSyllabus = syllabus.subjects[subjectName];
-        const questionsForSubject = allQuestions.filter(q => q.subject === subjectName);
-        
-        const shuffled = shuffleArray([...questionsForSubject]);
-        
-        // The number of questions to take is the 'marks' for that subject from the syllabus
-        const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
-        
-        selectedQuestions.push(...shuffled.slice(0, questionsToTake));
+      // If a syllabus exists and has subjects, use it to select questions.
+      if (syllabus && Object.keys(syllabus.subjects).length > 0) {
+        for (const subjectName in syllabus.subjects) {
+          const subjectSyllabus = syllabus.subjects[subjectName];
+          const questionsForSubject = allQuestions.filter(q => q.subject === subjectName);
+          const shuffled = shuffleArray([...questionsForSubject]);
+          const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
+          selectedQuestions.push(...shuffled.slice(0, questionsToTake));
+        }
+      } else {
+        // Fallback: If no syllabus or no subjects in syllabus, use all available questions for the level.
+        selectedQuestions = [...allQuestions];
       }
 
       // Shuffle the final list so questions from different subjects are mixed
@@ -98,19 +99,43 @@ function ExamContent() {
   }, [examQuestions]);
   
   const handleFinishExam = useCallback(() => {
-    if (!syllabus || !examQuestions) {
-      console.error("Syllabus or exam questions not ready for level:", level);
+    if (!examQuestions) {
+      console.error("Exam questions not ready for level:", level);
       router.push('/dashboard/competition/exam/result');
       return;
+    }
+
+    let finalSyllabus = syllabus;
+    // If syllabus doesn't exist, create a temporary one based on the questions in the exam
+    if (!finalSyllabus || Object.keys(finalSyllabus.subjects).length === 0) {
+        const subjects: { [subjectName: string]: SyllabusTopic } = {};
+        const questionsBySubject: { [subjectName: string]: Question[] } = {};
+
+        examQuestions.forEach(q => {
+            if (!questionsBySubject[q.subject]) {
+                questionsBySubject[q.subject] = [];
+            }
+            questionsBySubject[q.subject].push(q);
+        });
+
+        for (const subjectName in questionsBySubject) {
+            subjects[subjectName] = {
+                marks: questionsBySubject[subjectName].length, // Total marks is number of questions
+                topics: []
+            };
+        }
+        
+        finalSyllabus = {
+            level: level,
+            subjects: subjects
+        };
     }
 
     const subjectResults: SubjectResult[] = [];
     let totalObtainedMarks = 0;
     let totalMarks = 0;
 
-    for (const subjectName in syllabus.subjects) {
-      const subjectSyllabus = syllabus.subjects[subjectName];
-      // These are the questions from the current exam session for this subject
+    for (const subjectName in finalSyllabus.subjects) {
       const subjectQuestionsInExam = examQuestions.filter(q => q.subject === subjectName);
       
       if (subjectQuestionsInExam.length === 0) continue;
@@ -133,23 +158,25 @@ function ExamContent() {
       });
       
       // Each question is worth 1 mark, with a 0.5 deduction for wrong answers.
+      // Total marks for the subject is the number of questions for that subject in the exam.
+      const subjectTotalMarks = subjectQuestionsInExam.length;
       const obtainedMarks = (correctAnswers * 1) - (incorrectAnswers * 0.5);
       const obtainedMarksClamped = Math.max(0, obtainedMarks);
-      const percentage = (obtainedMarksClamped / subjectSyllabus.marks) * 100;
+      const percentage = subjectTotalMarks > 0 ? (obtainedMarksClamped / subjectTotalMarks) * 100 : 0;
       
       subjectResults.push({
         subject: subjectName,
-        totalMarks: subjectSyllabus.marks,
+        totalMarks: subjectTotalMarks,
         obtainedMarks: parseFloat(obtainedMarksClamped.toFixed(2)),
         percentage: parseFloat(percentage.toFixed(2)),
         status: percentage >= 60 ? 'Passed' : 'Failed'
       });
 
       totalObtainedMarks += obtainedMarksClamped;
-      totalMarks += subjectSyllabus.marks;
+      totalMarks += subjectTotalMarks;
     }
 
-    const overallStatus = subjectResults.every(r => r.status === 'Passed') ? 'Passed' : 'Failed';
+    const overallStatus = subjectResults.length > 0 && subjectResults.every(r => r.status === 'Passed') ? 'Passed' : 'Failed';
     const totalPercentage = totalMarks > 0 ? (totalObtainedMarks / totalMarks) * 100 : 0;
 
     const newResult: ExamResult = {
