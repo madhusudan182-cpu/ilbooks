@@ -6,11 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockUsers } from "@/lib/data";
 import type { User } from "@/lib/types";
-import { MessageCircle, UserCheck, UserPlus, ArrowLeft } from "lucide-react";
+import { MessageCircle, UserCheck, UserPlus, ArrowLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const UserCard = ({ user }: { user: User }) => {
   const isCurrentUser = user.id === currentUser.id;
@@ -92,13 +94,32 @@ export default function SocialPage() {
   const [isClient, setIsClient] = useState(false);
   const [view, setView] = useState<'tabs' | 'invite'>('tabs');
   const [invitedFriends, setInvitedFriends] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setIsClient(true);
   }, []);
   
-  const handleInviteFriend = (friendId: string) => {
+  const handleInviteFriend = (friendId: string, friendName: string) => {
     setInvitedFriends(prev => new Set(prev).add(friendId));
+    toast({
+        title: `Invitation sent to ${friendName}`,
+        description: "A place where you can read, flourish and earn money by reading book.",
+    });
+  };
+
+  const filteredFriends = mockFacebookFriends.filter(friend =>
+    friend.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleInviteAll = () => {
+    const allFriendIds = filteredFriends.map(f => f.id);
+    setInvitedFriends(prev => new Set([...prev, ...allFriendIds]));
+    toast({
+        title: "All visible friends invited!",
+        description: "A place where you can read, flourish and earn money by reading book.",
+    });
   };
 
   const following = mockUsers.filter(u => u.isFollowing);
@@ -118,9 +139,25 @@ export default function SocialPage() {
             Back
           </Button>
         </div>
+        
+        <div className="mb-4 space-y-2">
+            <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    placeholder="Search for a friend..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+            <Button onClick={handleInviteAll} className="w-full">
+                Invite All
+            </Button>
+        </div>
+
         <Card>
           <CardContent className="p-2 space-y-2">
-            {mockFacebookFriends.map(friend => {
+            {filteredFriends.map(friend => {
               const isInvited = invitedFriends.has(friend.id);
               return (
                 <Card key={friend.id}>
@@ -132,7 +169,7 @@ export default function SocialPage() {
                     <p className="flex-1 font-semibold">{friend.name}</p>
                     <Button
                       size="sm"
-                      onClick={() => handleInviteFriend(friend.id)}
+                      onClick={() => handleInviteFriend(friend.id, friend.name)}
                       disabled={isInvited}
                       className={cn(isInvited && "bg-green-500 hover:bg-green-600")}
                     >
