@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +10,11 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Book, Award, Percent, DollarSign, Edit, ClipboardList } from "lucide-react";
 import { PaymentGateway } from '@/components/payment-gateway';
 import { currentUser } from '@/lib/auth';
-import { allQuestions } from '@/lib/questions';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import type { Syllabus } from '@/lib/types';
+import type { Syllabus, Question } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const examSchedules: { [key: number]: { day: number, start: number, end: number } } = {
@@ -106,6 +105,13 @@ export default function CompetitionPage() {
 
     const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
     const userSyllabus = userSyllabusArr?.[0];
+
+    const questionsQuery = useMemo(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'questions'), where('level', '==', competitionLevel));
+    }, [firestore, competitionLevel]);
+
+    const { data: questionsForLevel } = useCollection<Question>(questionsQuery);
 
     useEffect(() => {
         const registrationStatus = sessionStorage.getItem(`examRegistered_${competitionLevel}`);
@@ -225,7 +231,7 @@ export default function CompetitionPage() {
         if (majorLevel >= 1) {
             setShowPayment(true);
         } else {
-            const hasQuestionsForLevel = allQuestions.some(q => q.level === competitionLevel);
+            const hasQuestionsForLevel = questionsForLevel && questionsForLevel.length > 0;
             if (hasQuestionsForLevel) {
                 setShowPayment(true);
             } else {
