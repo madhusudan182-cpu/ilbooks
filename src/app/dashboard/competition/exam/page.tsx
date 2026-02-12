@@ -27,14 +27,13 @@ function ExamContent() {
   const firestore = useFirestore();
 
   const questionsQuery = useMemo(() => {
-    if (!firestore) return null;
+    // For level 0.0, we use local questions, so no need to query Firestore.
+    if (!firestore || level === '0.0') return null;
     return query(collection(firestore, 'questions'), where('level', '==', level));
   }, [firestore, level]);
 
-  // All available questions for the level
   const { data: allQuestions, loading: questionsLoading } = useCollection<Question>(questionsQuery);
   
-  // The randomly selected subset of questions for this specific exam instance
   const [examQuestions, setExamQuestions] = useState<Question[] | null>(null);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -42,21 +41,15 @@ function ExamContent() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
-  const [syllabusQuery, setSyllabusQuery] = useState<any>(null);
-  useEffect(() => {
-      if (firestore) {
-          setSyllabusQuery(query(collection(firestore, 'syllabi'), where('level', '==', level)));
-      }
+  const syllabusQuery = useMemo(() => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'syllabi'), where('level', '==', level));
   }, [firestore, level]);
 
-  const { data: userSyllabusArr } = useCollection<Syllabus>(syllabusQuery);
+  const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
   const syllabus = userSyllabusArr?.[0];
 
- useEffect(() => {
-    if (questionsLoading) {
-      return; // Wait for Firestore query to complete
-    }
-
+  useEffect(() => {
     const shuffleArray = (array: any[]) => {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -65,27 +58,30 @@ function ExamContent() {
       return array;
     };
 
-    let potentialQuestions: Question[] = [];
-    const hasFirestoreQuestions = allQuestions && allQuestions.length > 0;
-
-    // Step 1: Determine the source of questions
-    if (level === '0.0' && !hasFirestoreQuestions) {
-      // Fallback for Level 0.0 if Firestore is empty
+    // Hardcoded, guaranteed logic for Level 0.0
+    if (level === '0.0') {
       const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
       const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
-      potentialQuestions = [...localBengali, ...localEnglish];
-    } else if (hasFirestoreQuestions) {
-      // Use questions from Firestore for all other cases
+      const localQuestions = [...localBengali, ...localEnglish];
+      setExamQuestions(shuffleArray(localQuestions));
+      return; // Return immediately to avoid database logic for 0.0
+    }
+
+    // Logic for all other levels (1.0 and above)
+    if (questionsLoading || syllabusLoading) {
+      return; // Wait for data to load
+    }
+
+    let potentialQuestions: Question[] = [];
+    if (allQuestions && allQuestions.length > 0) {
       potentialQuestions = allQuestions;
     }
 
-    // Step 2: If we have potential questions, filter them by syllabus (if applicable)
     let finalQuestions: Question[] = [];
     const hasSyllabus = syllabus && Object.keys(syllabus.subjects).length > 0;
 
     if (potentialQuestions.length > 0) {
       if (hasSyllabus) {
-        // Filter by syllabus
         let selectedQuestions: Question[] = [];
         for (const subjectName in syllabus.subjects) {
           const subjectSyllabus = syllabus.subjects[subjectName];
@@ -96,14 +92,13 @@ function ExamContent() {
         }
         finalQuestions = selectedQuestions;
       } else {
-        // No syllabus, so just use all the potential questions
+        // If no syllabus, use all available questions for that level
         finalQuestions = potentialQuestions;
       }
     }
 
-    // Step 3: Set the state
     setExamQuestions(shuffleArray(finalQuestions));
-  }, [allQuestions, syllabus, level, questionsLoading]);
+  }, [allQuestions, userSyllabusArr, level, questionsLoading, syllabusLoading, syllabus]);
 
 
   useEffect(() => {
@@ -282,7 +277,7 @@ function ExamContent() {
   };
   const fontSizeClass = getFontSizeClass(currentQuestion?.questionText || '');
 
-  if (questionsLoading || !examQuestions) {
+  if ((level !== '0.0' && (questionsLoading || syllabusLoading)) || !examQuestions) {
     return (
        <main className="flex items-center justify-center min-h-screen bg-background p-4">
         <Card className="w-full max-w-2xl text-center">
