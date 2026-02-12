@@ -19,6 +19,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
 import { newBengaliLevel0Questions } from "@/lib/level-0-bengali-questions";
+import { newEnglishLevel0Questions } from "@/lib/level-0-english-questions";
 
 export default function AllQuestionsPage() {
     const firestore = useFirestore();
@@ -48,14 +49,25 @@ export default function AllQuestionsPage() {
         let questionsToEdit = JSON.parse(JSON.stringify(questionsByLevel[level] || []));
         
         if (level === '0.0') {
-            const existingQuestionTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-            const questionsToAdd = newBengaliLevel0Questions
-                .filter(newQ => !existingQuestionTexts.has(newQ.questionText))
+            // Bengali questions
+            const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
+            const bengaliQuestionsToAdd = newBengaliLevel0Questions
+                .filter(newQ => !existingBengaliTexts.has(newQ.questionText))
                 .map((q, index) => ({
                     ...q,
-                    id: `new-question-${Date.now()}-${index}`
+                    id: `new-bengali-question-${Date.now()}-${index}`
                 }));
-            questionsToEdit.push(...questionsToAdd);
+            questionsToEdit.push(...bengaliQuestionsToAdd);
+
+            // English questions
+            const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
+            const englishQuestionsToAdd = newEnglishLevel0Questions
+                .filter(newQ => !existingEnglishTexts.has(newQ.questionText))
+                .map((q, index) => ({
+                    ...q,
+                    id: `new-english-question-${Date.now()}-${index}`
+                }));
+            questionsToEdit.push(...englishQuestionsToAdd);
         }
 
         questionsToEdit.forEach((q: Question) => {
