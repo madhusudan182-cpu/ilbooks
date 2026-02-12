@@ -36,20 +36,18 @@ export default function HomePage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-4">
       <Card id="post">
-        <CardContent className="p-0">
-          <div className="flex items-center gap-0">
-            <div className="p-1">
-                <Avatar className="h-8 w-8">
-                <AvatarImage src={currentUser.avatarUrl} alt="User" />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-            </div>
+        <CardContent className="p-1">
+          <div className="flex items-center gap-2">
+            <Avatar className="h-7 w-7">
+              <AvatarImage src={currentUser.avatarUrl} alt="User" />
+              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            </Avatar>
             <div className="w-full">
               <form>
                 <Textarea
                   className={cn(
-                    "text-xs transition-all duration-200 ease-in-out p-1 border-0 focus-visible:ring-0 resize-none",
-                     isPosting ? "min-h-[40px]" : "h-8"
+                    "text-sm transition-all duration-200 ease-in-out p-1 border-0 focus-visible:ring-0 resize-none",
+                     isPosting ? "min-h-[36px]" : "h-7"
                   )}
                   placeholder="What's on your mind, bookworm?"
                   onFocus={() => setIsPosting(true)}
