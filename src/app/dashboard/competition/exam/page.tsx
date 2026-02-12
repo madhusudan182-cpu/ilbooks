@@ -55,28 +55,29 @@ function ExamContent() {
   useEffect(() => {
     if (questionsLoading) return; // Don't run until Firestore query is complete
 
-    let questionsToUse: Question[] = allQuestions || [];
-
-    // Fallback for Level 0.0 if Firestore returns no questions
-    if (level === '0.0' && questionsToUse.length === 0) {
-      const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
-      const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
-      questionsToUse = [...localBengali, ...localEnglish];
-    }
-    
-    if (questionsToUse.length > 0) {
-      
-      const shuffleArray = (array: any[]) => {
+    const shuffleArray = (array: any[]) => {
         for (let i = array.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [array[i], array[j]] = [array[j], array[i]];
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
         }
         return array;
-      };
+    };
 
-      let selectedQuestions: Question[] = [];
-      
+    let questionsToUse: Question[] = allQuestions || [];
+    let finalQuestions: Question[] = [];
+
+    // If Firestore returns no questions and it's level 0.0, use the local fallback questions.
+    // This is the highest priority fallback and bypasses syllabus filtering.
+    if (level === '0.0' && (!allQuestions || allQuestions.length === 0)) {
+        const localBengali = newBengaliLevel0Questions.map((q, i) => ({ ...q, id: `local-beng-${i}` }));
+        const localEnglish = newEnglishLevel0Questions.map((q, i) => ({ ...q, id: `local-eng-${i}` }));
+        finalQuestions = [...localBengali, ...localEnglish];
+    } 
+    // Otherwise, if we have questions (from Firestore), process them.
+    else if (questionsToUse.length > 0) {
       if (syllabus && Object.keys(syllabus.subjects).length > 0) {
+        // We have a syllabus, so select questions based on it.
+        let selectedQuestions: Question[] = [];
         for (const subjectName in syllabus.subjects) {
           const subjectSyllabus = syllabus.subjects[subjectName];
           const questionsForSubject = questionsToUse.filter(q => q.subject === subjectName);
@@ -84,13 +85,19 @@ function ExamContent() {
           const questionsToTake = Math.min(subjectSyllabus.marks, shuffled.length);
           selectedQuestions.push(...shuffled.slice(0, questionsToTake));
         }
+        finalQuestions = selectedQuestions;
       } else {
-        selectedQuestions = [...questionsToUse];
+        // No syllabus, so use all available questions from Firestore.
+        finalQuestions = questionsToUse;
       }
-
-      setExamQuestions(shuffleArray(selectedQuestions));
+    }
+    
+    // If after all logic, we still have no questions, set to empty array.
+    // Otherwise, shuffle the final list.
+    if (finalQuestions.length > 0) {
+        setExamQuestions(shuffleArray(finalQuestions));
     } else {
-      setExamQuestions([]);
+        setExamQuestions([]);
     }
   }, [allQuestions, syllabus, level, questionsLoading]);
 
