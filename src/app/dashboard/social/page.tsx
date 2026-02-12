@@ -98,11 +98,11 @@ export default function SocialPage() {
         <Tabs defaultValue="search">
           <div className="grid w-full grid-cols-4 bg-transparent p-0 gap-1">
             <TabsList className="col-span-3 grid w-full grid-cols-3 bg-transparent p-0 gap-1">
-                <TabsTrigger value="search" className="bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-auto text-xs">Search</TabsTrigger>
-                <TabsTrigger value="following" className="bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-auto text-xs"><UserCheck className="w-4 h-4 mr-1" />Following</TabsTrigger>
-                <TabsTrigger value="followers" className="bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-auto text-xs"><UserPlus className="w-4 h-4 mr-1" />Followers</TabsTrigger>
+                <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-auto text-xs">Search</TabsTrigger>
+                <TabsTrigger value="following" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-auto text-xs"><UserCheck className="w-4 h-4 mr-1" />Following</TabsTrigger>
+                <TabsTrigger value="followers" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-auto text-xs"><UserPlus className="w-4 h-4 mr-1" />Followers</TabsTrigger>
             </TabsList>
-            <Button onClick={handleInvite} className="bg-green-500 hover:bg-green-600 text-white px-1 py-1 h-auto text-xs">
+            <Button onClick={handleInvite} className="rounded-md bg-green-500 hover:bg-green-600 text-white px-1 py-1 h-auto text-xs">
                 <FacebookIcon className="w-4 h-4 mr-1" />
                 Invite
             </Button>
