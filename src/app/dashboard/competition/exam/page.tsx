@@ -39,6 +39,7 @@ function ExamContent() {
   const firestore = useFirestore();
 
   const isLevelZero = level === '0.0';
+  const majorLevel = parseInt(level.split('.')[0], 10);
 
   const questionsQuery = useMemo(() => {
     if (!firestore) return null;
@@ -384,14 +385,16 @@ function ExamContent() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-end mb-4">
-            <Button asChild variant="outline">
-                <Link href="https://docs.google.com/document/d/your-doc-id/edit" target="_blank" rel="noopener noreferrer">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Open Reference Document
-                </Link>
-            </Button>
-          </div>
+          {majorLevel >= 1 && (
+            <div className="flex justify-end mb-4">
+              <Button asChild variant="outline">
+                  <Link href="https://docs.google.com/document/d/your-doc-id/edit" target="_blank" rel="noopener noreferrer">
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Open Reference Document
+                  </Link>
+              </Button>
+            </div>
+          )}
           <div className="h-36 flex items-center justify-start text-left p-2 mb-4 border-b">
             <p className={cn("font-medium", fontSizeClass)}>{currentQuestion?.questionText}</p>
           </div>
