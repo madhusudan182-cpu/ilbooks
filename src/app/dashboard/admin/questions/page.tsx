@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -31,6 +32,7 @@ import { newEnglishLevel5Questions } from "@/lib/level-0-5-english-questions";
 import { newBengaliLevel5Questions } from "@/lib/level-0-5-bengali-questions";
 import { newBengaliLevel6Questions } from "@/lib/level-0-6-bengali-questions";
 import { newBengaliLevel7Questions } from "@/lib/level-0-7-bengali-questions";
+import { newBengaliLevel8Questions } from "@/lib/level-0-8-bengali-questions";
 
 export default function AllQuestionsPage() {
     const firestore = useFirestore();
@@ -176,6 +178,15 @@ export default function AllQuestionsPage() {
                 .map((q, index) => ({
                     ...q,
                     id: `new-bengali-question-0-7-${Date.now()}-${index}`
+                }));
+            questionsToEdit.push(...bengaliQuestionsToAdd);
+        } else if (level === '0.8') {
+            const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
+            const bengaliQuestionsToAdd = newBengaliLevel8Questions
+                .filter(newQ => !existingBengaliTexts.has(newQ.questionText))
+                .map((q, index) => ({
+                    ...q,
+                    id: `new-bengali-question-0-8-${Date.now()}-${index}`
                 }));
             questionsToEdit.push(...bengaliQuestionsToAdd);
         }
