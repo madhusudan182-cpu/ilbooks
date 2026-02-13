@@ -272,9 +272,9 @@ export const newEnglishLevel9Questions: Omit<Question, 'id'>[] = [
     questionText: "'Willful' শব্দটির সঠিক IPA রূপ কোনটি?",
     answers: [
       { text: '/ˈwɪlfl/', isCorrect: true },
-      { text: /ˈwɪlɪŋ/, isCorrect: false },
-      { text: /ˈwaɪli/, isCorrect: false },
-      { text: /wɪl/, isCorrect: false },
+      { text: '/ˈwɪlɪŋ/', isCorrect: false },
+      { text: '/ˈwaɪli/', isCorrect: false },
+      { text: '/wɪl/', isCorrect: false },
     ],
   },
   {
@@ -317,8 +317,8 @@ export const newEnglishLevel9Questions: Omit<Question, 'id'>[] = [
     answers: [
       { text: '/ˈwɪnsəm/', isCorrect: true },
       { text: '/ˈwɪntə(r)/', isCorrect: false },
-      { text: /wɪn/, isCorrect: false },
-      { text: /ˈwelkəm/, isCorrect: false },
+      { text: '/wɪn/', isCorrect: false },
+      { text: '/ˈwelkəm/', isCorrect: false },
     ],
   },
   {
@@ -328,8 +328,8 @@ export const newEnglishLevel9Questions: Omit<Question, 'id'>[] = [
     answers: [
       { text: '/əˈnɔɪnt/', isCorrect: true },
       { text: '/əˈnaʊns/', isCorrect: false },
-      { text: /ˈænədʌɪz/, isCorrect: false },
-      { text: /ˈæntiruːm/, isCorrect: false },
+      { text: '/ˈænədʌɪz/', isCorrect: false },
+      { text: '/ˈæntiruːm/', isCorrect: false },
     ],
   },
   {
