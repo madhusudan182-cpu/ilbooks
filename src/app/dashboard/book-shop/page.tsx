@@ -29,7 +29,7 @@ import { currentUser } from '@/lib/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type CartItem = Book & { quantity: number };
-const DELIVERY_CHARGE = 50;
+const DELIVERY_CHARGE = 60;
 
 export default function BookShopPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -348,11 +348,11 @@ export default function BookShopPage() {
                     <Separator className="my-4" />
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal</span>
+                        <span>Sub-Total</span>
                         <span>Tk {subtotal}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Delivery Charge</span>
+                        <span>Delivery Charge</span>
                         <span>Tk {DELIVERY_CHARGE}</span>
                       </div>
                     </div>
