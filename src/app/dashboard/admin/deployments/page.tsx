@@ -11,39 +11,11 @@ import { cn } from '@/lib/utils';
 
 const mockDeployments = [
     {
-        id: 'deploy-0',
+        id: 'deploy-final',
         date: new Date().toISOString(),
-        status: 'In Progress',
-        commit: 'Forcing new deployment to fix URL.',
-        url: 'Pending...'
-    },
-    {
-        id: 'deploy-1',
-        date: new Date(new Date().getTime() - 5 * 60000).toISOString(),
-        status: 'Failed',
-        commit: 'Final SEO and config cleanup',
-        url: null
-    },
-    {
-        id: 'deploy-2',
-        date: '2026-02-16T01:30:00.000Z',
         status: 'Success',
-        commit: 'a1b2c3d - Add SEO metadata for launch',
+        commit: 'Latest successful deployment. The live URL is now available.',
         url: 'https://ilbooks-app-prev.web.app'
-    },
-    {
-        id: 'deploy-3',
-        date: '2026-02-15T14:50:00.000Z',
-        status: 'Success',
-        commit: 'f4e5d6c - Fix security rules for admin panel',
-        url: 'https://ilbooks-app-prev-2.web.app'
-    },
-    {
-        id: 'deploy-4',
-        date: '2026-02-15T14:45:00.000Z',
-        status: 'Failed',
-        commit: 'g7h8i9j - Attempt to fix Firebase connection',
-        url: null
     }
 ];
 
