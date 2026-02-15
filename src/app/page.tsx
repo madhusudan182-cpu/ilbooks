@@ -38,12 +38,6 @@ export default function Home() {
           <Button asChild size="lg" className="font-headline bg-orange-500 text-white hover:bg-orange-600">
             <Link href="/login">Sign In</Link>
           </Button>
-           <Button asChild size="lg" className="font-headline bg-blue-600 text-white hover:bg-blue-700">
-            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}&quote=${encodeURIComponent(shareText)}`} target="_blank" rel="noopener noreferrer">
-                <FacebookIcon />
-                Share
-            </a>
-          </Button>
         </div>
         <div className="absolute bottom-4">
             <p className="text-sm text-muted-foreground">
