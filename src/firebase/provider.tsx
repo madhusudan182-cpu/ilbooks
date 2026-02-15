@@ -1,10 +1,14 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import type { FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { firebaseConfig } from './config';
 
 export interface FirebaseContextValue {
   app: FirebaseApp | null;
@@ -20,13 +24,24 @@ export const FirebaseContext = createContext<FirebaseContextValue>({
 
 export function FirebaseProvider({
   children,
-  value,
 }: {
   children: React.ReactNode;
-  value: FirebaseContextValue;
 }) {
+    const instances = useMemo(() => {
+        // This check ensures Firebase is never initialized on the server,
+        // preventing network errors during server-side rendering.
+        if (typeof window !== 'undefined') {
+            const apps = getApps();
+            const app = apps.length > 0 ? getApp() : initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const firestore = getFirestore(app);
+            return { app, auth, firestore };
+        }
+        return { app: null, auth: null, firestore: null };
+    }, []);
+
   return (
-    <FirebaseContext.Provider value={value}>
+    <FirebaseContext.Provider value={instances}>
       {children}
       <FirebaseErrorListener />
     </FirebaseContext.Provider>

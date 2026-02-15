@@ -1,13 +1,7 @@
 'use client';
 
-import { initializeFirebase } from '@/firebase';
 import { FirebaseProvider } from '@/firebase/provider';
 
-export function FirebaseAppProvider({ children }: { children: React.ReactNode }) {
-  const { app, auth, firestore } = initializeFirebase();
-  return (
-    <FirebaseProvider value={{ app, auth, firestore }}>
-      {children}
-    </FirebaseProvider>
-  );
-}
+// This file now simply re-exports the main FirebaseProvider under the name FirebaseAppProvider
+// to maintain compatibility with its usage in the root layout.
+export { FirebaseProvider as FirebaseAppProvider };
