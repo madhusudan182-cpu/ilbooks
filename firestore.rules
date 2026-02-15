@@ -37,16 +37,16 @@ service cloud.firestore {
 
     // Secure syllabi
     match /syllabi/{level} {
-      // Any authenticated user can read syllabi. Admins can list all.
-      allow read: if isAuthenticated();
+      // Any authenticated user can get or list syllabi.
+      allow get, list: if isAuthenticated();
       // Only admins can create or update syllabi.
       allow write: if isAdmin();
     }
 
     // Secure books
     match /books/{bookId} {
-      // Any authenticated user can read books. Admins can list all.
-      allow read: if isAuthenticated();
+      // Any authenticated user can get or list books.
+      allow get, list: if isAuthenticated();
       // Only admins can create or update books.
       allow write: if isAdmin();
     }
