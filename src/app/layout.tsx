@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { FirebaseAppProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'ILBooks',
-  description: 'A network for book lovers.',
+  title: 'ILBooks - The Social Network for Book Lovers',
+  description: 'Join ILBooks, a vibrant community for readers. Connect with fellow bookworms, compete in literary challenges, discover new books, and share your passion for reading.',
 };
 
 export default function RootLayout({
