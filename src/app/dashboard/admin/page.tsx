@@ -66,7 +66,7 @@ export default function AdminPage() {
               <Button asChild>
                 <Link href="/dashboard/admin/results">View User Results</Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild>
                 <Link href="/dashboard/admin/schedule">
                   <CalendarClock className="mr-2 h-4 w-4" />
                   Exam Schedule
