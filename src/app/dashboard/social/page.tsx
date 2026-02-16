@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockUsers } from "@/lib/data";
 import type { User } from "@/lib/types";
-import { MessageCircle, UserPlus, ArrowLeft, Search, Users } from "lucide-react";
+import { MessageCircle, UserPlus, ArrowLeft, Search, Users, Share2 } from "lucide-react";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
@@ -109,6 +109,35 @@ export default function SocialPage() {
     });
   };
 
+  const handleShare = async () => {
+    const shareData = {
+        title: 'ILBooks - The Social Network for Book Lovers',
+        text: 'Join ILBooks, a vibrant community for readers. Connect with fellow bookworms, compete in literary challenges, discover new books, and share your passion for reading.',
+        url: 'https://ilbooks-app-prev.web.app'
+    };
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+            toast({
+                title: 'Shared successfully!',
+            });
+        } else {
+            await navigator.clipboard.writeText(shareData.url);
+            toast({
+                title: 'Link Copied!',
+                description: 'The app link has been copied to your clipboard. You can now paste it to share.',
+            });
+        }
+    } catch (error) {
+        console.error('Share failed:', error);
+        toast({
+            title: 'Share failed',
+            description: 'Could not share at this moment. Please try again.',
+            variant: 'destructive',
+        });
+    }
+  };
+
   const filteredFriendsData = mockFacebookFriends.filter(friend =>
     friend.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -123,7 +152,6 @@ export default function SocialPage() {
   };
 
   const friends = mockUsers.filter(u => u.isMutual);
-  const followers = [...mockUsers.filter(u => u.isMutual), mockUsers[2]];
 
   if (!isClient) {
     return null;
@@ -190,11 +218,14 @@ export default function SocialPage() {
       <h1 className="text-2xl font-bold font-headline text-center mb-4">Social Circle</h1>
       <Tabs defaultValue="search">
         <div className="grid w-full grid-cols-4 items-center bg-transparent p-0 gap-1">
-          <TabsList className="col-span-3 grid w-full grid-cols-3 bg-transparent p-0 gap-1">
+          <TabsList className="col-span-2 grid w-full grid-cols-2 bg-transparent p-0 gap-1">
               <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs">Search</TabsTrigger>
               <TabsTrigger value="friends" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-8 text-xs"><Users className="w-4 h-4 mr-1" />Friends</TabsTrigger>
-              <TabsTrigger value="followers" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs"><UserPlus className="w-4 h-4 mr-1" />Followers</TabsTrigger>
           </TabsList>
+           <Button onClick={handleShare} className="rounded-md bg-green-500 hover:bg-green-600 text-white px-1 py-1 h-8 text-xs">
+              <Share2 className="w-4 h-4 mr-1" />
+              Share
+          </Button>
           <Button onClick={() => setView('invite')} className="rounded-md bg-red-300 hover:bg-red-400 text-red-800 px-1 py-1 h-8 text-xs">
               <FacebookIcon className="w-4 h-4 mr-1 text-blue-600" />
               Invite
@@ -205,9 +236,6 @@ export default function SocialPage() {
         </TabsContent>
         <TabsContent value="friends" className="mt-2">
           <UserList users={friends} />
-        </TabsContent>
-        <TabsContent value="followers" className="mt-2">
-          <UserList users={followers} />
         </TabsContent>
       </Tabs>
     </div>
