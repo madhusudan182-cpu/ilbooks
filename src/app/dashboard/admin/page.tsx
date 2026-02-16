@@ -66,7 +66,7 @@ export default function AdminPage() {
               <Button asChild>
                 <Link href="/dashboard/admin/results">View User Results</Link>
               </Button>
-              <Button asChild>
+              <Button asChild className="bg-blue-500 hover:bg-blue-600">
                 <Link href="/dashboard/admin/schedule">
                   <CalendarClock className="mr-2 h-4 w-4" />
                   Exam Schedule
@@ -146,18 +146,6 @@ export default function AdminPage() {
           <CardContent>
               <Button asChild>
                 <Link href="/dashboard/admin/analytics">View Analytics</Link>
-              </Button>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-2xl font-headline"><Server className="text-primary w-6 h-6"/> Deployments</CardTitle>
-              <CardDescription>Check the status of application deployments.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <Button asChild>
-                <Link href="/dashboard/admin/deployments">View Deployments</Link>
               </Button>
           </CardContent>
         </Card>
