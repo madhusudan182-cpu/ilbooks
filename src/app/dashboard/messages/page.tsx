@@ -691,7 +691,7 @@ export default function MessagesPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-2">
                                 <div className="flex gap-1">
-                                    {['😊', '👍', '❤️', '😂', '🎉'].map(emoji => (
+                                    {['😊', '👍', '❤️', '😂', '🎉', '🙏', '😢', '🔥', '😮', '🤔'].map(emoji => (
                                         <Button key={emoji} variant="ghost" size="icon" className="h-8 w-8" onClick={() => setNewMessage(prev => prev + emoji)}>
                                             {emoji}
                                         </Button>
