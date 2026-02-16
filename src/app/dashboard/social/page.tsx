@@ -235,11 +235,11 @@ export default function SocialPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <h1 className="text-2xl font-bold font-headline text-center mb-4">Social Circle</h1>
-      <Tabs defaultValue="search">
+      <Tabs defaultValue="friends">
         <div className="grid w-full grid-cols-4 items-center bg-transparent p-0 gap-1">
           <TabsList className="col-span-2 grid w-full grid-cols-2 bg-transparent p-0 gap-1">
-              <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs">Search</TabsTrigger>
               <TabsTrigger value="friends" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-8 text-xs"><Users className="w-4 h-4 mr-1" />Friends</TabsTrigger>
+              <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs">Search</TabsTrigger>
           </TabsList>
            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
