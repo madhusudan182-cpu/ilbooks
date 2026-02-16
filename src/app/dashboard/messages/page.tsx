@@ -17,6 +17,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MoreVertical, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { currentUser } from '@/lib/auth';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const allConversations = [
   {
@@ -111,12 +120,46 @@ export default function MessagesPage() {
   const isAdmin = currentUser.isAdmin || false;
   const isFeatureLocked = currentUser.level < 0.3 && !isAdmin;
 
+  const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const truncateMessage = (message: string, maxLength = 20): string => {
     if (message.length <= maxLength) {
       return message;
     }
     return `${message.substring(0, maxLength)}....`;
   };
+
+  useEffect(() => {
+    if (isCameraDialogOpen) {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings.',
+          });
+        }
+      };
+      getCameraPermission();
+    } else {
+      // Cleanup: stop video stream when dialog closes
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [isCameraDialogOpen, toast]);
 
   useEffect(() => {
     setIsClient(true);
@@ -236,6 +279,31 @@ export default function MessagesPage() {
   }
 
   return (
+    <>
+    <Dialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Camera</DialogTitle>
+          <DialogDescription>Take a photo to send in the chat.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted />
+          {!hasCameraPermission && hasCameraPermission !== null && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTitle>Camera Access Denied</AlertTitle>
+              <AlertDescription>
+                Please enable camera permissions in your browser settings.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsCameraDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => toast({ title: "Taking pictures coming soon!" })} disabled={!hasCameraPermission}>Take Picture</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <div className="flex bg-background h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)]">
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex-col",
@@ -457,7 +525,7 @@ export default function MessagesPage() {
                             <Paperclip className="w-5 h-5"/>
                             <span className="sr-only">Attach file</span>
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" className="shrink-0 h-10 w-10 -ml-2" onClick={() => toast({ title: "Camera feature coming soon!" })}>
+                        <Button type="button" variant="ghost" size="icon" className="shrink-0 h-10 w-10 -ml-2" onClick={() => setIsCameraDialogOpen(true)}>
                             <Camera className="w-5 h-5"/>
                             <span className="sr-only">Take a photo</span>
                         </Button>
@@ -501,5 +569,6 @@ export default function MessagesPage() {
         )}
       </main>
     </div>
+    </>
   );
 }
