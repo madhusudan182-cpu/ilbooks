@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockUsers } from "@/lib/data";
 import type { User } from "@/lib/types";
-import { MessageCircle, UserCheck, UserPlus, ArrowLeft, Search } from "lucide-react";
+import { MessageCircle, UserPlus, ArrowLeft, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
@@ -109,12 +109,12 @@ export default function SocialPage() {
     });
   };
 
-  const filteredFriends = mockFacebookFriends.filter(friend =>
+  const filteredFriendsData = mockFacebookFriends.filter(friend =>
     friend.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleInviteAll = () => {
-    const allFriendIds = filteredFriends.map(f => f.id);
+    const allFriendIds = filteredFriendsData.map(f => f.id);
     setInvitedFriends(prev => new Set([...prev, ...allFriendIds]));
     toast({
         title: "All visible friends invited!",
@@ -122,7 +122,7 @@ export default function SocialPage() {
     });
   };
 
-  const following = mockUsers.filter(u => u.isFollowing);
+  const friends = mockUsers.filter(u => u.isMutual);
   const followers = [...mockUsers.filter(u => u.isMutual), mockUsers[2]];
 
   if (!isClient) {
@@ -157,7 +157,7 @@ export default function SocialPage() {
 
         <Card>
           <CardContent className="p-2 space-y-2">
-            {filteredFriends.map(friend => {
+            {filteredFriendsData.map(friend => {
               const isInvited = invitedFriends.has(friend.id);
               return (
                 <Card key={friend.id}>
@@ -192,7 +192,7 @@ export default function SocialPage() {
         <div className="grid w-full grid-cols-4 items-center bg-transparent p-0 gap-1">
           <TabsList className="col-span-3 grid w-full grid-cols-3 bg-transparent p-0 gap-1">
               <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs">Search</TabsTrigger>
-              <TabsTrigger value="following" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-8 text-xs"><UserCheck className="w-4 h-4 mr-1" />Following</TabsTrigger>
+              <TabsTrigger value="friends" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-8 text-xs"><Users className="w-4 h-4 mr-1" />Friends</TabsTrigger>
               <TabsTrigger value="followers" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs"><UserPlus className="w-4 h-4 mr-1" />Followers</TabsTrigger>
           </TabsList>
           <Button onClick={() => setView('invite')} className="rounded-md bg-red-300 hover:bg-red-400 text-red-800 px-1 py-1 h-8 text-xs">
@@ -203,8 +203,8 @@ export default function SocialPage() {
         <TabsContent value="search" className="mt-2">
           <UserList users={mockUsers} />
         </TabsContent>
-        <TabsContent value="following" className="mt-2">
-          <UserList users={following} />
+        <TabsContent value="friends" className="mt-2">
+          <UserList users={friends} />
         </TabsContent>
         <TabsContent value="followers" className="mt-2">
           <UserList users={followers} />
