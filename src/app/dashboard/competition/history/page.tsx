@@ -36,7 +36,7 @@ const DetailedResultTable = ({ result }: { result: ExamResult }) => (
                             <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.subject}</TableCell>
                             <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.totalMarks}</TableCell>
                             <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.obtainedMarks}</TableCell>
-                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.percentage.toFixed(0)}%</TableCell>
+                            <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", subjectResult.percentage >= 80 && "text-green-600 font-bold")}>{subjectResult.percentage.toFixed(0)}%</TableCell>
                             <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", subjectResult.status === 'Passed' ? 'text-green-600' : 'text-red-600')}>
                                 {subjectResult.status}
                             </TableCell>
@@ -46,7 +46,7 @@ const DetailedResultTable = ({ result }: { result: ExamResult }) => (
                         <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">Total</TableCell>
                         <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalMarks}</TableCell>
                         <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalObtainedMarks}</TableCell>
-                        <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalPercentage.toFixed(0)}%</TableCell>
+                        <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", result.totalPercentage >= 80 && "text-green-600 font-bold")}>{result.totalPercentage.toFixed(0)}%</TableCell>
                         <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>
                             {result.overallStatus}
                         </TableCell>
@@ -155,7 +155,7 @@ function ExamHistoryContent() {
                                         <TableRow key={result.id}>
                                             <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{format(new Date(result.examDate), 'dd/MM/yyyy')}</TableCell>
                                             <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.level}</TableCell>
-                                            <TableCell className="text-center font-medium px-1 sm:px-2 py-1 text-xs">
+                                            <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", result.totalPercentage >= 80 && "text-green-600 font-bold")}>
                                                 {result.totalPercentage.toFixed(0)}%
                                             </TableCell>
                                             <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>

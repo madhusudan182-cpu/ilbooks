@@ -67,7 +67,7 @@ export default function AdminResultsPage() {
                                                         <Badge className={cn(result.overallStatus === 'Passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')}>
                                                             {result.overallStatus}
                                                         </Badge>
-                                                        <span className={cn("text-sm font-semibold", result.totalPercentage >= 80 ? "text-primary font-bold" : "text-muted-foreground")}>({result.totalPercentage.toFixed(0)}%)</span>
+                                                        <span className={cn("text-sm font-semibold", result.totalPercentage >= 80 ? "text-green-600 font-bold" : "text-muted-foreground")}>({result.totalPercentage.toFixed(0)}%)</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -99,7 +99,7 @@ export default function AdminResultsPage() {
                                                                     <TableCell>{subjectResult.subject}</TableCell>
                                                                     <TableCell className="text-center">{subjectResult.totalMarks}</TableCell>
                                                                     <TableCell className="text-center">{subjectResult.obtainedMarks}</TableCell>
-                                                                    <TableCell className={cn("text-center", subjectResult.percentage >= 80 ? "text-primary font-bold" : "")}>{subjectResult.percentage.toFixed(0)}%</TableCell>
+                                                                    <TableCell className={cn("text-center", subjectResult.percentage >= 80 ? "text-green-600 font-bold" : "")}>{subjectResult.percentage.toFixed(0)}%</TableCell>
                                                                     <TableCell className={cn("text-right font-bold", subjectResult.status === 'Passed' ? 'text-green-600' : 'text-red-600')}>
                                                                         {subjectResult.status}
                                                                     </TableCell>
@@ -109,7 +109,7 @@ export default function AdminResultsPage() {
                                                                 <TableCell>Total</TableCell>
                                                                 <TableCell className="text-center">{result.totalMarks}</TableCell>
                                                                 <TableCell className="text-center">{result.totalObtainedMarks}</TableCell>
-                                                                <TableCell className={cn("text-center", result.totalPercentage >= 80 ? "text-primary font-bold" : "")}>{result.totalPercentage.toFixed(0)}%</TableCell>
+                                                                <TableCell className={cn("text-center", result.totalPercentage >= 80 ? "text-green-600 font-bold" : "")}>{result.totalPercentage.toFixed(0)}%</TableCell>
                                                                 <TableCell className={cn("text-right", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>
                                                                     {result.overallStatus}
                                                                 </TableCell>
