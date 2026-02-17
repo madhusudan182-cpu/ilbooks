@@ -96,6 +96,11 @@ function BooksPageContent() {
     const booksQuery = useMemo(() => (firestore ? collection(firestore, 'books') : null), [firestore]);
     const { data: books, loading: booksLoading } = useCollection<BookType>(booksQuery);
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const [editingMode, setEditingMode] = useState<EditMode | null>(null);
     const [editedBooks, setEditedBooks] = useState<BookType[]>([]);
@@ -265,7 +270,7 @@ function BooksPageContent() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {booksLoading ? (
+                     {(booksLoading || !isClient) ? (
                         <div className="space-y-2">
                            <Skeleton className="h-12 w-full" />
                            <Skeleton className="h-12 w-full" />

@@ -31,6 +31,11 @@ export default function AllSyllabiPage() {
     const [editingLevel, setEditingLevel] = useState<string | null>(null);
     const [editedSubjects, setEditedSubjects] = useState<EditableSubject[]>([]);
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const allLevels: string[] = [];
     for (let i = 0; i <= 19; i++) {
@@ -166,7 +171,7 @@ export default function AllSyllabiPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {syllabiLoading ? (
+                    {(syllabiLoading || !isClient) ? (
                         <div className="space-y-2">
                            <Skeleton className="h-12 w-full" />
                            <Skeleton className="h-12 w-full" />

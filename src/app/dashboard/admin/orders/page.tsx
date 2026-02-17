@@ -22,6 +22,11 @@ export default function AdminOrdersPage() {
     const firestore = useFirestore();
     const [ordersQuery, setOrdersQuery] = useState<any>(null);
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     useEffect(() => {
         if (firestore) {
@@ -58,7 +63,7 @@ export default function AdminOrdersPage() {
             });
     };
 
-    if (loading) {
+    if (loading || !isClient) {
         return (
             <div className="p-4 md:p-6 lg:p-8">
                 <Card>

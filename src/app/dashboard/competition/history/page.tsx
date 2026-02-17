@@ -61,6 +61,11 @@ function ExamHistoryContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [activeView, setActiveView] = useState<'recent' | 'previous' | null>(null);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const [userExamHistory, setUserExamHistory] = useState<ExamResult[]>(() => 
         mockExamResults.filter(result => result.userId === currentUser.id)
@@ -103,6 +108,34 @@ function ExamHistoryContent() {
         }
     };
 
+    if (!isClient) {
+      return (
+        <div className="p-2 md:p-4 lg:p-6">
+            <div className="mb-2">
+                <Skeleton className="h-9 w-40" />
+            </div>
+            <Card>
+                <CardHeader className="p-4">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-7 w-48" />
+                    </div>
+                    <Skeleton className="h-4 w-64 mt-2" />
+                    <div className="pt-4 flex flex-wrap justify-center gap-2">
+                        <Skeleton className="h-10 w-36" />
+                        <Skeleton className="h-10 w-36" />
+                    </div>
+                </CardHeader>
+                <CardContent className="px-2 sm:px-4">
+                    <Skeleton className="h-24 w-full" />
+                </CardContent>
+            </Card>
+            <div className="mt-4 flex justify-center">
+                <Skeleton className="h-10 w-24" />
+            </div>
+        </div>
+      )
+    }
 
     return (
         <div className="p-2 md:p-4 lg:p-6">

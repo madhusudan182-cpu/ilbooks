@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,11 +13,40 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminResultsPage() {
     const [results] = useState<ExamResult[]>(mockExamResults);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const sortedResults = [...results].sort((a, b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime());
+
+    if (!isClient) {
+        return (
+             <div className="p-4 md:p-6 lg:p-8">
+                <div className="mb-4">
+                    <Skeleton className="h-9 w-44" />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-4 w-72" />
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="space-y-2">
+                           <Skeleton className="h-16 w-full" />
+                           <Skeleton className="h-16 w-full" />
+                           <Skeleton className="h-16 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
 
     return (
         <>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -48,6 +47,11 @@ export default function AllQuestionsPage() {
     const [editingLevel, setEditingLevel] = useState<string | null>(null);
     const [editedQuestions, setEditedQuestions] = useState<Question[]>([]);
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
  
     const allLevels: string[] = [];
     for (let i = 0; i <= 19; i++) {
@@ -391,7 +395,7 @@ export default function AllQuestionsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {questionsLoading ? (
+                    {(questionsLoading || !isClient) ? (
                          <div className="space-y-2">
                            <Skeleton className="h-12 w-full" />
                            <Skeleton className="h-12 w-full" />
