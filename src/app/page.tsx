@@ -33,7 +33,7 @@ export default function Home() {
           </div>
           {/* Social Sign In */}
           <div className="mt-6 flex items-center justify-center gap-6">
-            <Link href="/signup" className="flex flex-col items-center gap-2 group">
+            <Link href="/dashboard" className="flex flex-col items-center gap-2 group">
                 <div className="h-14 w-14 rounded-full border bg-card flex items-center justify-center group-hover:bg-muted transition-colors">
                   {/* Google SVG */}
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-7 w-7">
@@ -45,7 +45,7 @@ export default function Home() {
                 </div>
                 <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Sign Up with</span>
             </Link>
-            <Link href="/signup" className="flex flex-col items-center gap-2 group">
+            <Link href="/dashboard" className="flex flex-col items-center gap-2 group">
               <div className="h-14 w-14 rounded-full border bg-card flex items-center justify-center group-hover:bg-muted transition-colors">
                 {/* Facebook SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-10 w-10">
