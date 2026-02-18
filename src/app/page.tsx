@@ -43,7 +43,7 @@ export default function Home() {
                     <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.022,35.533,44,30.228,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Sign Up</span>
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Social Media</span>
             </Link>
             <Link href="/signup" className="flex flex-col items-center gap-2 group">
               <div className="h-14 w-14 rounded-full border bg-card flex items-center justify-center group-hover:bg-muted transition-colors">
@@ -52,7 +52,7 @@ export default function Home() {
                   <linearGradient id="Ld6sqrtcxMyckEl6oeKdma" x1="9.993" x2="40.615" y1="9.993" y2="40.615" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#2aa4f4"></stop><stop offset="1" stopColor="#007ad9"></stop></linearGradient><path fill="url(#Ld6sqrtcxMyckEl6oeKdma)" d="M24,4C12.954,4,4,12.954,4,24s8.954,20,20,20s20-8.954,20-20S35.046,4,24,4z"></path><path fill="#fff" d="M26.707,29.301h5.176l0.813-5.559h-5.989v-3.542c0-1.624,0.452-2.731,2.781-2.731l3.282,0v-4.896 c-0.566-0.076-2.516-0.246-4.783-0.246c-4.733,0-7.975,2.902-7.975,8.203v4.116h-5.368v5.559h5.368V44h6.323V29.301z"></path>
                 </svg>
               </div>
-              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Sign Up</span>
+              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Social Media</span>
             </Link>
           </div>
         </section>
