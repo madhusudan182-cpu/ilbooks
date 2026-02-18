@@ -45,7 +45,7 @@ export default function Home() {
               <div className="h-14 w-14 rounded-full border bg-card flex items-center justify-center group-hover:bg-muted transition-colors">
                 {/* Facebook SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-10 w-10">
-                  <linearGradient id="Ld6sqrtcxMyckEl6oeKdma" x1="9.993" x2="40.615" y1="9.993" y2="40.615" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2aa4f4"></stop><stop offset="1" stop-color="#007ad9"></stop></linearGradient><path fill="url(#Ld6sqrtcxMyckEl6oeKdma)" d="M24,4C12.954,4,4,12.954,4,24s8.954,20,20,20s20-8.954,20-20S35.046,4,24,4z"></path><path fill="#fff" d="M26.707,29.301h5.176l0.813-5.559h-5.989v-3.542c0-1.624,0.452-2.731,2.781-2.731l3.282,0v-4.896 c-0.566-0.076-2.516-0.246-4.783-0.246c-4.733,0-7.975,2.902-7.975,8.203v4.116h-5.368v5.559h5.368V44h6.323V29.301z"></path>
+                  <linearGradient id="Ld6sqrtcxMyckEl6oeKdma" x1="9.993" x2="40.615" y1="9.993" y2="40.615" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#2aa4f4"></stop><stop offset="1" stopColor="#007ad9"></stop></linearGradient><path fill="url(#Ld6sqrtcxMyckEl6oeKdma)" d="M24,4C12.954,4,4,12.954,4,24s8.954,20,20,20s20-8.954,20-20S35.046,4,24,4z"></path><path fill="#fff" d="M26.707,29.301h5.176l0.813-5.559h-5.989v-3.542c0-1.624,0.452-2.731,2.781-2.731l3.282,0v-4.896 c-0.566-0.076-2.516-0.246-4.783-0.246c-4.733,0-7.975,2.902-7.975,8.203v4.116h-5.368v5.559h5.368V44h6.323V29.301z"></path>
                 </svg>
               </div>
               <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">Sign In</span>
