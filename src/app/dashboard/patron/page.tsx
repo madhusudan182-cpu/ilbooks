@@ -42,7 +42,7 @@ export default function PatronPage() {
             <Crown className="w-16 h-16 mx-auto mb-4 text-[#D4AF37]" />
             <CardTitle className="text-2xl">Become a Patron</CardTitle>
             <CardDescription className="text-white/90 mt-2 max-w-md mx-auto">
-              We are trying to build a reading community in Bangladesh. If you like you can donate to keep this movement going smoothly.
+              We are currently building a nationwide reading community in Bangladesh. Your generous contributions play a vital role in ensuring this movement continues to operate smoothly and effectively.
             </CardDescription>
           </CardHeader>
         </Card>
