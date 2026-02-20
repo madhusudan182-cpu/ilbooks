@@ -19,33 +19,30 @@ export function IlbooksLogo({ className }: { className?: string }) {
         <text
           x="7"
           y="11"
-          fill="white"
           textAnchor="middle"
           fontSize="2.8"
           fontWeight="bold"
-          className="font-headline"
+          className="font-headline fill-white"
         >
           I
         </text>
         <text
           x="7"
           y="15"
-          fill="white"
           textAnchor="middle"
           fontSize="2.8"
           fontWeight="bold"
-          className="font-headline"
+          className="font-headline fill-white"
         >
           Love
         </text>
         <text
           x="17"
           y="13"
-          fill="white"
           textAnchor="middle"
           fontSize="2.8"
           fontWeight="bold"
-          className="font-headline"
+          className="font-headline fill-white"
         >
           Books
         </text>
