@@ -34,7 +34,8 @@ export function AnimatedLogo() {
           y="11"
           fill="white"
           textAnchor="middle"
-          fontSize="2.5"
+          fontSize="2.8"
+          fontWeight="bold"
           className="font-headline"
         >
           I
@@ -44,7 +45,8 @@ export function AnimatedLogo() {
           y="15"
           fill="white"
           textAnchor="middle"
-          fontSize="2.5"
+          fontSize="2.8"
+          fontWeight="bold"
           className="font-headline"
         >
           Love
@@ -54,7 +56,8 @@ export function AnimatedLogo() {
           y="13"
           fill="white"
           textAnchor="middle"
-          fontSize="2.5"
+          fontSize="2.8"
+          fontWeight="bold"
           className="font-headline"
         >
           Books
