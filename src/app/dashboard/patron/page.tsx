@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,9 @@ export default function PatronPage() {
           <CardHeader className="text-center">
             <Crown className="w-16 h-16 mx-auto mb-4 text-[#D4AF37]" />
             <CardTitle className="text-2xl">Become a Patron</CardTitle>
+            <CardDescription className="text-white/90 mt-2 max-w-md mx-auto">
+              We are trying to build a reading community in Bangladesh. If you like you can donate to keep this movement going smoothly.
+            </CardDescription>
           </CardHeader>
         </Card>
 
