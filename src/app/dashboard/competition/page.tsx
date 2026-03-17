@@ -25,8 +25,8 @@ export default function CompetitionPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const [userLevel, setUserLevel] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
+    const competitionLevel = currentUser.level.toFixed(1);
     
     const getExamFee = (levelString: string): number => {
         const [major] = levelString.split('.').map(Number);
@@ -39,7 +39,7 @@ export default function CompetitionPage() {
         return 20; // Default
     };
     
-    const examFee = getExamFee(userLevel || '0.0');
+    const examFee = getExamFee(competitionLevel);
     
     const [isRegistered, setIsRegistered] = useState(false);
     const [isExamTime, setIsExamTime] = useState(false);
@@ -47,26 +47,7 @@ export default function CompetitionPage() {
 
     useEffect(() => {
         setIsClient(true);
-        const baseLevel = currentUser.level;
-        const savedLevelString = sessionStorage.getItem('currentUserLevel');
-
-        if (savedLevelString) {
-            const savedLevel = parseFloat(savedLevelString);
-            // The effective level is the higher of the base level and the session level.
-            const effectiveLevel = Math.max(baseLevel, savedLevel);
-            setUserLevel(effectiveLevel.toFixed(1));
-            // Update session storage to the effective level to maintain consistency.
-            sessionStorage.setItem('currentUserLevel', effectiveLevel.toFixed(1));
-        } else {
-            // No session level, so use the base level.
-            setUserLevel(baseLevel.toFixed(1));
-            sessionStorage.setItem('currentUserLevel', baseLevel.toFixed(1));
-        }
     }, []);
-
-    const competitionLevel = useMemo(() => {
-        return userLevel || '0.0';
-    }, [userLevel]);
 
     const levelNumber = useMemo(() => parseFloat(competitionLevel), [competitionLevel]);
     const isFeeExempt = useMemo(() => levelNumber >= 0.0 && levelNumber <= 0.5, [levelNumber]);
@@ -240,7 +221,7 @@ export default function CompetitionPage() {
         }
     }
 
-    const [majorLevel] = (userLevel || '0.0').split('.').map(Number);
+    const [majorLevel] = (competitionLevel).split('.').map(Number);
     const buttonText = isFeeExempt
       ? "Start Exam"
       : majorLevel < 1
@@ -275,8 +256,8 @@ export default function CompetitionPage() {
                     <h1 className="text-4xl font-bold font-headline">Competition</h1>
                     <p className="text-muted-foreground mt-2">Test your knowledge, level up, and win prizes!</p>
                     <div className="flex flex-col justify-center items-center gap-2 mt-4">
-                        {isClient && userLevel ? (
-                            <Badge className="text-base bg-red-100 text-red-800">Your Current Level: {userLevel}</Badge>
+                        {isClient ? (
+                            <Badge className="text-base bg-red-100 text-red-800">Your Current Level: {competitionLevel}</Badge>
                         ) : (
                             <Skeleton className="h-7 w-48" />
                         )}

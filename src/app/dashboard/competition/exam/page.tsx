@@ -236,21 +236,6 @@ function ExamContent() {
     sessionStorage.removeItem(`examRegistrationExpiry_${level}`);
     sessionStorage.removeItem(`notificationSent_${level}`);
 
-    if (overallStatus === 'Passed') {
-        const [major, minor] = level.split('.').map(Number);
-        let nextMajor = major;
-        let nextMinor = minor + 1;
-        if (nextMinor > 9) {
-            nextMinor = 0;
-            nextMajor = major + 1;
-            if (nextMajor === 1) {
-                nextMajor = 2;
-            }
-        }
-        const nextLevel = `${nextMajor}.${nextMinor}`;
-        sessionStorage.setItem('currentUserLevel', nextLevel);
-    }
-
     router.push('/dashboard/competition/exam/result');
 
   }, [level, examQuestions, userAnswers, router]);
