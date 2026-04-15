@@ -120,7 +120,8 @@ export default function MessagesPage() {
   const { toast } = useToast();
 
   const isAdmin = currentUser.isAdmin || false;
-  const isFeatureLocked = currentUser.level < 0.3 && !isAdmin;
+  const isFeatureLocked = currentUser.level <= 0.5 && !isAdmin;
+  const [showFeatureLockDialog, setShowFeatureLockDialog] = useState(false);
 
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
@@ -217,7 +218,12 @@ export default function MessagesPage() {
   useEffect(() => {
     setIsClient(true);
     const chatWithId = searchParams.get('chatWith');
-    if (chatWithId && !isFeatureLocked) {
+    if (chatWithId) {
+      if (isFeatureLocked) {
+        setShowFeatureLockDialog(true);
+        router.push('/dashboard/messages', { scroll: false });
+        return;
+      }
       const conversation = allConversations.find(c => c.user.id === chatWithId);
       if (conversation) {
         // The conversation exists, so they are a friend. Select it.
@@ -258,11 +264,7 @@ export default function MessagesPage() {
 
   const handleSelectConversation = (conv: Conversation) => {
     if (isFeatureLocked) {
-      toast({
-        title: "Feature Locked",
-        description: "You need to reach Level 0.3 to chat with friends.",
-        variant: "destructive",
-      });
+      setShowFeatureLockDialog(true);
       return;
     }
       if (conv.user.isMutual || conv.user.isAdmin) {
@@ -338,28 +340,25 @@ export default function MessagesPage() {
       </div>
     );
   }
-  
-  if (isFeatureLocked) {
-    return (
-      <div className="flex h-full items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Lock className="w-6 h-6" /> Chat Feature Locked
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              You need to reach Level 0.3 to unlock the ability to chat with your friends. Keep participating in competitions to level up!
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <>
+    <AlertDialog open={showFeatureLockDialog} onOpenChange={setShowFeatureLockDialog}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Lock className="w-6 h-6" /> Chat Feature Locked
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              In order to chat you have to pass the level 0.5. Keep participating in competitions to level up!
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setShowFeatureLockDialog(false)}>OK</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
     <Dialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
       <DialogContent>
         <DialogHeader>
