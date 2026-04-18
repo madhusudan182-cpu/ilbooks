@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockUsers } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { Lock, MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, Mic, Smile, UserX, ShieldAlert } from "lucide-react";
+import { MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, Mic, Smile, UserX, ShieldAlert } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { User } from '@/lib/types';
 import { IlbooksLogo } from '@/components/ilbooks-logo';
@@ -119,9 +119,6 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const isFeatureLocked = currentUser.level <= 0.2;
-  const [showFeatureLockDialog, setShowFeatureLockDialog] = useState(false);
-
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -220,15 +217,18 @@ export default function MessagesPage() {
     
     if (chatWithId) {
         const conversation = allConversations.find(c => c.user.id === chatWithId);
-        const isChattingWithAdmin = conversation?.user.isAdmin === true;
-
-        if (isFeatureLocked && !isChattingWithAdmin) {
-            setShowFeatureLockDialog(true);
-            return;
-        }
 
         if (conversation) {
+          if (conversation.user.isMutual || conversation.user.isAdmin) {
             setSelectedConversation(conversation);
+          } else {
+             toast({
+                title: "Cannot Chat",
+                description: "You can only chat with mutual friends.",
+                variant: "destructive"
+            });
+            router.push('/dashboard/messages', { scroll: false });
+          }
         } else {
             const targetUserExists = mockUsers.some(u => u.id === chatWithId);
             if (targetUserExists) {
@@ -251,7 +251,7 @@ export default function MessagesPage() {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [searchParams, isFeatureLocked, router, toast]);
+  }, [searchParams, router, toast]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -260,26 +260,16 @@ export default function MessagesPage() {
   }, [selectedConversation?.messages]);
 
   const handleSelectConversation = (conv: Conversation) => {
-    if (conv.user.isAdmin) {
-        setSelectedConversation(conv);
-        router.push(`/dashboard/messages?chatWith=${conv.user.id}`, { scroll: false });
-        return;
+    if (conv.user.isMutual || conv.user.isAdmin) {
+      setSelectedConversation(conv);
+      router.push(`/dashboard/messages?chatWith=${conv.user.id}`, { scroll: false });
+    } else {
+        toast({
+          title: "Cannot Chat",
+          description: "You can only chat with mutual friends.",
+          variant: "destructive"
+      });
     }
-
-    if (isFeatureLocked) {
-      setShowFeatureLockDialog(true);
-      return;
-    }
-      if (conv.user.isMutual) {
-        setSelectedConversation(conv);
-        router.push(`/dashboard/messages?chatWith=${conv.user.id}`, { scroll: false });
-      } else {
-         toast({
-            title: "Cannot Chat",
-            description: "You can only chat with mutual friends.",
-            variant: "destructive"
-        });
-      }
   }
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -346,25 +336,6 @@ export default function MessagesPage() {
 
   return (
     <>
-    <AlertDialog open={showFeatureLockDialog} onOpenChange={setShowFeatureLockDialog}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Lock className="w-6 h-6" /> Chat Feature Locked
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              In order to chat you have to pass the level 0.2. Keep participating in competitions to level up!
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogAction onClick={() => {
-                  setShowFeatureLockDialog(false);
-                  router.push('/dashboard/messages', { scroll: false });
-                }}>OK</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-
     <Dialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
       <DialogContent>
         <DialogHeader>
