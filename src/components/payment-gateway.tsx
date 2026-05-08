@@ -106,14 +106,14 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <HandCoins className="w-6 h-6 text-primary" />
-                Complete Your Payment
+                Complete Your bKash Payment
               </DialogTitle>
               <DialogDescription>
                 Paying BDT {amount.toFixed(2)} for "{productName}".
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-2">
-              <Label htmlFor="phone-number">bKash/Rocket Number</Label>
+              <Label htmlFor="phone-number">bKash Mobile Number</Label>
               <div className="relative">
                 <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -175,7 +175,7 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
             <DialogHeader>
               <DialogTitle>Enter PIN</DialogTitle>
               <DialogDescription>
-                Enter your bKash/Rocket PIN to confirm payment.
+                Enter your bKash PIN to confirm payment.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-2">
@@ -203,7 +203,7 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
             return (
                 <div className="flex flex-col items-center justify-center py-10 space-y-4">
                     <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                    <p className="text-muted-foreground">Processing payment...</p>
+                    <p className="text-muted-foreground">Processing bKash payment...</p>
                     <Progress value={50} className="w-3/4" />
                 </div>
             );
@@ -213,7 +213,7 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
                     <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
                     <DialogTitle className="text-2xl">Payment Successful!</DialogTitle>
                     <DialogDescription className="mt-2">
-                        Your payment of BDT {amount.toFixed(2)} has been confirmed.
+                        Your bKash payment of BDT {amount.toFixed(2)} has been confirmed.
                     </DialogDescription>
                     <DialogFooter className="mt-6 w-full">
                         <Button className="w-full" onClick={handleSuccess}>Continue</Button>

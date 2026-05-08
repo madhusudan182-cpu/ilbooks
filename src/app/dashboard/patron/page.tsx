@@ -100,20 +100,13 @@ export default function PatronPage() {
             <CardTitle className="text-[#722F37] text-lg">Payment Options</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 border rounded-lg">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="text-center p-4 border rounded-lg max-w-sm mx-auto w-full">
                 <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full mx-auto mb-2 flex items-center justify-center">
                   <span className="text-white font-bold text-xs">bKash</span>
                 </div>
                 <p className="text-sm font-semibold">bKash</p>
-                <p className="text-xs text-gray-500">Fast & Secure</p>
-              </div>
-              <div className="text-center p-4 border rounded-lg">
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full mx-auto mb-2 flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">Rocket</span>
-                </div>
-                <p className="text-sm font-semibold">Rocket</p>
-                <p className="text-xs text-gray-500">DBBL Mobile Banking</p>
+                <p className="text-xs text-gray-500">Fast & Secure Payment</p>
               </div>
             </div>
           </CardContent>
