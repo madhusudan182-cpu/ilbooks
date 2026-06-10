@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Force deployment trigger to resolve persistent permission issues: 2025-05-24T14:20:00Z
+    // Force deployment trigger to resolve persistent permission issues: 2025-05-25T11:00:00Z
     
     // Global allow for prototype/development phase
     match /{document=**} {
