@@ -14,20 +14,23 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ExamResult, SubjectResult, Syllabus, Question, User as UserProfile } from '@/lib/types';
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { newBengaliLevel0Questions } from '@/lib/level-0-bengali-questions';
 import { newEnglishLevel0Questions } from '@/lib/level-0-english-questions';
 import { examSchedules, examHolds } from '@/lib/exam-schedule';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const TOTAL_TIME_PER_QUESTION = 15; // seconds
 
 const shuffleArray = (array: any[]) => {
-  for (let i = array.length - 1; i > 0; i--) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return array;
+  return shuffled;
 };
 
 
@@ -71,7 +74,6 @@ function ExamContent() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   useEffect(() => {
-    // This is the special path for Level 0.0, which is always self-contained.
     if (isLevelZero) {
         const bengali = shuffleArray([...newBengaliLevel0Questions]).map((q, i) => ({ ...q, id: `b-local-${Date.now()}-${i}` })).slice(0, 10);
         const english = shuffleArray([...newEnglishLevel0Questions]).map((q, i) => ({ ...q, id: `e-local-${Date.now()}-${i}` })).slice(0, 10);
@@ -80,21 +82,19 @@ function ExamContent() {
           answers: shuffleArray([...q.answers])
         }));
         setExamQuestions(finalQuestions);
-        return; // Exit early
+        return;
     }
 
-    // For any other level, wait for data to load
     if (questionsLoading || syllabusLoading) {
       return; 
     }
   
     let questionPool: Question[] | null = null;
   
-    // Use DB questions if they exist. For non-0.0 levels, this is the only source.
     if (allQuestionsFromDB && allQuestionsFromDB.length > 0) {
       questionPool = allQuestionsFromDB;
     } else {
-      setExamQuestions([]); // No questions found in DB for this level
+      setExamQuestions([]); 
       return;
     }
   
@@ -102,19 +102,13 @@ function ExamContent() {
     const syllabusToUse = syllabus && Object.keys(syllabus.subjects).length > 0 ? syllabus : null;
   
     if (syllabusToUse) {
-      // A syllabus IS defined, so we follow it.
       const tempFinalQuestions: Question[] = [];
       for (const subjectNameWithColon in syllabusToUse.subjects) {
         const subjectSyllabus = syllabusToUse.subjects[subjectNameWithColon];
         const subjectName = subjectNameWithColon.trim().replace(/:$/, '').trim();
         const questionsForSubject = questionPool.filter(q => q.subject === subjectName);
         
-        // Use available questions, even if fewer than the syllabus requires
         const questionsToTake = Math.min(questionsForSubject.length, subjectSyllabus.marks);
-  
-        if (questionsToTake < subjectSyllabus.marks) {
-          console.warn(`Not enough questions for subject "${subjectName}" for level ${levelStr}. Required: ${subjectSyllabus.marks}, Available: ${questionsForSubject.length}. Using available questions.`);
-        }
   
         if (questionsToTake > 0) {
           const shuffled = shuffleArray([...questionsForSubject]);
@@ -123,7 +117,6 @@ function ExamContent() {
       }
       finalQuestions = tempFinalQuestions;
     } else if (questionPool && questionPool.length > 0) {
-      // NO syllabus is defined, but questions EXIST. Build a default exam.
       const questionsBySubject: Record<string, Question[]> = {};
       questionPool.forEach(q => {
         if (!questionsBySubject[q.subject]) questionsBySubject[q.subject] = [];
@@ -132,7 +125,7 @@ function ExamContent() {
   
       for (const subjectName in questionsBySubject) {
         const shuffled = shuffleArray(questionsBySubject[subjectName]);
-        const questionsToTake = Math.min(10, shuffled.length); // Default to 10 questions
+        const questionsToTake = Math.min(10, shuffled.length);
         finalQuestions.push(...shuffled.slice(0, questionsToTake));
       }
     }
@@ -148,7 +141,6 @@ function ExamContent() {
 
 
   useEffect(() => {
-    // This effect initializes the exam state once the examQuestions are selected
     if (examQuestions) {
       setUserAnswers(Array(examQuestions.length).fill(null));
       setCurrentQuestionIndex(0);
@@ -217,7 +209,6 @@ function ExamContent() {
     const overallStatus = subjectResults.length > 0 && subjectResults.every(r => r.status === 'Passed') ? 'Passed' : 'Failed';
     const totalPercentage = totalMarks > 0 ? (totalObtainedMarks / totalMarks) * 100 : 0;
 
-    // Progression Logic: If passed, upgrade level in Firestore
     if (overallStatus === 'Passed') {
         const currentLevelNum = profile.level || 0;
         const major = Math.floor(currentLevelNum);
@@ -231,21 +222,18 @@ function ExamContent() {
             nextMinor = 0;
         }
         
-        // Skip level 1.x as per user requirement
         if (nextMajor === 1) {
             nextMajor = 2;
             nextMinor = 0;
         }
         
         const nextLevel = parseFloat((nextMajor + (nextMinor / 10)).toFixed(1));
-        
-        // Update user's level in Firestore
         const userRef = doc(firestore, 'users', user.uid);
         updateDoc(userRef, { level: nextLevel });
     }
 
-    const newResult: ExamResult = {
-        id: `result-${Date.now()}`,
+    const resultsCollection = collection(firestore, 'results');
+    const newResult = {
         userId: user.uid,
         userName: profile.name,
         userAvatarUrl: profile.avatarUrl,
@@ -255,10 +243,20 @@ function ExamContent() {
         totalPercentage: parseFloat(totalPercentage.toFixed(2)),
         overallStatus: overallStatus,
         subjects: subjectResults,
-        examDate: new Date().toISOString().split('T')[0],
+        examDate: serverTimestamp(),
     };
 
-    sessionStorage.setItem('lastExamResult', JSON.stringify(newResult));
+    addDoc(resultsCollection, newResult)
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: resultsCollection.path,
+          operation: 'create',
+          requestResourceData: newResult,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
+    sessionStorage.setItem('lastExamResult', JSON.stringify({ ...newResult, id: `local-${Date.now()}` }));
 
     sessionStorage.removeItem(`examRegistered_${levelStr}`);
     sessionStorage.removeItem(`examRegistrationExpiry_${levelStr}`);
@@ -313,7 +311,6 @@ function ExamContent() {
   };
   const fontSizeClass = getFontSizeClass(currentQuestion?.questionText || '');
 
-  // The initial loading state. `examQuestions` is null until the effect runs.
   if (examQuestions === null) {
     return (
        <main className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -333,7 +330,6 @@ function ExamContent() {
     )
   }
 
-  // This state is hit when the effect has run but found no questions for the current level.
   if (examQuestions.length === 0) {
     const schedule = examSchedules[majorLevel];
     const scheduleMessage = schedule
@@ -355,7 +351,6 @@ function ExamContent() {
     );
   }
 
-  // This is the main exam UI, rendered when examQuestions has items.
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">

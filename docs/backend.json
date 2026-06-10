@@ -49,75 +49,70 @@
       },
       "required": ["userId", "customerName", "deliveryAddress", "mobileNumber", "books", "totalAmount", "orderDate", "status"]
     },
-    "SyllabusTopic": {
-      "title": "Syllabus Topic",
-      "description": "Defines the topics and marks for a single subject within a syllabus.",
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Represents a financial transaction record.",
       "type": "object",
       "properties": {
-        "marks": { "type": "number", "description": "Total marks for the subject." },
-        "topics": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "List of topics covered in the subject."
-        }
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["Exam Fee", "Book Shop", "Patronage"] },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" }
       },
-      "required": ["marks", "topics"]
+      "required": ["userId", "amount", "type", "date", "status"]
     },
-    "Syllabus": {
-      "title": "Syllabus",
-      "description": "Represents the syllabus for a specific competition level.",
+    "ExamResult": {
+      "title": "Exam Result",
+      "description": "Represents a user's performance in a competition level exam.",
       "type": "object",
       "properties": {
-        "level": { "type": "string", "description": "The competition level this syllabus applies to (e.g., '0.0', '1.5')." },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "level": { "type": "string" },
+        "totalMarks": { "type": "number" },
+        "totalObtainedMarks": { "type": "number" },
+        "totalPercentage": { "type": "number" },
+        "overallStatus": { "type": "string", "enum": ["Passed", "Failed"] },
+        "examDate": { "type": "string", "format": "date-time" },
         "subjects": {
-          "type": "object",
-          "description": "A map of subject names to their topic details.",
-          "additionalProperties": {
-            "$ref": "#/backend/entities/SyllabusTopic"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subject": { "type": "string" },
+              "totalMarks": { "type": "number" },
+              "obtainedMarks": { "type": "number" },
+              "status": { "type": "string" }
+            }
           }
         }
       },
-      "required": ["level", "subjects"]
+      "required": ["userId", "level", "totalMarks", "totalObtainedMarks", "overallStatus", "examDate"]
     },
-    "Book": {
-      "title": "Book",
-      "description": "Represents a book in the store.",
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Represents a chat thread between users.",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "author": { "type": "string" },
-        "price": { "type": "number" },
-        "coverUrl": { "type": "string", "format": "uri" },
-        "pdfUrl": { "type": "string", "format": "uri" },
-        "level": { "type": "string" },
-        "category": { "type": "string", "enum": ["vocab_grammar", "popular"] }
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "author", "price", "coverUrl", "level"]
+      "required": ["participants", "updatedAt"]
     },
-    "Answer": {
-      "title": "Answer",
-      "description": "Represents an answer to a question.",
+    "Message": {
+      "title": "Message",
+      "description": "Represents a single message in a conversation.",
       "type": "object",
       "properties": {
+        "senderId": { "type": "string" },
         "text": { "type": "string" },
-        "isCorrect": { "type": "boolean" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "seen"] }
       },
-      "required": ["text", "isCorrect"]
-    },
-    "Question": {
-      "title": "Question",
-      "description": "Represents an exam question.",
-      "type": "object",
-      "properties": {
-        "level": { "type": "string" },
-        "subject": { "type": "string", "enum": ["Bengali", "English"] },
-        "questionText": { "type": "string" },
-        "answers": {
-          "type": "array",
-          "items": { "$ref": "#/backend/entities/Answer" }
-        }
-      },
-      "required": ["level", "subject", "questionText", "answers"]
+      "required": ["senderId", "text", "createdAt"]
     }
   },
   "auth": {
@@ -131,6 +126,22 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/backend/entities/Order" },
       "description": "Stores customer book orders."
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/backend/entities/Transaction" },
+      "description": "Log of all financial transactions."
+    },
+    "/results/{resultId}": {
+      "schema": { "$ref": "#/backend/entities/ExamResult" },
+      "description": "Stores exam results for level progression."
+    },
+    "/conversations/{convoId}": {
+      "schema": { "$ref": "#/backend/entities/Conversation" },
+      "description": "Stores chat conversation metadata."
+    },
+    "/conversations/{convoId}/messages/{msgId}": {
+      "schema": { "$ref": "#/backend/entities/Message" },
+      "description": "Stores individual messages within a conversation."
     },
     "/syllabi/{level}": {
       "schema": { "$ref": "#/backend/entities/Syllabus" },

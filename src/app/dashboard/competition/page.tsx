@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,12 +11,14 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowRight, Book, Award, Percent, DollarSign, Edit, ClipboardList, Loader2 } from "lucide-react";
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Syllabus, Question, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { examSchedules, examScheduleMessages, examHolds } from '@/lib/exam-schedule';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function CompetitionPage() {
     const { user, loading: authLoading } = useUser();
@@ -39,7 +42,7 @@ export default function CompetitionPage() {
         if (major >= 3 && major < 4) return 35;
         if (major >= 4 && major < 5) return 40;
         if (major >= 5 && major <= 19) return 50;
-        return 20; // Default
+        return 20; 
     };
     
     const examFee = getExamFee(competitionLevel);
@@ -104,26 +107,6 @@ export default function CompetitionPage() {
                 } else {
                     setIsExamTime(false);
                 }
-
-                const notificationSent = sessionStorage.getItem(`notificationSent_${competitionLevel}`);
-                if (!notificationSent) {
-                    const examStartDate = new Date(now);
-                    const dayDiff = (schedule.day - now.getDay() + 7) % 7;
-                    examStartDate.setDate(now.getDate() + dayDiff);
-                    examStartDate.setHours(schedule.start, 0, 0, 0);
-                    
-                    const timeUntilExam = examStartDate.getTime() - now.getTime();
-                    const minutesUntilExam = timeUntilExam / (1000 * 60);
-    
-                    if (minutesUntilExam > 0 && minutesUntilExam <= 30) {
-                        toast({
-                            title: "Exam Reminder",
-                            description: `Your exam for Level ${competitionLevel} starts in under 30 minutes.`,
-                            duration: 10000
-                        });
-                        sessionStorage.setItem(`notificationSent_${competitionLevel}`, 'true');
-                    }
-                }
             } else {
                 setIsExamTime(false);
             }
@@ -135,7 +118,28 @@ export default function CompetitionPage() {
     }, [competitionLevel, toast]);
 
     const handlePaymentSuccess = () => {
-        if (!competitionLevel) return;
+        if (!competitionLevel || !firestore || !user) return;
+
+        const txnData = {
+            userId: user.uid,
+            userName: profile?.name || 'Anonymous',
+            amount: examFee,
+            type: 'Exam Fee',
+            date: serverTimestamp(),
+            status: 'Completed'
+        };
+
+        const txnsCollection = collection(firestore, 'transactions');
+        addDoc(txnsCollection, txnData)
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: txnsCollection.path,
+                    operation: 'create',
+                    requestResourceData: txnData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
+
         const [majorLevel] = competitionLevel.split('.').map(Number);
         if (majorLevel < 1) {
              router.push(`/dashboard/competition/exam?level=${competitionLevel}`);

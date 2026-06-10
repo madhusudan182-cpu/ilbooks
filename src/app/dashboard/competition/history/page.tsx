@@ -1,65 +1,74 @@
+
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, ClipboardList } from 'lucide-react';
-import { mockExamResults } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { currentUser } from '@/lib/auth';
 import type { ExamResult } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
-const DetailedResultTable = ({ result }: { result: ExamResult }) => (
-    <div className="border rounded-lg overflow-hidden my-4 animate-fade-in-up">
-        <h3 className="p-3 font-bold text-center text-md bg-muted">
-            Result for Level {result.level} (Date: {format(new Date(result.examDate), 'dd/MM/yyyy')})
-        </h3>
-        <div className="overflow-x-auto">
-            <Table>
-                <TableHeader>
-                    <TableRow className="bg-yellow-300 hover:bg-yellow-300">
-                        <TableHead className="font-bold text-black text-xs px-1 sm:px-2 py-1 text-center">Subject</TableHead>
-                        <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Total</TableHead>
-                        <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Obtained</TableHead>
-                        <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Percentage</TableHead>
-                        <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Status</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {result.subjects.map((subjectResult) => (
-                        <TableRow key={subjectResult.subject}>
-                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.subject}</TableCell>
-                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.totalMarks}</TableCell>
-                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.obtainedMarks}</TableCell>
-                            <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", subjectResult.percentage >= 80 && "text-pink-600 font-bold text-base")}>{subjectResult.percentage.toFixed(0)}%</TableCell>
-                            <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", subjectResult.status === 'Passed' ? 'text-green-600' : 'text-red-600')}>
-                                {subjectResult.status}
+const DetailedResultTable = ({ result }: { result: ExamResult }) => {
+    const examDate = result.examDate && (result.examDate as any).seconds 
+        ? new Date((result.examDate as any).seconds * 1000) 
+        : new Date(result.examDate as any);
+
+    return (
+        <div className="border rounded-lg overflow-hidden my-4 animate-fade-in-up">
+            <h3 className="p-3 font-bold text-center text-md bg-muted">
+                Result for Level {result.level} (Date: {format(examDate, 'dd/MM/yyyy')})
+            </h3>
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="bg-yellow-300 hover:bg-yellow-300">
+                            <TableHead className="font-bold text-black text-xs px-1 sm:px-2 py-1 text-center">Subject</TableHead>
+                            <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Total</TableHead>
+                            <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Obtained</TableHead>
+                            <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Percentage</TableHead>
+                            <TableHead className="font-bold text-black text-xs text-center px-1 sm:px-2 py-1">Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {result.subjects.map((subjectResult) => (
+                            <TableRow key={subjectResult.subject}>
+                                <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.subject}</TableCell>
+                                <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.totalMarks}</TableCell>
+                                <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{subjectResult.obtainedMarks}</TableCell>
+                                <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", subjectResult.percentage >= 80 && "text-pink-600 font-bold text-base")}>{subjectResult.percentage.toFixed(0)}%</TableCell>
+                                <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", subjectResult.status === 'Passed' ? 'text-green-600' : 'text-red-600')}>
+                                    {subjectResult.status}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        <TableRow className="font-bold bg-muted/80">
+                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">Total</TableCell>
+                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalMarks}</TableCell>
+                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalObtainedMarks}</TableCell>
+                            <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", result.totalPercentage >= 80 && "text-pink-600 font-bold text-base")}>{result.totalPercentage.toFixed(0)}%</TableCell>
+                            <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>
+                                {result.overallStatus}
                             </TableCell>
                         </TableRow>
-                    ))}
-                    <TableRow className="font-bold bg-muted/80">
-                        <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">Total</TableCell>
-                        <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalMarks}</TableCell>
-                        <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.totalObtainedMarks}</TableCell>
-                        <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", result.totalPercentage >= 80 && "text-pink-600 font-bold text-base")}>{result.totalPercentage.toFixed(0)}%</TableCell>
-                        <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>
-                            {result.overallStatus}
-                        </TableCell>
-                    </TableRow>
-                </TableBody>
-            </Table>
+                    </TableBody>
+                </Table>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 function ExamHistoryContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const firestore = useFirestore();
+    const { user } = useUser();
     const [activeView, setActiveView] = useState<'recent' | 'previous' | null>(null);
     const [isClient, setIsClient] = useState(false);
 
@@ -67,30 +76,18 @@ function ExamHistoryContent() {
         setIsClient(true);
     }, []);
 
-    const [userExamHistory, setUserExamHistory] = useState<ExamResult[]>(() => 
-        mockExamResults.filter(result => result.userId === currentUser.id)
-        .sort((a, b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime())
-    );
-    
-    useEffect(() => {
-        const lastResultString = sessionStorage.getItem('lastExamResult');
-        if (lastResultString) {
-            try {
-                const lastResult = JSON.parse(lastResultString);
-                 setUserExamHistory(prev => {
-                    const isAlreadyAdded = prev.some(r => r.id === lastResult.id);
-                    if (!isAlreadyAdded) {
-                        return [lastResult, ...prev].sort((a, b) => new Date(b.examDate).getTime() - new Date(a.examDate).getTime());
-                    }
-                    return prev;
-                });
-            } catch (e) {
-                console.error("Failed to parse last exam result from session storage", e);
-            }
-        }
-    }, []); 
+    const resultsQuery = useMemo(() => {
+        if (!firestore || !user) return null;
+        return query(
+            collection(firestore, 'results'),
+            where('userId', '==', user.uid),
+            orderBy('examDate', 'desc')
+        );
+    }, [firestore, user]);
 
-    const lastResult = userExamHistory.length > 0 ? userExamHistory[0] : null;
+    const { data: userExamHistory, loading } = useCollection<ExamResult>(resultsQuery);
+    
+    const lastResult = userExamHistory && userExamHistory.length > 0 ? userExamHistory[0] : null;
 
     useEffect(() => {
         const viewParam = searchParams.get('view');
@@ -108,7 +105,7 @@ function ExamHistoryContent() {
         }
     };
 
-    if (!isClient) {
+    if (!isClient || loading) {
       return (
         <div className="p-2 md:p-4 lg:p-6">
             <div className="mb-2">
@@ -116,23 +113,13 @@ function ExamHistoryContent() {
             </div>
             <Card>
                 <CardHeader className="p-4">
-                    <div className="flex items-center gap-2">
-                        <Skeleton className="h-6 w-6 rounded-full" />
-                        <Skeleton className="h-7 w-48" />
-                    </div>
+                    <Skeleton className="h-7 w-48" />
                     <Skeleton className="h-4 w-64 mt-2" />
-                    <div className="pt-4 flex flex-wrap justify-center gap-2">
-                        <Skeleton className="h-10 w-36" />
-                        <Skeleton className="h-10 w-36" />
-                    </div>
                 </CardHeader>
                 <CardContent className="px-2 sm:px-4">
                     <Skeleton className="h-24 w-full" />
                 </CardContent>
             </Card>
-            <div className="mt-4 flex justify-center">
-                <Skeleton className="h-10 w-24" />
-            </div>
         </div>
       )
     }
@@ -160,19 +147,19 @@ function ExamHistoryContent() {
                         <Button size="sm" onClick={() => setActiveView('recent')} disabled={!lastResult} className="bg-primary/80 hover:bg-primary/90 h-auto px-3 py-1.5 text-xs">
                             Recent Exam Result
                         </Button>
-                        <Button size="sm" onClick={() => setActiveView('previous')} disabled={userExamHistory.length === 0} className="bg-primary/80 hover:bg-primary/90 h-auto px-3 py-1.5 text-xs">
+                        <Button size="sm" onClick={() => setActiveView('previous')} disabled={!userExamHistory || userExamHistory.length === 0} className="bg-primary/80 hover:bg-primary/90 h-auto px-3 py-1.5 text-xs">
                             Previous Results
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="px-2 sm:px-4">
-                    {activeView === null && userExamHistory.length === 0 && (
+                    {(!userExamHistory || userExamHistory.length === 0) && (
                          <p className="text-muted-foreground text-center py-8">You have no exam history yet.</p>
                     )}
                     
                     {activeView === 'recent' && lastResult && <DetailedResultTable result={lastResult} />}
 
-                    {activeView === 'previous' && userExamHistory.length > 0 && (
+                    {activeView === 'previous' && userExamHistory && userExamHistory.length > 0 && (
                         <div className="overflow-x-auto mt-4 animate-fade-in-up">
                             <Table>
                                 <TableHeader>
@@ -184,24 +171,26 @@ function ExamHistoryContent() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {userExamHistory.map(result => (
-                                        <TableRow key={result.id}>
-                                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{format(new Date(result.examDate), 'dd/MM/yyyy')}</TableCell>
-                                            <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.level}</TableCell>
-                                            <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", result.totalPercentage >= 80 && "text-pink-600 font-bold text-base")}>
-                                                {result.totalPercentage.toFixed(0)}%
-                                            </TableCell>
-                                            <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>
-                                                {result.overallStatus}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {userExamHistory.map(result => {
+                                        const examDate = result.examDate && (result.examDate as any).seconds 
+                                            ? new Date((result.examDate as any).seconds * 1000) 
+                                            : new Date(result.examDate as any);
+                                        return (
+                                            <TableRow key={result.id}>
+                                                <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{format(examDate, 'dd/MM/yyyy')}</TableCell>
+                                                <TableCell className="text-center px-1 sm:px-2 py-1 text-xs">{result.level}</TableCell>
+                                                <TableCell className={cn("text-center font-medium px-1 sm:px-2 py-1 text-xs", result.totalPercentage >= 80 && "text-pink-600 font-bold text-base")}>
+                                                    {result.totalPercentage.toFixed(0)}%
+                                                </TableCell>
+                                                <TableCell className={cn("text-center font-bold px-1 sm:px-2 py-1 text-xs", result.overallStatus === 'Passed' ? 'text-green-600' : 'text-red-600')}>
+                                                    {result.overallStatus}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </div>
-                    )}
-                     {activeView === 'previous' && userExamHistory.length === 0 && (
-                         <p className="text-muted-foreground text-center py-8">You have no exam history yet.</p>
                     )}
                 </CardContent>
             </Card>
@@ -215,29 +204,8 @@ function ExamHistoryContent() {
 export default function ExamHistoryPage() {
     return (
         <Suspense fallback={
-            <div className="p-2 md:p-4 lg:p-6">
-                <div className="mb-2">
-                    <Skeleton className="h-9 w-40" />
-                </div>
-                <Card>
-                    <CardHeader className="p-4">
-                        <div className="flex items-center gap-2">
-                            <Skeleton className="h-6 w-6 rounded-full" />
-                            <Skeleton className="h-7 w-48" />
-                        </div>
-                        <Skeleton className="h-4 w-64 mt-2" />
-                        <div className="pt-4 flex flex-wrap justify-center gap-2">
-                            <Skeleton className="h-10 w-36" />
-                            <Skeleton className="h-10 w-36" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="px-2 sm:px-4">
-                        <Skeleton className="h-24 w-full" />
-                    </CardContent>
-                </Card>
-                <div className="mt-4 flex justify-center">
-                    <Skeleton className="h-10 w-24" />
-                </div>
+            <div className="p-2 md:p-4 lg:p-6 text-center">
+                <Skeleton className="h-[400px] w-full" />
             </div>
         }>
             <ExamHistoryContent />

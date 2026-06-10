@@ -1,17 +1,26 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Heart, Crown } from 'lucide-react';
 import { PaymentGateway } from '@/components/payment-gateway';
+import { useFirestore, useUser } from '@/firebase';
+import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function PatronPage() {
   const [amount, setAmount] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
 
   const handleDonate = () => {
     if (amount && parseFloat(amount) > 0) {
@@ -20,11 +29,35 @@ export default function PatronPage() {
   };
 
   const handlePaymentSuccess = () => {
-    setShowSuccess(true);
-    setAmount('');
-    setTimeout(() => {
-        setShowSuccess(false);
-    }, 5000); // Hide success message after 5 seconds
+    if (!firestore || !user) return;
+
+    const donationAmount = parseFloat(amount);
+    const txnData = {
+        userId: user.uid,
+        userName: user.displayName || 'Anonymous',
+        amount: donationAmount,
+        type: 'Patronage',
+        date: serverTimestamp(),
+        status: 'Completed'
+    };
+
+    const txnsCollection = collection(firestore, 'transactions');
+    addDoc(txnsCollection, txnData)
+      .then(() => {
+        setShowSuccess(true);
+        setAmount('');
+        setTimeout(() => {
+            setShowSuccess(false);
+        }, 5000);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: txnsCollection.path,
+          operation: 'create',
+          requestResourceData: txnData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   return (
@@ -94,7 +127,6 @@ export default function PatronPage() {
           </CardContent>
         </Card>
 
-        {/* Payment Options Info */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="text-[#722F37] text-lg">Payment Options</CardTitle>
