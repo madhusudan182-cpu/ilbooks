@@ -1,18 +1,23 @@
+
 'use client';
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link"
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Camera } from "lucide-react"
+import { Camera, Loader2 } from "lucide-react"
 import { thanasByDistrict } from "@/lib/location-data";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { useUser, useFirestore } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 const districts = Object.keys(thanasByDistrict);
 
@@ -23,15 +28,31 @@ const hobbiesList = [
 ];
 
 export default function CreateProfilePage() {
+  const { user, loading: authLoading } = useUser();
   const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedThana, setSelectedThana] = useState("");
   const [thanas, setThanas] = useState<string[]>([]);
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
+  const [profession, setProfession] = useState("");
+  const [institution, setInstitution] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, authLoading, router]);
 
   const handleDistrictChange = (district: string) => {
     setSelectedDistrict(district);
     setThanas(thanasByDistrict[district] || []);
+    setSelectedThana("");
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +65,38 @@ export default function CreateProfilePage() {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !firestore) return;
+
+    setIsSaving(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, {
+        profession,
+        institution,
+        district: selectedDistrict,
+        thana: selectedThana,
+        location: `${selectedThana}, ${selectedDistrict}, Bangladesh`,
+        hobbies: selectedHobbies,
+        avatarUrl: avatarUrl || `https://picsum.photos/seed/${user.uid}/100/100`,
+      });
+
+      toast({ title: "Profile updated successfully!" });
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin" /></div>;
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -66,11 +119,11 @@ export default function CreateProfilePage() {
           <CardDescription>Tell us a bit about yourself to get started.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6">
+          <form className="grid gap-6" onSubmit={handleSaveProfile}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="profession">Profession</Label>
-                <Select>
+                <Select value={profession} onValueChange={setProfession}>
                   <SelectTrigger id="profession">
                     <SelectValue placeholder="Select your profession" />
                   </SelectTrigger>
@@ -83,13 +136,13 @@ export default function CreateProfilePage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="institution">Current or Last Educational Institution</Label>
-                <Input id="institution" placeholder="e.g., University of Dhaka" />
+                <Input id="institution" placeholder="e.g., University of Dhaka" value={institution} onChange={(e) => setInstitution(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="grid gap-2">
                 <Label htmlFor="district">District</Label>
-                <Select onValueChange={handleDistrictChange}>
+                <Select value={selectedDistrict} onValueChange={handleDistrictChange}>
                   <SelectTrigger id="district">
                     <SelectValue placeholder="Select your district" />
                   </SelectTrigger>
@@ -102,7 +155,7 @@ export default function CreateProfilePage() {
               </div>
                <div className="grid gap-2">
                 <Label htmlFor="thana">Thana</Label>
-                <Select disabled={!selectedDistrict}>
+                <Select disabled={!selectedDistrict} value={selectedThana} onValueChange={setSelectedThana}>
                     <SelectTrigger id="thana">
                         <SelectValue placeholder="Select your thana" />
                     </SelectTrigger>
@@ -151,8 +204,9 @@ export default function CreateProfilePage() {
             </div>
             <div className="flex justify-end gap-2">
                 <Button variant="outline" asChild><Link href="/dashboard">Skip</Link></Button>
-                <Button type="submit" className="font-headline" asChild>
-                    <Link href="/dashboard">Save Profile</Link>
+                <Button type="submit" className="font-headline" disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Profile
                 </Button>
             </div>
           </form>

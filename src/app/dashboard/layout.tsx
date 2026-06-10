@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Gift, Bell, Shield, Package } from 'lucide-react';
+import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Bell, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -18,10 +19,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { currentUser } from '@/lib/auth';
+import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
+import type { User as UserProfile } from '@/lib/types';
 
 type NavItem = {
   href: string;
@@ -37,7 +40,6 @@ const allNavItems: NavItem[] = [
   { href: '/dashboard/patron', title: 'Become a Patron', icon: Crown },
   { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
   { href: '/dashboard/social', title: 'Social Circle', icon: Users },
-  { href: '/dashboard/new-arrivals', title: 'New Arrivals', icon: Gift },
   { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell },
   { href: '/dashboard/admin', title: 'Admin', icon: Shield, adminOnly: true },
 ];
@@ -59,14 +61,23 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const { user, loading: authLoading } = useUser();
+  const firestore = useFirestore();
+  const userRef = React.useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userRef);
+
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
-  
-  const isAdmin = currentUser.isAdmin || false;
 
   React.useEffect(() => {
     setIsClient(true);
-  }, []);
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, authLoading, router]);
+
+  const isAdmin = profile?.isAdmin || false;
 
   const notifications = [
     {
@@ -84,27 +95,25 @@ export default function DashboardLayout({
   ];
   const notificationCount = notifications.length;
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+
+  if (!isClient || authLoading || profileLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user || !profile) return null;
+
   return (
     <div className="flex min-h-screen w-full flex-col">
        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="flex h-12 items-center gap-4 px-4 md:px-6" suppressHydrationWarning>
-          {!isClient && (
-            <>
-              {/* Static placeholder for SSR to prevent layout shift */}
-              <div className="flex items-center gap-2">
-                 <Link href="/dashboard" className="flex items-center gap-2 text-pink-500">
-                    <BookOpen className="w-6 h-6" />
-                    <span className="font-headline font-semibold">ILBooks</span>
-                 </Link>
-              </div>
-              <div className="ml-auto flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-muted" />
-                <Button variant="outline" size="sm" className="hidden md:block w-24"> </Button>
-              </div>
-            </>
-          )}
-          {isClient && (
-            <>
+        <div className="flex h-12 items-center gap-4 px-4 md:px-6">
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button
@@ -192,17 +201,17 @@ export default function DashboardLayout({
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={currentUser.avatarUrl} alt="User avatar" />
-                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={profile.avatarUrl} alt="User avatar" />
+                        <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{currentUser.name}</p>
+                        <p className="text-sm font-medium leading-none">{profile.name}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {currentUser.id}@example.com
+                          {profile.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -232,26 +241,16 @@ export default function DashboardLayout({
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>No</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => router.push('/login')}>Yes</AlertDialogAction>
+                      <AlertDialogAction onClick={handleLogout}>Yes</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
-            </>
-          )}
         </div>
       </header>
 
-      <nav className="sticky top-12 z-10 w-full border-b bg-background/95 backdrop-blur-sm" suppressHydrationWarning>
-          <div className="mx-auto flex h-10 items-center justify-center gap-1 p-2" suppressHydrationWarning>
-            {!isClient && (
-                <>
-                    {[...Array(iconNavItems.length + 1)].map((_, i) => (
-                        <div key={i} className="h-10 w-10 rounded-lg bg-muted" />
-                    ))}
-                </>
-            )}
-            {isClient && (
+      <nav className="sticky top-12 z-10 w-full border-b bg-background/95 backdrop-blur-sm">
+          <div className="mx-auto flex h-10 items-center justify-center gap-1 p-2">
                 <TooltipProvider>
                 {[...iconNavItems, { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }].map((item) => {
                     if (item.title === 'Notifications') {
@@ -316,7 +315,6 @@ export default function DashboardLayout({
                     </Tooltip>
                 )})}
                 </TooltipProvider>
-            )}
           </div>
         </nav>
 

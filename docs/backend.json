@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -7,8 +8,15 @@
       "properties": {
         "name": { "type": "string", "description": "The user's full name." },
         "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "mobile": { "type": "string", "description": "The user's mobile number." },
         "level": { "type": "number", "description": "The user's competition level." },
-        "isAdmin": { "type": "boolean", "description": "Flag to indicate if user is an admin." }
+        "isAdmin": { "type": "boolean", "description": "Flag to indicate if user is an admin." },
+        "profession": { "type": "string" },
+        "institution": { "type": "string" },
+        "district": { "type": "string" },
+        "thana": { "type": "string" },
+        "hobbies": { "type": "array", "items": { "type": "string" } },
+        "avatarUrl": { "type": "string" }
       },
       "required": ["name", "email"]
     },
