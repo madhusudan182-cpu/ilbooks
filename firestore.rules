@@ -2,45 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Force deployment trigger: 2025-06-10T10:00:00Z
-    // This rule allows all read and write operations for prototyping.
-    
-    match /users/{userId} {
-      allow read, write: if true;
-    }
-    
-    match /conversations/{convoId} {
-      allow read, write: if true;
-      match /messages/{messageId} {
-        allow read, write: if true;
-      }
-    }
-    
-    match /results/{id} {
-      allow read, write: if true;
-    }
-    
-    match /transactions/{id} {
-      allow read, write: if true;
-    }
-
-    match /orders/{id} {
-      allow read, write: if true;
-    }
-    
-    match /books/{id} {
-      allow read, write: if true;
-    }
-    
-    match /questions/{id} {
-      allow read, write: if true;
-    }
-
-    match /syllabi/{id} {
-      allow read, write: if true;
-    }
-
-    // Global fallback for any other collections
+    // Force deployment trigger: 2025-06-10T12:30:00Z
+    // This rule allows all read and write operations for the prototyping phase.
     match /{document=**} {
       allow read, write: if true;
     }

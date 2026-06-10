@@ -37,7 +37,8 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!firestore || !user) return;
 
-    // Simplified query to avoid index requirements and potential false-positive permission errors
+    // We use a simple query to avoid index requirements.
+    // Sorting is done in memory to prevent "Permission Denied" errors that are actually "Missing Index" errors.
     const convosQuery = query(
       collection(firestore, 'conversations'),
       where('participants', 'array-contains', user.uid)
@@ -50,15 +51,18 @@ export default function MessagesPage() {
           id: doc.id,
           ...doc.data()
         }));
-        // Sort in memory instead of in the query to avoid complex indexing
-        const sortedConvos = convos.sort((a, b) => {
-          const timeA = (a as any).updatedAt?.seconds || 0;
-          const timeB = (b as any).updatedAt?.seconds || 0;
+        
+        // Sort in memory by updatedAt descending
+        const sortedConvos = convos.sort((a: any, b: any) => {
+          const timeA = a.updatedAt?.seconds || 0;
+          const timeB = b.updatedAt?.seconds || 0;
           return timeB - timeA;
         });
         setConversations(sortedConvos);
       },
       async (err) => {
+        // If it's a real permission error, emit it. 
+        // Otherwise, log the raw error to help debug index issues.
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'conversations',
@@ -66,7 +70,7 @@ export default function MessagesPage() {
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
         } else {
-          console.error("Chat Conversations Sync Error:", err);
+          console.error("Chat Sync Error:", err);
         }
       }
     );
@@ -102,7 +106,7 @@ export default function MessagesPage() {
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
         } else {
-          console.error("Chat Messages Sync Error:", err);
+          console.error("Message Sync Error:", err);
         }
       }
     );
@@ -221,12 +225,12 @@ export default function MessagesPage() {
         <ScrollArea className="flex-1">
           {conversations.map(conv => {
              const lastMsgTime = conv.updatedAt?.seconds ? format(new Date(conv.updatedAt.seconds * 1000), 'MMM d') : '';
+             const partnerId = conv.participants.find((p: string) => p !== user?.uid);
              return (
               <div
                 key={conv.id}
                 role="button"
                 onClick={() => {
-                  const partnerId = conv.participants.find((p: string) => p !== user?.uid);
                   router.push(`/dashboard/messages?chatWith=${partnerId}`);
                 }}
                 className={cn(
@@ -239,7 +243,7 @@ export default function MessagesPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline">
-                      <p className="font-semibold truncate">Chat Session</p>
+                      <p className="font-semibold truncate">Conversation</p>
                       <span className="text-[10px] text-muted-foreground">{lastMsgTime}</span>
                     </div>
                     <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
@@ -247,6 +251,11 @@ export default function MessagesPage() {
               </div>
             );
           })}
+          {conversations.length === 0 && (
+              <div className="p-4 text-center text-muted-foreground text-sm">
+                  No active chats. Start one from the Social page!
+              </div>
+          )}
         </ScrollArea>
       </aside>
 
