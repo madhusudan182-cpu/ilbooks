@@ -1,29 +1,42 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Book, ListChecks, BookOpen, Package, ClipboardList, Landmark, BarChart, Server, CalendarClock } from "lucide-react";
+import { Shield, Book, ListChecks, BookOpen, Package, ClipboardList, Landmark, BarChart, Server, CalendarClock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { currentUser } from "@/lib/auth";
+import { useEffect, useState, useMemo } from "react";
+import { useUser, useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
+import type { User as UserProfile } from "@/lib/types";
 
 export default function AdminPage() {
     const router = useRouter();
-    // In a real app, this user would come from an authentication session.
-    // To test non-admin protection, you can now change the user in src/lib/auth.ts
+    const { user, loading: authLoading } = useUser();
+    const firestore = useFirestore();
+    const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+    const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userRef);
+
     const [isClient, setIsClient] = useState(false);
     
+    const isAdmin = profile?.isAdmin || user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
+
     useEffect(() => {
       setIsClient(true);
-        if (!currentUser.isAdmin) {
+    }, []);
+
+    useEffect(() => {
+        if (!authLoading && !profileLoading && isClient && !isAdmin) {
             router.push('/dashboard');
         }
-    }, [router]);
+    }, [isAdmin, authLoading, profileLoading, isClient, router]);
     
-    if (!currentUser.isAdmin || !isClient) {
-        return null; // Or a loading spinner while redirecting
+    if (authLoading || profileLoading || !isClient) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
+
+    if (!isAdmin) return null;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">

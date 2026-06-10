@@ -77,7 +77,7 @@ export default function DashboardLayout({
     }
   }, [user, authLoading, router]);
 
-  const isAdmin = profile?.isAdmin || false;
+  const isAdmin = profile?.isAdmin || user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
 
   const notifications = [
     {

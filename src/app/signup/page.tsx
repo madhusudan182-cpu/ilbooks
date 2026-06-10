@@ -51,12 +51,13 @@ export default function SignupPage() {
       const user = userCredential.user;
 
       // Create profile in Firestore
+      // madhusudan.182@gmail.com is set as admin
       await setDoc(doc(firestore, 'users', user.uid), {
         name,
         email,
         mobile,
         level: 0.0,
-        isAdmin: false,
+        isAdmin: email.toLowerCase() === 'madhusudan.182@gmail.com',
         avatarUrl: `https://picsum.photos/seed/${user.uid}/100/100`,
         hobbies: [],
         location: '',
