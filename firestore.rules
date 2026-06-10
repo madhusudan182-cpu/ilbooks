@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Force deployment trigger: 2024-05-22T10:00:00Z
+    // Force deployment trigger to resolve persistent permission issues: 2025-05-24T12:00:00Z
     
     // Allow read and write access to all documents for simplicity in this prototype.
     // This ensures that all features like chat, results, and transactions work without friction.
@@ -10,7 +10,7 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // Explicitly matching collections for better clarity and ensuring rules deployment
+    // Explicit matches to ensure coverage and clarity
     match /users/{userId} {
       allow read, write: if true;
     }
