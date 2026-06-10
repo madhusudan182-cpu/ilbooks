@@ -5,7 +5,7 @@ export const mockUsers: User[] = [
     id: 'user-1',
     name: 'Alia Rahman',
     avatarUrl: 'https://picsum.photos/seed/av1/100/100',
-    level: 5.5,
+    level: 0.0,
     institution: 'University of Dhaka',
     location: 'Dhaka, Bangladesh',
     hobbies: ['Classic Literature', 'Poetry', 'History'],
@@ -286,7 +286,7 @@ export const mockSignUpData: Record<'day' | 'week' | 'month' | 'lifetime', SignU
 
 export const mockTopUsers: TopUser[] = [
     { id: 'user-3', name: 'Cathy Liu', avatarUrl: 'https://picsum.photos/seed/av3/100/100', level: 3.0, progress: 5 },
-    { id: 'user-1', name: 'Alia Rahman', avatarUrl: 'https://picsum.photos/seed/av1/100/100', level: 2.1, progress: 3 },
+    { id: 'user-1', name: 'Alia Rahman', avatarUrl: 'https://picsum.photos/seed/av1/100/100', level: 0.0, progress: 3 },
     { id: 'user-2', name: 'Ben Carter', avatarUrl: 'https://picsum.photos/seed/av2/100/100', level: 1.5, progress: 2 },
     { id: 'user-4', name: 'David Hasan', avatarUrl: 'https://picsum.photos/seed/av4/100/100', level: 0.5, progress: 1 },
 ];
