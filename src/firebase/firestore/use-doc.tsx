@@ -37,13 +37,18 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null) {
           setState({ data: null, loading: false, error: null });
         }
       },
-      async (err) => {
-        const permissionError = new FirestorePermissionError({
-            path: ref.path,
-            operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setState({ data: null, loading: false, error: permissionError });
+      async (err: any) => {
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+              path: ref.path,
+              operation: 'get',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          setState({ data: null, loading: false, error: permissionError });
+        } else {
+          console.error("Firestore Document Listener Error:", err);
+          setState({ data: null, loading: false, error: err });
+        }
       }
     );
 

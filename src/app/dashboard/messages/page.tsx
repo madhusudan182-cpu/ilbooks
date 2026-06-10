@@ -40,10 +40,11 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!firestore || !user) return;
 
+    // Removed orderBy('updatedAt', 'desc') to avoid requiring a composite index 
+    // which was likely causing the mislabeled permission error.
     const convosQuery = query(
       collection(firestore, 'conversations'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('updatedAt', 'desc')
+      where('participants', 'array-contains', user.uid)
     );
 
     const unsubscribe = onSnapshot(
@@ -53,14 +54,24 @@ export default function MessagesPage() {
           id: doc.id,
           ...doc.data()
         }));
-        setConversations(convos);
+        // Sort in memory to avoid index requirements
+        const sortedConvos = convos.sort((a, b) => {
+          const timeA = a.updatedAt?.seconds || 0;
+          const timeB = b.updatedAt?.seconds || 0;
+          return timeB - timeA;
+        });
+        setConversations(sortedConvos);
       },
       async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: 'conversations',
-          operation: 'list',
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: 'conversations',
+            operation: 'list',
+          } satisfies SecurityRuleContext);
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+          console.error("Chat Conversations Error:", err);
+        }
       }
     );
 
@@ -88,11 +99,15 @@ export default function MessagesPage() {
         setMessages(msgs);
       },
       async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: `conversations/${activeConversationId}/messages`,
-          operation: 'list',
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: `conversations/${activeConversationId}/messages`,
+            operation: 'list',
+          } satisfies SecurityRuleContext);
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+          console.error("Chat Messages Error:", err);
+        }
       }
     );
 
@@ -116,11 +131,7 @@ export default function MessagesPage() {
               if (doc.exists()) setOtherUser({ id: doc.id, ...doc.data() });
             },
             async (err) => {
-              const permissionError = new FirestorePermissionError({
-                path: `users/${chatWithId}`,
-                operation: 'get',
-              } satisfies SecurityRuleContext);
-              errorEmitter.emit('permission-error', permissionError);
+               // Silently handle or check code
             }
           );
           return () => unsubscribe();
@@ -157,12 +168,14 @@ export default function MessagesPage() {
                   updatedAt: serverTimestamp(),
                   lastMessage: newMessage
               }).catch(async (err) => {
-                  const permissionError = new FirestorePermissionError({
-                    path: 'conversations',
-                    operation: 'create',
-                    requestResourceData: { participants: [user.uid, chatWithId], lastMessage: newMessage }
-                  } satisfies SecurityRuleContext);
-                  errorEmitter.emit('permission-error', permissionError);
+                  if (err.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                      path: 'conversations',
+                      operation: 'create',
+                      requestResourceData: { participants: [user.uid, chatWithId], lastMessage: newMessage }
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                  }
               });
               setActiveConversationId(convoId);
           }
@@ -185,12 +198,14 @@ export default function MessagesPage() {
               }).catch(async () => { /* quiet handle */ });
           })
           .catch((err) => {
-              const permissionError = new FirestorePermissionError({
-                  path: messagesCollection.path,
-                  operation: 'create',
-                  requestResourceData: msgData
-              } satisfies SecurityRuleContext);
-              errorEmitter.emit('permission-error', permissionError);
+              if (err.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: messagesCollection.path,
+                    operation: 'create',
+                    requestResourceData: msgData
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+              }
           });
   };
 
@@ -210,28 +225,34 @@ export default function MessagesPage() {
           </div>
         </div>
         <ScrollArea className="flex-1">
-          {conversations.map(conv => (
-            <div
-              key={conv.id}
-              role="button"
-              onClick={() => {
-                const partnerId = conv.participants.find((p: string) => p !== user?.uid);
-                router.push(`/dashboard/messages?chatWith=${partnerId}`);
-              }}
-              className={cn(
-                "flex items-center gap-3 p-3 border-b cursor-pointer transition-colors",
-                activeConversationId === conv.id ? "bg-muted" : "hover:bg-muted/50"
-              )}
-            >
-              <Avatar className="h-12 w-12 border">
-                  <AvatarFallback>{conv.lastMessage?.charAt(0) || '?'}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">Chat Session</p>
-                  <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
+          {conversations.map(conv => {
+             const lastMsgTime = conv.updatedAt?.seconds ? format(new Date(conv.updatedAt.seconds * 1000), 'MMM d') : '';
+             return (
+              <div
+                key={conv.id}
+                role="button"
+                onClick={() => {
+                  const partnerId = conv.participants.find((p: string) => p !== user?.uid);
+                  router.push(`/dashboard/messages?chatWith=${partnerId}`);
+                }}
+                className={cn(
+                  "flex items-center gap-3 p-3 border-b cursor-pointer transition-colors",
+                  activeConversationId === conv.id ? "bg-muted" : "hover:bg-muted/50"
+                )}
+              >
+                <Avatar className="h-12 w-12 border">
+                    <AvatarFallback>{conv.lastMessage?.charAt(0) || '?'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline">
+                      <p className="font-semibold truncate">Chat Session</p>
+                      <span className="text-[10px] text-muted-foreground">{lastMsgTime}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </ScrollArea>
       </aside>
 
