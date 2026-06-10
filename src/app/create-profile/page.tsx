@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from "react";
@@ -58,6 +57,16 @@ export default function CreateProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      if (file.size > 800000) {
+        toast({
+            variant: "destructive",
+            title: "File too large",
+            description: "Please select an image smaller than 800KB.",
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (loadEvent) => {
         setAvatarUrl(loadEvent.target?.result as string);
@@ -78,12 +87,12 @@ export default function CreateProfilePage() {
         institution,
         district: selectedDistrict,
         thana: selectedThana,
-        location: `${selectedThana}, ${selectedDistrict}, Bangladesh`,
+        location: selectedThana && selectedDistrict ? `${selectedThana}, ${selectedDistrict}, Bangladesh` : "",
         hobbies: selectedHobbies,
         avatarUrl: avatarUrl || `https://picsum.photos/seed/${user.uid}/100/100`,
       });
 
-      toast({ title: "Profile updated successfully!" });
+      toast({ title: "Profile created successfully!" });
       router.push('/dashboard');
     } catch (error: any) {
       toast({

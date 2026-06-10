@@ -38,18 +38,18 @@ export default function ProfilePage() {
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // Initialize form state only when not editing or when profile first loads
   useEffect(() => {
-    if (profile) {
+    if (profile && !isEditing) {
       setEditedProfile(profile);
     }
-  }, [profile]);
+  }, [profile, isEditing]);
 
   const selectedDistrict = editedProfile.district || "";
   const thanas = thanasByDistrict[selectedDistrict] || [];
 
   const handleDistrictChange = (district: string) => {
-    handleProfileChange('district', district);
-    handleProfileChange('thana', "");
+    setEditedProfile(prev => ({ ...prev, district, thana: "" }));
   };
 
   const handleProfileChange = (field: keyof User, value: any) => {
@@ -59,6 +59,17 @@ export default function ProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Basic size check for Firestore base64 storage (limit 1MB)
+      if (file.size > 800000) {
+        toast({
+            variant: "destructive",
+            title: "File too large",
+            description: "Please select an image smaller than 800KB.",
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (loadEvent) => {
         handleProfileChange('avatarUrl', loadEvent.target?.result as string);
@@ -74,15 +85,19 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       const docRef = doc(firestore, 'users', user.uid);
-      await updateDoc(docRef, {
-        name: editedProfile.name,
-        institution: editedProfile.institution,
-        district: editedProfile.district,
-        thana: editedProfile.thana,
-        location: editedProfile.thana ? `${editedProfile.thana}, ${editedProfile.district}, Bangladesh` : editedProfile.location,
-        hobbies: editedProfile.hobbies,
-        avatarUrl: editedProfile.avatarUrl,
-      });
+      const updateData = {
+        name: editedProfile.name || "",
+        institution: editedProfile.institution || "",
+        district: editedProfile.district || "",
+        thana: editedProfile.thana || "",
+        location: editedProfile.thana && editedProfile.district 
+            ? `${editedProfile.thana}, ${editedProfile.district}, Bangladesh` 
+            : (editedProfile.location || ""),
+        hobbies: editedProfile.hobbies || [],
+        avatarUrl: editedProfile.avatarUrl || "",
+      };
+
+      await updateDoc(docRef, updateData);
 
       toast({ title: "Profile updated successfully!" });
       setIsEditing(false);

@@ -59,10 +59,10 @@ export default function HomePage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-4">
       <Card id="post">
-        <CardContent className="p-1">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={profile.avatarUrl} alt="User" />
+        <CardContent className="p-2 pt-4">
+          <div className="flex items-start gap-3">
+            <Avatar className="h-10 w-10 border">
+              <AvatarImage src={profile.avatarUrl} alt={profile.name} />
               <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="w-full">
@@ -71,7 +71,7 @@ export default function HomePage() {
                   rows={1}
                   className={cn(
                     "text-sm transition-all duration-200 ease-in-out p-1 border-0 focus-visible:ring-0 resize-none h-auto min-h-0",
-                    isPosting ? "min-h-[36px]" : ""
+                    isPosting ? "min-h-[60px] border rounded-md p-2 mt-1" : ""
                   )}
                   placeholder="What's on your mind, bookworm?"
                   onFocus={() => setIsPosting(true)}
@@ -83,7 +83,7 @@ export default function HomePage() {
           </div>
         </CardContent>
         {isPosting && (
-          <CardFooter className="flex items-center justify-between p-1 border-t">
+          <CardFooter className="flex items-center justify-between p-2 border-t">
             <div className="flex">
                 <input type="file" ref={imageInputRef} accept="image/*" className="hidden" />
                 <input type="file" ref={videoInputRef} accept="video/*" className="hidden" />
@@ -96,11 +96,11 @@ export default function HomePage() {
                     <span className="sr-only">Add video</span>
                 </Button>
             </div>
-            <div className="flex items-center gap-1">
-                <Button size="sm" className="h-7 bg-pink-500 text-white hover:bg-pink-600" onClick={handleCancel}>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={handleCancel}>
                 Cancel
                 </Button>
-                <Button size="sm" className="h-7">Post</Button>
+                <Button size="sm" className="bg-pink-500 hover:bg-pink-600 text-white">Post</Button>
             </div>
           </CardFooter>
         )}
@@ -108,19 +108,24 @@ export default function HomePage() {
 
       <div className="space-y-4">
         {mockPosts.map((post) => {
+          // If the post is by the logged-in user, use the real-time profile data
           const isMe = user && post.author.id === user.uid;
+          const authorName = isMe ? profile.name : post.author.name;
+          const authorAvatar = isMe ? profile.avatarUrl : post.author.avatarUrl;
+          const authorLevel = isMe ? profile.level : post.author.level;
           const profileUrl = isMe ? "/dashboard/profile" : `/dashboard/user/${post.author.id}`;
+          
           return (
             <Card key={post.id} className="overflow-hidden">
-              <CardHeader className="flex flex-row items-center gap-2 p-2">
+              <CardHeader className="flex flex-row items-center gap-3 p-3">
                 <Link href={profileUrl}>
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-10 w-10 border">
                     <AvatarImage
-                      src={post.author.avatarUrl}
-                      alt={post.author.name}
+                      src={authorAvatar}
+                      alt={authorName}
                     />
                     <AvatarFallback>
-                      {post.author.name.charAt(0)}
+                      {authorName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
@@ -128,18 +133,18 @@ export default function HomePage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={profileUrl}
-                      className="font-headline hover:underline text-base"
+                      className="font-headline font-semibold hover:underline text-base"
                     >
-                      {post.author.name}
+                      {authorName}
                     </Link>
-                    <Badge variant="secondary" className="text-xs">Level: {post.author.level.toFixed(1)}</Badge>
+                    <Badge variant="secondary" className="text-xs">Level: {authorLevel.toFixed(1)}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {post.createdAt}
                   </p>
                 </div>
               </CardHeader>
-              <CardContent className="px-2 pt-0 pb-1">
+              <CardContent className="px-3 pt-0 pb-2">
                 <p className="whitespace-pre-wrap text-sm">{post.content}</p>
                 {post.imageUrl && (
                   <div className="mt-2 relative aspect-[16/9] rounded-md overflow-hidden border">
@@ -153,7 +158,7 @@ export default function HomePage() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex justify-between p-0">
+              <CardFooter className="flex justify-between p-1 border-t bg-muted/5">
                 <div className="flex">
                   <Button variant="ghost" size="sm" onClick={handleLike}>
                     <Heart className="w-4 h-4 mr-1" />
@@ -170,8 +175,8 @@ export default function HomePage() {
                 </div>
               </CardFooter>
               {commentingOn === post.id && (
-                <div className="p-2 border-t bg-muted/50">
-                  <Textarea placeholder="Write your comment..." className="mb-2 text-sm" />
+                <div className="p-3 border-t bg-muted/30">
+                  <Textarea placeholder="Write your comment..." className="mb-2 text-sm bg-background" />
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" size="sm" onClick={() => setCommentingOn(null)}>Cancel</Button>
                     <Button size="sm" onClick={() => setCommentingOn(null)}>Comment</Button>
