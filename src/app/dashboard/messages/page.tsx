@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck } from "lucide-react";
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -26,7 +26,6 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
 
@@ -34,49 +33,25 @@ export default function MessagesPage() {
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!firestore || !user) return;
-
-    // Use a simple query on participants to find conversations for the current user.
-    // We avoid complex orderBy in the query itself to prevent "Missing Index" errors
-    // being misreported as "Permission Denied" errors.
-    const convosQuery = query(
+  // Use the standardized hook for conversations
+  const convosQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return query(
       collection(firestore, 'conversations'),
       where('participants', 'array-contains', user.uid)
     );
-
-    const unsubscribe = onSnapshot(
-      convosQuery, 
-      (snapshot) => {
-        const convos = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        
-        // Sort in memory by updatedAt descending to ensure the most recent chat is at the top
-        const sortedConvos = convos.sort((a: any, b: any) => {
-          const timeA = a.updatedAt?.seconds || 0;
-          const timeB = b.updatedAt?.seconds || 0;
-          return timeB - timeA;
-        });
-        setConversations(sortedConvos);
-      },
-      async (err) => {
-        // Detailed logging to help identify if the error is actually index-related
-        console.error("DEBUG: Conversations Listener Error:", err);
-        
-        if (err.code === 'permission-denied') {
-          const permissionError = new FirestorePermissionError({
-            path: 'conversations',
-            operation: 'list',
-          } satisfies SecurityRuleContext);
-          errorEmitter.emit('permission-error', permissionError);
-        }
-      }
-    );
-
-    return () => unsubscribe();
   }, [firestore, user]);
+
+  const { data: rawConversations, loading: convosLoading } = useCollection<any>(convosQuery);
+
+  const conversations = useMemo(() => {
+    if (!rawConversations) return [];
+    return [...rawConversations].sort((a, b) => {
+      const timeA = a.updatedAt?.seconds || 0;
+      const timeB = b.updatedAt?.seconds || 0;
+      return timeB - timeA;
+    });
+  }, [rawConversations]);
 
   useEffect(() => {
     if (!firestore || !activeConversationId) {
@@ -165,7 +140,6 @@ export default function MessagesPage() {
                   updatedAt: serverTimestamp(),
                   lastMessage: newMessage
               }).catch(async (err) => {
-                  console.error("DEBUG: Create Convo Error:", err);
                   if (err.code === 'permission-denied') {
                     const permissionError = new FirestorePermissionError({
                       path: 'conversations',
@@ -196,7 +170,6 @@ export default function MessagesPage() {
               }).catch(() => {});
           })
           .catch((err) => {
-              console.error("DEBUG: Send Message Error:", err);
               if (err.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
                     path: messagesCollection.path,
@@ -226,7 +199,7 @@ export default function MessagesPage() {
         <ScrollArea className="flex-1">
           {conversations.map(conv => {
              const lastMsgTime = conv.updatedAt?.seconds ? format(new Date(conv.updatedAt.seconds * 1000), 'MMM d') : '';
-             const partnerId = conv.participants.find((p: string) => p !== user?.uid);
+             const partnerId = conv.participants?.find((p: string) => p !== user?.uid);
              return (
               <div
                 key={conv.id}
@@ -252,10 +225,16 @@ export default function MessagesPage() {
               </div>
             );
           })}
-          {conversations.length === 0 && (
+          {conversations.length === 0 && !convosLoading && (
               <div className="p-4 text-center text-muted-foreground text-sm">
                   No active chats. Start one from the Social page!
               </div>
+          )}
+          {convosLoading && (
+            <div className="p-4 space-y-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+            </div>
           )}
         </ScrollArea>
       </aside>
