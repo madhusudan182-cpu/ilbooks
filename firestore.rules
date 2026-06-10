@@ -2,9 +2,48 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Force deployment trigger: 2024-05-22T10:00:00Z
+    
     // Allow read and write access to all documents for simplicity in this prototype.
     // This ensures that all features like chat, results, and transactions work without friction.
     match /{document=**} {
+      allow read, write: if true;
+    }
+
+    // Explicitly matching collections for better clarity and ensuring rules deployment
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    match /conversations/{convoId} {
+      allow read, write: if true;
+      
+      match /messages/{msgId} {
+        allow read, write: if true;
+      }
+    }
+    
+    match /results/{resultId} {
+      allow read, write: if true;
+    }
+    
+    match /transactions/{transactionId} {
+      allow read, write: if true;
+    }
+    
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+    
+    match /books/{bookId} {
+      allow read, write: if true;
+    }
+    
+    match /syllabi/{level} {
+      allow read, write: if true;
+    }
+    
+    match /questions/{questionId} {
       allow read, write: if true;
     }
   }
