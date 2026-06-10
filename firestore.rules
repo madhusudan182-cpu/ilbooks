@@ -3,16 +3,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // These rules are open for development purposes as the application
-    // uses a mock authentication system. In a real-world application,
-    // these would be secured based on user authentication and roles.
-    
     match /users/{userId} {
       allow read, write: if true;
     }
 
     match /orders/{orderId} {
        allow read, write: if true;
+    }
+
+    match /transactions/{transactionId} {
+      allow read, write: if true;
+    }
+
+    match /results/{resultId} {
+      allow read, write: if true;
+    }
+
+    match /conversations/{convoId} {
+      allow read, write: if true;
+      match /messages/{msgId} {
+        allow read, write: if true;
+      }
     }
 
     match /syllabi/{level} {

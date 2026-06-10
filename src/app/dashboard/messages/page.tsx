@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -9,27 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Search, Send, ArrowLeft, Phone, Video, Paperclip, Camera, FileImage, Mic, Smile, UserX, ShieldAlert, MoreVertical, Reply, Copy, ThumbsUp, Trash2, Check, CheckCheck, Clock } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { User as UserProfile } from '@/lib/types';
-import { IlbooksLogo } from '@/components/ilbooks-logo';
+import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck } from "lucide-react";
+import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, setDoc, limit, onSnapshot } from 'firebase/firestore';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useFirestore, useUser } from '@/firebase';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export default function MessagesPage() {
   const { user } = useUser();
@@ -39,7 +25,6 @@ export default function MessagesPage() {
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -48,17 +33,10 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
 
-  // Modal states
-  const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
-  const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
-  const [callType, setCallType] = useState<'Audio' | 'Video' | null>(null);
-  const [isVoiceDialogOpen, setIsVoiceDialogOpen] = useState(false);
-
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Listen for user's conversations
   useEffect(() => {
     if (!firestore || !user) return;
 
@@ -68,18 +46,27 @@ export default function MessagesPage() {
       orderBy('updatedAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(convosQuery, (snapshot) => {
-      const convos = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setConversations(convos);
-    });
+    const unsubscribe = onSnapshot(
+      convosQuery, 
+      (snapshot) => {
+        const convos = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setConversations(convos);
+      },
+      async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'conversations',
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    );
 
     return () => unsubscribe();
   }, [firestore, user]);
 
-  // Listen for messages in active conversation
   useEffect(() => {
     if (!firestore || !activeConversationId) {
         setMessages([]);
@@ -91,35 +78,52 @@ export default function MessagesPage() {
       orderBy('createdAt', 'asc')
     );
 
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setMessages(msgs);
-    });
+    const unsubscribe = onSnapshot(
+      messagesQuery, 
+      (snapshot) => {
+        const msgs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setMessages(msgs);
+      },
+      async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: `conversations/${activeConversationId}/messages`,
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    );
 
     return () => unsubscribe();
   }, [firestore, activeConversationId]);
 
-  // Handle search param for specific chat
   useEffect(() => {
       const chatWithId = searchParams.get('chatWith');
-      if (chatWithId && user) {
-          // Check if conversation already exists
+      if (chatWithId && user && firestore) {
           const existingConvo = conversations.find(c => c.participants.includes(chatWithId));
           if (existingConvo) {
               setActiveConversationId(existingConvo.id);
           } else {
-              // Create temporary reference or just wait for message
               setActiveConversationId(null);
           }
           
-          // Fetch other user profile
-          const otherUserRef = doc(firestore!, 'users', chatWithId);
-          onSnapshot(otherUserRef, (doc) => {
+          const otherUserRef = doc(firestore, 'users', chatWithId);
+          const unsubscribe = onSnapshot(
+            otherUserRef, 
+            (doc) => {
               if (doc.exists()) setOtherUser({ id: doc.id, ...doc.data() });
-          });
+            },
+            async (err) => {
+              const permissionError = new FirestorePermissionError({
+                path: `users/${chatWithId}`,
+                operation: 'get',
+              } satisfies SecurityRuleContext);
+              errorEmitter.emit('permission-error', permissionError);
+            }
+          );
+          return () => unsubscribe();
       } else {
           setActiveConversationId(null);
           setOtherUser(null);
@@ -142,18 +146,23 @@ export default function MessagesPage() {
       let convoId = activeConversationId;
 
       if (!convoId) {
-          // Check again if convo exists
           const existing = conversations.find(c => c.participants.includes(chatWithId));
           if (existing) {
               convoId = existing.id;
           } else {
-              // Create new conversation
               const newConvoRef = doc(collection(firestore, 'conversations'));
               convoId = newConvoRef.id;
-              await setDoc(newConvoRef, {
+              setDoc(newConvoRef, {
                   participants: [user.uid, chatWithId],
                   updatedAt: serverTimestamp(),
                   lastMessage: newMessage
+              }).catch(async (err) => {
+                  const permissionError = new FirestorePermissionError({
+                    path: 'conversations',
+                    operation: 'create',
+                    requestResourceData: { participants: [user.uid, chatWithId], lastMessage: newMessage }
+                  } satisfies SecurityRuleContext);
+                  errorEmitter.emit('permission-error', permissionError);
               });
               setActiveConversationId(convoId);
           }
@@ -173,14 +182,14 @@ export default function MessagesPage() {
               updateDoc(doc(firestore, 'conversations', convoId!), {
                   lastMessage: newMessage,
                   updatedAt: serverTimestamp()
-              });
+              }).catch(async () => { /* quiet handle */ });
           })
           .catch((err) => {
               const permissionError = new FirestorePermissionError({
                   path: messagesCollection.path,
                   operation: 'create',
                   requestResourceData: msgData
-              });
+              } satisfies SecurityRuleContext);
               errorEmitter.emit('permission-error', permissionError);
           });
   };
@@ -189,7 +198,6 @@ export default function MessagesPage() {
 
   return (
     <div className="flex bg-background h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)] overflow-hidden">
-      {/* Conversation List */}
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex flex-col",
         activeConversationId || otherUser ? "hidden md:flex" : "flex"
@@ -227,7 +235,6 @@ export default function MessagesPage() {
         </ScrollArea>
       </aside>
 
-      {/* Chat Window */}
       <main className={cn(
         "flex-1 flex flex-col relative",
         activeConversationId || otherUser ? "flex" : "hidden md:flex"
