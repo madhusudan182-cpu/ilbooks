@@ -37,8 +37,9 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!firestore || !user) return;
 
-    // We use a simple query to avoid index requirements.
-    // Sorting is done in memory to prevent "Permission Denied" errors that are actually "Missing Index" errors.
+    // Use a simple query on participants to find conversations for the current user.
+    // We avoid complex orderBy in the query itself to prevent "Missing Index" errors
+    // being misreported as "Permission Denied" errors.
     const convosQuery = query(
       collection(firestore, 'conversations'),
       where('participants', 'array-contains', user.uid)
@@ -52,7 +53,7 @@ export default function MessagesPage() {
           ...doc.data()
         }));
         
-        // Sort in memory by updatedAt descending
+        // Sort in memory by updatedAt descending to ensure the most recent chat is at the top
         const sortedConvos = convos.sort((a: any, b: any) => {
           const timeA = a.updatedAt?.seconds || 0;
           const timeB = b.updatedAt?.seconds || 0;
@@ -61,16 +62,15 @@ export default function MessagesPage() {
         setConversations(sortedConvos);
       },
       async (err) => {
-        // If it's a real permission error, emit it. 
-        // Otherwise, log the raw error to help debug index issues.
+        // Detailed logging to help identify if the error is actually index-related
+        console.error("DEBUG: Conversations Listener Error:", err);
+        
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: 'conversations',
             operation: 'list',
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
-        } else {
-          console.error("Chat Sync Error:", err);
         }
       }
     );
@@ -99,14 +99,13 @@ export default function MessagesPage() {
         setMessages(msgs);
       },
       async (err) => {
+        console.error("DEBUG: Messages Listener Error:", err);
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: `conversations/${activeConversationId}/messages`,
             operation: 'list',
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
-        } else {
-          console.error("Message Sync Error:", err);
         }
       }
     );
@@ -166,6 +165,7 @@ export default function MessagesPage() {
                   updatedAt: serverTimestamp(),
                   lastMessage: newMessage
               }).catch(async (err) => {
+                  console.error("DEBUG: Create Convo Error:", err);
                   if (err.code === 'permission-denied') {
                     const permissionError = new FirestorePermissionError({
                       path: 'conversations',
@@ -196,6 +196,7 @@ export default function MessagesPage() {
               }).catch(() => {});
           })
           .catch((err) => {
+              console.error("DEBUG: Send Message Error:", err);
               if (err.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
                     path: messagesCollection.path,
