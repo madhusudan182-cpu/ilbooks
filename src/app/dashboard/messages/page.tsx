@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck } from "lucide-react";
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -20,7 +18,6 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 export default function MessagesPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
@@ -40,8 +37,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!firestore || !user) return;
 
-    // Removed orderBy('updatedAt', 'desc') to avoid requiring a composite index 
-    // which was likely causing the mislabeled permission error.
+    // Simplified query to avoid index requirements and potential false-positive permission errors
     const convosQuery = query(
       collection(firestore, 'conversations'),
       where('participants', 'array-contains', user.uid)
@@ -54,10 +50,10 @@ export default function MessagesPage() {
           id: doc.id,
           ...doc.data()
         }));
-        // Sort in memory to avoid index requirements
+        // Sort in memory instead of in the query to avoid complex indexing
         const sortedConvos = convos.sort((a, b) => {
-          const timeA = a.updatedAt?.seconds || 0;
-          const timeB = b.updatedAt?.seconds || 0;
+          const timeA = (a as any).updatedAt?.seconds || 0;
+          const timeB = (b as any).updatedAt?.seconds || 0;
           return timeB - timeA;
         });
         setConversations(sortedConvos);
@@ -70,7 +66,7 @@ export default function MessagesPage() {
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
         } else {
-          console.error("Chat Conversations Error:", err);
+          console.error("Chat Conversations Sync Error:", err);
         }
       }
     );
@@ -106,7 +102,7 @@ export default function MessagesPage() {
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
         } else {
-          console.error("Chat Messages Error:", err);
+          console.error("Chat Messages Sync Error:", err);
         }
       }
     );
@@ -130,9 +126,7 @@ export default function MessagesPage() {
             (doc) => {
               if (doc.exists()) setOtherUser({ id: doc.id, ...doc.data() });
             },
-            async (err) => {
-               // Silently handle or check code
-            }
+            () => { /* Silently handle individual user fetch errors */ }
           );
           return () => unsubscribe();
       } else {
@@ -188,14 +182,14 @@ export default function MessagesPage() {
           status: 'sent'
       };
 
-      const messagesCollection = collection(firestore, 'conversations', convoId, 'messages');
+      const messagesCollection = collection(firestore, 'conversations', convoId!, 'messages');
       addDoc(messagesCollection, msgData)
           .then(() => {
               setNewMessage('');
               updateDoc(doc(firestore, 'conversations', convoId!), {
                   lastMessage: newMessage,
                   updatedAt: serverTimestamp()
-              }).catch(async () => { /* quiet handle */ });
+              }).catch(() => {});
           })
           .catch((err) => {
               if (err.code === 'permission-denied') {
