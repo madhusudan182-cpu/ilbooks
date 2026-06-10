@@ -7,26 +7,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, Book, Award, Percent, DollarSign, Edit, ClipboardList } from "lucide-react";
+import { ArrowRight, Book, Award, Percent, DollarSign, Edit, ClipboardList, Loader2 } from "lucide-react";
 import { PaymentGateway } from '@/components/payment-gateway';
-import { currentUser } from '@/lib/auth';
+import { useUser, useFirestore, useDoc, useCollection } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import type { Syllabus, Question } from '@/lib/types';
+import type { Syllabus, Question, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { examSchedules, examScheduleMessages, examHolds } from '@/lib/exam-schedule';
 
-
 export default function CompetitionPage() {
+    const { user, loading: authLoading } = useUser();
+    const firestore = useFirestore();
+    const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+    const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
+
     const [showPayment, setShowPayment] = useState(false);
     const [showComingSoonDialog, setShowComingSoonDialog] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
 
     const [isClient, setIsClient] = useState(false);
-    const competitionLevel = currentUser.level.toFixed(1);
+    const competitionLevel = profile?.level?.toFixed(1) || "0.0";
     
     const getExamFee = (levelString: string): number => {
         const [major] = levelString.split('.').map(Number);
@@ -43,17 +46,16 @@ export default function CompetitionPage() {
     
     const [isRegistered, setIsRegistered] = useState(false);
     const [isExamTime, setIsExamTime] = useState(false);
-    const firestore = useFirestore();
 
     useEffect(() => {
         setIsClient(true);
     }, []);
 
-    const [syllabusQuery, setSyllabusQuery] = useState<any>(null);
-    useEffect(() => {
+    const syllabusQuery = useMemo(() => {
         if(firestore && competitionLevel) {
-            setSyllabusQuery(query(collection(firestore, 'syllabi'), where('level', '==', competitionLevel)));
+            return query(collection(firestore, 'syllabi'), where('level', '==', competitionLevel));
         }
+        return null;
     }, [firestore, competitionLevel]);
 
     const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
@@ -76,7 +78,6 @@ export default function CompetitionPage() {
         if (!competitionLevel) return;
 
         const checkTimeAndRegistration = () => {
-            // Check for expired registration
             const expiryTimestamp = sessionStorage.getItem(`examRegistrationExpiry_${competitionLevel}`);
             if (expiryTimestamp && Date.now() > parseInt(expiryTimestamp, 10)) {
                 sessionStorage.removeItem(`examRegistered_${competitionLevel}`);
@@ -84,10 +85,9 @@ export default function CompetitionPage() {
                 sessionStorage.removeItem(`notificationSent_${competitionLevel}`);
                 setIsRegistered(false);
                 setIsExamTime(false);
-                return; // Exit to prevent further checks in this cycle
+                return;
             }
 
-            // Check for current exam window
             const [majorLevel] = competitionLevel.split('.').map(Number);
             const registrationStatus = sessionStorage.getItem(`examRegistered_${competitionLevel}`);
             
@@ -105,12 +105,10 @@ export default function CompetitionPage() {
                     setIsExamTime(false);
                 }
 
-                // --- Notification Logic ---
                 const notificationSent = sessionStorage.getItem(`notificationSent_${competitionLevel}`);
                 if (!notificationSent) {
                     const examStartDate = new Date(now);
                     const dayDiff = (schedule.day - now.getDay() + 7) % 7;
-
                     examStartDate.setDate(now.getDate() + dayDiff);
                     examStartDate.setHours(schedule.start, 0, 0, 0);
                     
@@ -132,33 +130,19 @@ export default function CompetitionPage() {
         };
 
         checkTimeAndRegistration();
-        const interval = setInterval(checkTimeAndRegistration, 30000); // Check every 30 seconds
-
+        const interval = setInterval(checkTimeAndRegistration, 30000);
         return () => clearInterval(interval);
     }, [competitionLevel, toast]);
-
-    useEffect(() => {
-        if (showComingSoonDialog) {
-            const timer = setTimeout(() => {
-                setShowComingSoonDialog(false);
-            }, 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [showComingSoonDialog]);
-
 
     const handlePaymentSuccess = () => {
         if (!competitionLevel) return;
         const [majorLevel] = competitionLevel.split('.').map(Number);
         if (majorLevel < 1) {
-             console.log("Payment successful, starting exam for level 0.x...");
              router.push(`/dashboard/competition/exam?level=${competitionLevel}`);
         } else {
-            console.log("Payment successful, registration complete.");
             sessionStorage.setItem(`examRegistered_${competitionLevel}`, 'true');
             setIsRegistered(true);
 
-            // Store the expiry time for this registration
             const schedule = examSchedules[majorLevel];
             if (schedule) {
                 const now = new Date();
@@ -166,12 +150,11 @@ export default function CompetitionPage() {
                 const dayDiff = (schedule.day - now.getDay() + 7) % 7;
 
                 if (dayDiff === 0 && now.getHours() >= schedule.end) {
-                    // If exam for today is already over, schedule for next week
                     examDate.setDate(now.getDate() + 7);
                 } else {
                     examDate.setDate(now.getDate() + dayDiff);
                 }
-                examDate.setHours(schedule.end, 0, 0, 0); // Set to the end hour of the exam
+                examDate.setHours(schedule.end, 0, 0, 0);
                 sessionStorage.setItem(`examRegistrationExpiry_${competitionLevel}`, examDate.getTime().toString());
             }
 
@@ -190,7 +173,6 @@ export default function CompetitionPage() {
             return;
         }
     
-        // Check for questions and show payment for all levels
         const hasQuestionsForLevel = competitionLevel === '0.0' || (questionsForLevel && questionsForLevel.length > 0);
         if (hasQuestionsForLevel) {
             setShowPayment(true);
@@ -203,12 +185,13 @@ export default function CompetitionPage() {
         }
     }
 
-    const [majorLevel] = (competitionLevel).split('.').map(Number);
-    const buttonText = majorLevel < 1
-      ? "Proceed to bKash & Start Exam"
-      : "Register via bKash";
-    const scheduleMessage = examScheduleMessages[majorLevel];
+    if (authLoading || profileLoading) {
+      return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    }
 
+    const [majorLevel] = competitionLevel.split('.').map(Number);
+    const buttonText = majorLevel < 1 ? "Proceed to bKash & Start Exam" : "Register via bKash";
+    const scheduleMessage = examScheduleMessages[majorLevel];
 
     return (
         <>

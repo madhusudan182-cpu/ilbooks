@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,12 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { mockPosts } from "@/lib/data";
-import { MessageCircle, Heart, Share2, Image as ImageIcon, Film } from "lucide-react";
+import { MessageCircle, Heart, Share2, Image as ImageIcon, Film, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { currentUser } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useUser, useFirestore, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
+import type { User } from "@/lib/types";
 
 export default function HomePage() {
+  const { user, loading: authLoading } = useUser();
+  const firestore = useFirestore();
+  const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
+
   const [postContent, setPostContent] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -43,14 +50,20 @@ export default function HomePage() {
     toast({ title: "Sharing options coming soon!", duration: 2000 });
   };
 
+  if (authLoading || profileLoading) {
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!profile) return null;
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-4">
       <Card id="post">
         <CardContent className="p-1">
           <div className="flex items-center gap-2">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={currentUser.avatarUrl} alt="User" />
-              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={profile.avatarUrl} alt="User" />
+              <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="w-full">
               <form>
@@ -95,10 +108,8 @@ export default function HomePage() {
 
       <div className="space-y-4">
         {mockPosts.map((post) => {
-          const profileUrl =
-            post.author.id === currentUser.id
-              ? "/dashboard/profile"
-              : `/dashboard/user/${post.author.id}`;
+          const isMe = user && post.author.id === user.uid;
+          const profileUrl = isMe ? "/dashboard/profile" : `/dashboard/user/${post.author.id}`;
           return (
             <Card key={post.id} className="overflow-hidden">
               <CardHeader className="flex flex-row items-center gap-2 p-2">
