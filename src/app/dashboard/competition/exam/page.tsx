@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
@@ -11,14 +12,11 @@ import { Progress } from '@/components/ui/progress';
 import { BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { currentUser } from '@/lib/auth';
-import type { ExamResult, SubjectResult, Syllabus, Question, SyllabusTopic } from '@/lib/types';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import type { ExamResult, SubjectResult, Syllabus, Question, User as UserProfile } from '@/lib/types';
+import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { newBengaliLevel0Questions } from '@/lib/level-0-bengali-questions';
 import { newEnglishLevel0Questions } from '@/lib/level-0-english-questions';
-import { newBengaliLevel1Questions } from '@/lib/level-0-1-bengali-questions';
-import { newEnglishLevel1Questions } from '@/lib/level-0-1-english-questions';
 import { examSchedules, examHolds } from '@/lib/exam-schedule';
 
 
@@ -36,29 +34,32 @@ const shuffleArray = (array: any[]) => {
 function ExamContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const level = searchParams.get('level') || '0.0';
+  const levelStr = searchParams.get('level') || '0.0';
   const firestore = useFirestore();
+  const { user } = useUser();
+  const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const { data: profile } = useDoc<UserProfile>(userRef);
 
-  const isLevelZero = level === '0.0';
-  const majorLevel = parseInt(level.split('.')[0], 10);
+  const isLevelZero = levelStr === '0.0';
+  const majorLevel = parseInt(levelStr.split('.')[0], 10);
 
   useEffect(() => {
-    if (examHolds[level]) {
+    if (examHolds[levelStr]) {
         router.replace('/dashboard/competition/exam-held');
     }
-  }, [level, router]);
+  }, [levelStr, router]);
 
   const questionsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'questions'), where('level', '==', level));
-  }, [firestore, level]);
+    return query(collection(firestore, 'questions'), where('level', '==', levelStr));
+  }, [firestore, levelStr]);
 
   const { data: allQuestionsFromDB, loading: questionsLoading } = useCollection<Question>(questionsQuery);
   
   const syllabusQuery = useMemo(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'syllabi'), where('level', '==', level));
-  }, [firestore, level]);
+      return query(collection(firestore, 'syllabi'), where('level', '==', levelStr));
+  }, [firestore, levelStr]);
 
   const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
   const syllabus = userSyllabusArr?.[0];
@@ -112,7 +113,7 @@ function ExamContent() {
         const questionsToTake = Math.min(questionsForSubject.length, subjectSyllabus.marks);
   
         if (questionsToTake < subjectSyllabus.marks) {
-          console.warn(`Not enough questions for subject "${subjectName}" for level ${level}. Required: ${subjectSyllabus.marks}, Available: ${questionsForSubject.length}. Using available questions.`);
+          console.warn(`Not enough questions for subject "${subjectName}" for level ${levelStr}. Required: ${subjectSyllabus.marks}, Available: ${questionsForSubject.length}. Using available questions.`);
         }
   
         if (questionsToTake > 0) {
@@ -143,7 +144,7 @@ function ExamContent() {
 
     setExamQuestions(questionsWithShuffledAnswers);
   
-  }, [isLevelZero, allQuestionsFromDB, syllabus, questionsLoading, syllabusLoading, level]);
+  }, [isLevelZero, allQuestionsFromDB, syllabus, questionsLoading, syllabusLoading, levelStr]);
 
 
   useEffect(() => {
@@ -157,7 +158,7 @@ function ExamContent() {
   }, [examQuestions]);
   
   const handleFinishExam = useCallback(() => {
-    if (!examQuestions || examQuestions.length === 0) {
+    if (!examQuestions || examQuestions.length === 0 || !user || !firestore || !profile) {
       router.push('/dashboard/competition/exam/result');
       return;
     }
@@ -216,12 +217,39 @@ function ExamContent() {
     const overallStatus = subjectResults.length > 0 && subjectResults.every(r => r.status === 'Passed') ? 'Passed' : 'Failed';
     const totalPercentage = totalMarks > 0 ? (totalObtainedMarks / totalMarks) * 100 : 0;
 
+    // Progression Logic: If passed, upgrade level in Firestore
+    if (overallStatus === 'Passed') {
+        const currentLevelNum = profile.level || 0;
+        const major = Math.floor(currentLevelNum);
+        const minor = Math.round((currentLevelNum - major) * 10);
+        
+        let nextMajor = major;
+        let nextMinor = minor + 1;
+        
+        if (nextMinor > 9) {
+            nextMajor++;
+            nextMinor = 0;
+        }
+        
+        // Skip level 1.x as per user requirement
+        if (nextMajor === 1) {
+            nextMajor = 2;
+            nextMinor = 0;
+        }
+        
+        const nextLevel = parseFloat((nextMajor + (nextMinor / 10)).toFixed(1));
+        
+        // Update user's level in Firestore
+        const userRef = doc(firestore, 'users', user.uid);
+        updateDoc(userRef, { level: nextLevel });
+    }
+
     const newResult: ExamResult = {
         id: `result-${Date.now()}`,
-        userId: currentUser.id,
-        userName: currentUser.name,
-        userAvatarUrl: currentUser.avatarUrl,
-        level: level,
+        userId: user.uid,
+        userName: profile.name,
+        userAvatarUrl: profile.avatarUrl,
+        level: levelStr,
         totalMarks: totalMarks,
         totalObtainedMarks: parseFloat(totalObtainedMarks.toFixed(2)),
         totalPercentage: parseFloat(totalPercentage.toFixed(2)),
@@ -232,13 +260,13 @@ function ExamContent() {
 
     sessionStorage.setItem('lastExamResult', JSON.stringify(newResult));
 
-    sessionStorage.removeItem(`examRegistered_${level}`);
-    sessionStorage.removeItem(`examRegistrationExpiry_${level}`);
-    sessionStorage.removeItem(`notificationSent_${level}`);
+    sessionStorage.removeItem(`examRegistered_${levelStr}`);
+    sessionStorage.removeItem(`examRegistrationExpiry_${levelStr}`);
+    sessionStorage.removeItem(`notificationSent_${levelStr}`);
 
     router.push('/dashboard/competition/exam/result');
 
-  }, [level, examQuestions, userAnswers, router]);
+  }, [levelStr, examQuestions, userAnswers, router, user, firestore, profile]);
 
   const handleNext = useCallback(() => {
     if (!examQuestions) return;
@@ -310,7 +338,7 @@ function ExamContent() {
     const schedule = examSchedules[majorLevel];
     const scheduleMessage = schedule
       ? `Your exam will take place on ${schedule.dayName}: ${schedule.start}:00 to ${schedule.end}:00.`
-      : `There are currently no questions available for Level ${level}. Please check back later.`;
+      : `There are currently no questions available for Level ${levelStr}. Please check back later.`;
 
     return (
         <main className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -332,7 +360,7 @@ function ExamContent() {
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="pb-2">
-          <CardTitle className="font-headline text-center">Level: {level} Exam</CardTitle>
+          <CardTitle className="font-headline text-center">Level: {levelStr} Exam</CardTitle>
           <div className="flex items-center gap-4 pt-2">
             <span className="text-sm font-mono whitespace-nowrap">
               {currentQuestionIndex + 1} / {examQuestions.length}
