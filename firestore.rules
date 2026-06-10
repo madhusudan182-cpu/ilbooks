@@ -3,6 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Allow full access to all collections for simplicity in this prototype.
+    // In a production app, these should be restricted to authenticated users
+    // and specific ownership logic.
+
     match /users/{userId} {
       allow read, write: if true;
     }
@@ -35,6 +39,11 @@ service cloud.firestore {
     }
 
     match /questions/{questionId} {
+      allow read, write: if true;
+    }
+    
+    // Fallback for any other collections
+    match /{document=**} {
       allow read, write: if true;
     }
   }
