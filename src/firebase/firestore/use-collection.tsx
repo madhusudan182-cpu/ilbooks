@@ -37,6 +37,10 @@ export function useCollection<T>(query: Query<DocumentData> | null) {
         setState({ data, loading: false, error: null });
       },
       async (err: any) => {
+        // ALWAYS log the full error to console. 
+        // This is important because "Permission Denied" can sometimes be a missing index error.
+        console.error("Firestore Query Error:", err);
+
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
               path: (query as any)._query.path.segments.join('/'),
@@ -45,8 +49,6 @@ export function useCollection<T>(query: Query<DocumentData> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setState({ data: null, loading: false, error: permissionError });
         } else {
-          // Log other errors (like missing index) to console to see the real cause
-          console.error("Firestore Listener Error:", err);
           setState({ data: null, loading: false, error: err });
         }
       }
