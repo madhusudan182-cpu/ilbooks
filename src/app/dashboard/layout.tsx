@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -52,6 +53,8 @@ const iconNavItems: NavItem[] = [
     { href: '/dashboard/social', title: 'Social Circle', icon: Users },
 ];
 
+// Designated admin email
+const OWNER_EMAIL = 'madhusudan.182@gmail.com';
 
 export default function DashboardLayout({
   children,
@@ -71,26 +74,21 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     setIsClient(true);
-    if (!authLoading && !user) {
+  }, []);
+
+  React.useEffect(() => {
+    if (!authLoading && !user && isClient) {
       router.replace('/login');
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, isClient]);
 
   // Strictly check for the designated admin email
-  const isAdmin = user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
+  const isAdmin = user?.email?.toLowerCase() === OWNER_EMAIL;
 
   const notifications = [
     {
-      title: "New Follower",
-      description: "Ben Carter started following you.",
-    },
-    {
-      title: "Post Activity",
-      description: "Your post got 10 new likes.",
-    },
-    {
-      title: "New Books!",
-      description: "New arrivals are in the Book Shop.",
+      title: "Welcome to ILBooks",
+      description: "Start your journey by exploring the Book Shop!",
     }
   ];
   const notificationCount = notifications.length;
@@ -202,7 +200,7 @@ export default function DashboardLayout({
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={profile.avatarUrl} alt="User avatar" />
-                        <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>

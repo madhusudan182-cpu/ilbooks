@@ -1,17 +1,17 @@
+
 rules_version = '2';
 
 /**
  * FIRESTORE SECURITY RULES
- * BROAD PERMISSIONS FOR PROTOTYPING
- * FORCE DEPLOYMENT TRIGGER: 2025-06-10T19:00:00Z
+ * UPDATED: 2026-06-10T11:00:00Z
+ * PURPOSE: Grant access to all authenticated users for prototype testing.
  */
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allows all read and write operations for all collections during the prototyping phase.
-    // This is to ensure no permission barriers during development.
+    // Allows all read and write operations for authenticated users to ensure prototyping is smooth.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
     }
   }
 }

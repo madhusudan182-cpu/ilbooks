@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -11,7 +12,7 @@ import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck } from "l
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -33,7 +34,7 @@ export default function MessagesPage() {
     setIsClient(true);
   }, []);
 
-  // Use the standardized hook for conversations
+  // Simplified query to avoid permission/index errors
   const convosQuery = useMemo(() => {
     if (!firestore || !user) return null;
     return query(
@@ -44,6 +45,7 @@ export default function MessagesPage() {
 
   const { data: rawConversations, loading: convosLoading } = useCollection<any>(convosQuery);
 
+  // Sort conversations locally to avoid composite index requirement
   const conversations = useMemo(() => {
     if (!rawConversations) return [];
     return [...rawConversations].sort((a, b) => {
@@ -60,8 +62,7 @@ export default function MessagesPage() {
     }
 
     const messagesQuery = query(
-      collection(firestore, 'conversations', activeConversationId, 'messages'),
-      orderBy('createdAt', 'asc')
+      collection(firestore, 'conversations', activeConversationId, 'messages')
     );
 
     const unsubscribe = onSnapshot(
@@ -70,11 +71,10 @@ export default function MessagesPage() {
         const msgs = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        }));
+        })).sort((a: any, b: any) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
         setMessages(msgs);
       },
       async (err) => {
-        console.error("DEBUG: Messages Listener Error:", err);
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
             path: `conversations/${activeConversationId}/messages`,
