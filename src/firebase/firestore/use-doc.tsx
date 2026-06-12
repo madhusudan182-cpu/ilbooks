@@ -38,6 +38,9 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null) {
         }
       },
       async (err: any) => {
+        // Log details to console for debugging
+        console.error("Firestore Doc Error Detail:", err);
+
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
               path: ref.path,
@@ -46,7 +49,6 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null) {
           errorEmitter.emit('permission-error', permissionError);
           setState({ data: null, loading: false, error: permissionError });
         } else {
-          console.error("Firestore Document Listener Error:", err);
           setState({ data: null, loading: false, error: err });
         }
       }
