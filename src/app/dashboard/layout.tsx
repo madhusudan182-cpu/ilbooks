@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -77,7 +76,8 @@ export default function DashboardLayout({
     }
   }, [user, authLoading, router]);
 
-  const isAdmin = profile?.isAdmin || user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
+  // Strictly check for the designated admin email
+  const isAdmin = user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
 
   const notifications = [
     {

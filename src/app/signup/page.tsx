@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -51,13 +50,15 @@ export default function SignupPage() {
       const user = userCredential.user;
 
       // Create profile in Firestore
-      // madhusudan.182@gmail.com is set as admin
+      // madhusudan.182@gmail.com is strictly defined as the only owner
+      const isAdmin = email.toLowerCase() === 'madhusudan.182@gmail.com';
+      
       await setDoc(doc(firestore, 'users', user.uid), {
         name,
         email,
         mobile,
         level: 0.0,
-        isAdmin: email.toLowerCase() === 'madhusudan.182@gmail.com',
+        isAdmin: isAdmin,
         avatarUrl: `https://picsum.photos/seed/${user.uid}/100/100`,
         hobbies: [],
         location: '',
@@ -66,7 +67,7 @@ export default function SignupPage() {
 
       toast({
         title: "Account created successfully!",
-        description: "Let's complete your profile.",
+        description: isAdmin ? "Welcome, Owner." : "Let's complete your profile.",
       });
       router.push('/create-profile');
     } catch (error: any) {

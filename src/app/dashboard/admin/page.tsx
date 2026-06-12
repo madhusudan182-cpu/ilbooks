@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,7 +19,8 @@ export default function AdminPage() {
 
     const [isClient, setIsClient] = useState(false);
     
-    const isAdmin = profile?.isAdmin || user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
+    // Strictly define admin access by email
+    const isAdmin = user?.email?.toLowerCase() === 'madhusudan.182@gmail.com';
 
     useEffect(() => {
       setIsClient(true);
@@ -47,7 +47,7 @@ export default function AdminPage() {
             Admin Panel
           </CardTitle>
           <CardDescription>
-            Welcome to the admin dashboard.
+            Welcome to the admin dashboard, Owner.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,7 +75,7 @@ export default function AdminPage() {
               <CardTitle className="flex items-center gap-3 text-2xl font-headline"><ClipboardList className="text-primary w-6 h-6"/> Exam Results</CardTitle>
               <CardDescription>View the results of all user exam attempts.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardContent className="flex wrap gap-2">
               <Button asChild>
                 <Link href="/dashboard/admin/results">View User Results</Link>
               </Button>
@@ -141,7 +141,7 @@ export default function AdminPage() {
             </CardTitle>
             <CardDescription>Manage financial transactions and user rewards.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardContent className="flex wrap gap-2">
             <Button asChild>
               <Link href="/dashboard/admin/accounts/transactions">Transactions</Link>
             </Button>
