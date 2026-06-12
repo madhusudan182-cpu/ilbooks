@@ -18,11 +18,21 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/alert-dialog';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger, 
+  AlertDialogFooter 
+} from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { User as UserProfile } from '@/lib/types';
 
@@ -53,7 +63,6 @@ const iconNavItems: NavItem[] = [
     { href: '/dashboard/social', title: 'Social Circle', icon: Users },
 ];
 
-// Designated admin email
 const OWNER_EMAIL = 'madhusudan.182@gmail.com';
 
 export default function DashboardLayout({
@@ -67,7 +76,7 @@ export default function DashboardLayout({
   const { user, loading: authLoading } = useUser();
   const firestore = useFirestore();
   const userRef = React.useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userRef);
+  const { data: profile } = useDoc<UserProfile>(userRef);
 
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
@@ -82,7 +91,6 @@ export default function DashboardLayout({
     }
   }, [user, authLoading, router, isClient]);
 
-  // Strictly check for the designated admin email from the Auth object
   const isAdmin = user?.email?.toLowerCase() === OWNER_EMAIL;
 
   const notifications = [
@@ -108,7 +116,6 @@ export default function DashboardLayout({
 
   if (!user) return null;
 
-  // Fallback values if profile is still loading or doesn't exist
   const userName = profile?.name || user.displayName || user.email?.split('@')[0] || 'User';
   const userAvatar = profile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`;
 
