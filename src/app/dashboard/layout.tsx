@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from '@/components/ui/AlertDialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { User as UserProfile } from '@/lib/types';
 
@@ -82,7 +82,7 @@ export default function DashboardLayout({
     }
   }, [user, authLoading, router, isClient]);
 
-  // Strictly check for the designated admin email
+  // Strictly check for the designated admin email from the Auth object
   const isAdmin = user?.email?.toLowerCase() === OWNER_EMAIL;
 
   const notifications = [
@@ -98,7 +98,7 @@ export default function DashboardLayout({
     router.push('/login');
   };
 
-  if (!isClient || authLoading || profileLoading) {
+  if (!isClient || authLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -106,7 +106,11 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user || !profile) return null;
+  if (!user) return null;
+
+  // Fallback values if profile is still loading or doesn't exist
+  const userName = profile?.name || user.displayName || user.email?.split('@')[0] || 'User';
+  const userAvatar = profile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -199,17 +203,17 @@ export default function DashboardLayout({
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={profile.avatarUrl} alt="User avatar" />
-                        <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={userAvatar} alt="User avatar" />
+                        <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{profile.name}</p>
+                        <p className="text-sm font-medium leading-none">{userName}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {profile.email}
+                          {user.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>

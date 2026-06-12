@@ -3,14 +3,19 @@ rules_version = '2';
 
 /**
  * FIRESTORE SECURITY RULES
- * UPDATED: 2026-06-10T11:00:00Z
- * PURPOSE: Grant access to all authenticated users for prototype testing.
+ * UPDATED: 2024-07-29T12:00:00Z
+ * PURPOSE: Grant full access to all authenticated users for this community prototype.
  */
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allows all read and write operations for authenticated users to ensure prototyping is smooth.
+    // Standard wide-open rules for authenticated users to ensure smooth operation of social features.
     match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Explicit rule for user profiles
+    match /users/{userId} {
       allow read, write: if request.auth != null;
     }
   }

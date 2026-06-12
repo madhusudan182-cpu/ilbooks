@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useMemo } from "react";
@@ -50,11 +51,16 @@ export default function HomePage() {
     toast({ title: "Sharing options coming soon!", duration: 2000 });
   };
 
-  if (authLoading || profileLoading) {
+  if (authLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  if (!profile) return null;
+  if (!user) return null;
+
+  // Use Auth object fallbacks if profile document is missing
+  const userName = profile?.name || user.displayName || user.email?.split('@')[0] || 'User';
+  const userAvatar = profile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`;
+  const userLevel = profile?.level ?? 0.0;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-4">
@@ -62,8 +68,8 @@ export default function HomePage() {
         <CardContent className="p-2 pt-4">
           <div className="flex items-start gap-3">
             <Avatar className="h-10 w-10 border">
-              <AvatarImage src={profile.avatarUrl} alt={profile.name} />
-              <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
+              <AvatarImage src={userAvatar} alt={userName} />
+              <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="w-full">
               <form>
@@ -108,11 +114,11 @@ export default function HomePage() {
 
       <div className="space-y-4">
         {mockPosts.map((post) => {
-          // If the post is by the logged-in user, use the real-time profile data
+          // If the post is by the logged-in user, use the local data or real-time profile data
           const isMe = user && post.author.id === user.uid;
-          const authorName = isMe ? profile.name : post.author.name;
-          const authorAvatar = isMe ? profile.avatarUrl : post.author.avatarUrl;
-          const authorLevel = isMe ? profile.level : post.author.level;
+          const authorName = isMe ? userName : post.author.name;
+          const authorAvatar = isMe ? userAvatar : post.author.avatarUrl;
+          const authorLevel = isMe ? userLevel : post.author.level;
           const profileUrl = isMe ? "/dashboard/profile" : `/dashboard/user/${post.author.id}`;
           
           return (
