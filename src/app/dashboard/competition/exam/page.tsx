@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ExamResult, SubjectResult, Syllabus, Question, User as UserProfile } from '@/lib/types';
@@ -20,7 +19,7 @@ import { newEnglishLevel0Questions } from '@/lib/level-0-english-questions';
 import { examSchedules, examHolds } from '@/lib/exam-schedule';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-
+import { useToast } from '@/hooks/use-toast';
 
 const TOTAL_TIME_PER_QUESTION = 15; // seconds
 
@@ -33,18 +32,33 @@ const shuffleArray = (array: any[]) => {
   return shuffled;
 };
 
-
 function ExamContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
   const levelStr = searchParams.get('level') || '0.0';
   const firestore = useFirestore();
   const { user } = useUser();
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: profile } = useDoc<UserProfile>(userRef);
+  const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userRef);
 
   const isLevelZero = levelStr === '0.0';
   const majorLevel = parseInt(levelStr.split('.')[0], 10);
+
+  // Synchronous validation: Ensure the user is taking the exam for their actual level
+  useEffect(() => {
+    if (!profileLoading && profile) {
+      const actualLevel = profile.level?.toFixed(1) || "0.0";
+      if (levelStr !== actualLevel) {
+        toast({
+          title: "Synchronization Error",
+          description: `You are at Level ${actualLevel}. Please take the correct exam.`,
+          variant: "destructive",
+        });
+        router.replace('/dashboard/competition');
+      }
+    }
+  }, [profile, profileLoading, levelStr, router, toast]);
 
   useEffect(() => {
     if (examHolds[levelStr]) {
@@ -222,6 +236,7 @@ function ExamContent() {
             nextMinor = 0;
         }
         
+        // Skip level 1.x if transitioning from 0.9
         if (nextMajor === 1) {
             nextMajor = 2;
             nextMinor = 0;
@@ -230,6 +245,7 @@ function ExamContent() {
         const nextLevel = parseFloat((nextMajor + (nextMinor / 10)).toFixed(1));
         const userRef = doc(firestore, 'users', user.uid);
         updateDoc(userRef, { level: nextLevel });
+        toast({ title: "Level Up!", description: `Congratulations! You have reached Level ${nextLevel.toFixed(1)}.` });
     }
 
     const resultsCollection = collection(firestore, 'results');
@@ -257,14 +273,13 @@ function ExamContent() {
       });
 
     sessionStorage.setItem('lastExamResult', JSON.stringify({ ...newResult, id: `local-${Date.now()}` }));
-
     sessionStorage.removeItem(`examRegistered_${levelStr}`);
     sessionStorage.removeItem(`examRegistrationExpiry_${levelStr}`);
     sessionStorage.removeItem(`notificationSent_${levelStr}`);
 
     router.push('/dashboard/competition/exam/result');
 
-  }, [levelStr, examQuestions, userAnswers, router, user, firestore, profile]);
+  }, [levelStr, examQuestions, userAnswers, router, user, firestore, profile, toast]);
 
   const handleNext = useCallback(() => {
     if (!examQuestions) return;
@@ -311,7 +326,7 @@ function ExamContent() {
   };
   const fontSizeClass = getFontSizeClass(currentQuestion?.questionText || '');
 
-  if (examQuestions === null) {
+  if (examQuestions === null || profileLoading) {
     return (
        <main className="flex items-center justify-center min-h-screen bg-background p-4">
         <Card className="w-full max-w-2xl text-center">

@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, CreditCard, Plus, Minus, Trash2, Download } from 'lucide-react';
+import { ShoppingCart, CreditCard, Plus, Minus, Trash2, Download, Loader2 } from 'lucide-react';
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useToast } from '@/hooks/use-toast';
-import type { Book } from '@/lib/types';
+import type { Book, User } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -20,18 +20,22 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useFirestore, useCollection } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
+import { addDoc, collection, serverTimestamp, doc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
-import { currentUser } from '@/lib/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type CartItem = Book & { quantity: number };
 const DELIVERY_CHARGE = 60;
 
 export default function BookShopPage() {
+  const { user, loading: authLoading } = useUser();
+  const firestore = useFirestore();
+  const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showPayment, setShowPayment] = useState(false);
   const { toast } = useToast();
@@ -39,13 +43,12 @@ export default function BookShopPage() {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [mobile, setMobile] = useState('');
-  const firestore = useFirestore();
   const [activeCategory, setActiveCategory] = useState<'level' | 'vocab' | 'popular'>('level');
 
   const booksQuery = useMemo(() => (firestore ? collection(firestore, 'books') : null), [firestore]);
   const { data: books, loading: booksLoading } = useCollection<Book>(booksQuery);
 
-  const userLevel = currentUser.level.toFixed(1);
+  const userLevel = profile?.level?.toFixed(1) || "0.0";
 
   const displayedBooks = useMemo(() => {
     if (!books) return [];
@@ -92,24 +95,23 @@ export default function BookShopPage() {
     });
   };
 
-
   const handlePaymentSuccess = () => {
     setShowAddressDialog(true);
   };
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) {
+    if (!firestore || !user) {
       toast({
         title: 'Error',
-        description: 'Database not available.',
+        description: 'Database or user not available.',
         variant: 'destructive',
       });
       return;
     }
 
     const newOrder = {
-      userId: currentUser.id,
+      userId: user.uid,
       customerName: name,
       deliveryAddress: address,
       mobileNumber: mobile,
@@ -148,13 +150,12 @@ export default function BookShopPage() {
           requestResourceData: newOrder,
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({
-            title: "Uh oh! Something went wrong.",
-            description: "Could not place your order. Please try again.",
-            variant: "destructive",
-        });
       });
   };
+
+  if (authLoading || profileLoading) {
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <>
@@ -304,7 +305,7 @@ export default function BookShopPage() {
                 ) : (
                   <div className="col-span-full text-center text-muted-foreground py-10">
                     <p>
-                      There are no books in this category yet.
+                      There are no books in this category for Level {userLevel} yet.
                     </p>
                     <p>Check back soon!</p>
                   </div>

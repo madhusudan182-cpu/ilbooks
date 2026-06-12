@@ -2,8 +2,8 @@ rules_version = '2';
 
 /**
  * FIRESTORE SECURITY RULES
- * UPDATED: 2024-08-01T15:30:00Z - FORCING RE-DEPLOYMENT
- * PURPOSE: Grant full access to all authenticated users to resolve persistent permission errors.
+ * UPDATED: 2024-08-01T18:45:00Z - FORCING RE-DEPLOYMENT
+ * PURPOSE: Grant full access to all authenticated users for real-time community features.
  */
 
 service cloud.firestore {
