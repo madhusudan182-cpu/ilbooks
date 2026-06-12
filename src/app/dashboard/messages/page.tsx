@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -8,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck } from "lucide-react";
+import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck, Loader2 } from "lucide-react";
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc, getDocs } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -34,7 +33,7 @@ export default function MessagesPage() {
     setIsClient(true);
   }, []);
 
-  // Simplified query to avoid permission/index errors
+  // Use simple collection fetch to avoid initial complex query index errors
   const convosQuery = useMemo(() => {
     if (!firestore || !user) return null;
     return query(
@@ -45,7 +44,7 @@ export default function MessagesPage() {
 
   const { data: rawConversations, loading: convosLoading } = useCollection<any>(convosQuery);
 
-  // Sort conversations locally to avoid composite index requirement
+  // Sort conversations locally for the prototype UI
   const conversations = useMemo(() => {
     if (!rawConversations) return [];
     return [...rawConversations].sort((a, b) => {
@@ -74,14 +73,8 @@ export default function MessagesPage() {
         })).sort((a: any, b: any) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
         setMessages(msgs);
       },
-      async (err) => {
-        if (err.code === 'permission-denied') {
-          const permissionError = new FirestorePermissionError({
-            path: `conversations/${activeConversationId}/messages`,
-            operation: 'list',
-          } satisfies SecurityRuleContext);
-          errorEmitter.emit('permission-error', permissionError);
-        }
+      (err) => {
+          console.error("Messages listener error:", err);
       }
     );
 
@@ -91,10 +84,12 @@ export default function MessagesPage() {
   useEffect(() => {
       const chatWithId = searchParams.get('chatWith');
       if (chatWithId && user && firestore) {
+          // Look for an existing conversation
           const existingConvo = conversations.find(c => c.participants.includes(chatWithId));
           if (existingConvo) {
               setActiveConversationId(existingConvo.id);
           } else {
+              // Try to find if a conversation exists even if not in the cached list yet
               setActiveConversationId(null);
           }
           
@@ -103,8 +98,7 @@ export default function MessagesPage() {
             otherUserRef, 
             (doc) => {
               if (doc.exists()) setOtherUser({ id: doc.id, ...doc.data() });
-            },
-            () => { /* Silently handle individual user fetch errors */ }
+            }
           );
           return () => unsubscribe();
       } else {
@@ -129,25 +123,17 @@ export default function MessagesPage() {
       let convoId = activeConversationId;
 
       if (!convoId) {
+          // Double check for existing conversation before creating a new one
           const existing = conversations.find(c => c.participants.includes(chatWithId));
           if (existing) {
               convoId = existing.id;
           } else {
               const newConvoRef = doc(collection(firestore, 'conversations'));
               convoId = newConvoRef.id;
-              setDoc(newConvoRef, {
+              await setDoc(newConvoRef, {
                   participants: [user.uid, chatWithId],
                   updatedAt: serverTimestamp(),
                   lastMessage: newMessage
-              }).catch(async (err) => {
-                  if (err.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
-                      path: 'conversations',
-                      operation: 'create',
-                      requestResourceData: { participants: [user.uid, chatWithId], lastMessage: newMessage }
-                    } satisfies SecurityRuleContext);
-                    errorEmitter.emit('permission-error', permissionError);
-                  }
               });
               setActiveConversationId(convoId);
           }
@@ -170,18 +156,11 @@ export default function MessagesPage() {
               }).catch(() => {});
           })
           .catch((err) => {
-              if (err.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
-                    path: messagesCollection.path,
-                    operation: 'create',
-                    requestResourceData: msgData
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-              }
+              console.error("Failed to send message:", err);
           });
   };
 
-  if (!isClient) return <div className="h-screen flex items-center justify-center"><Skeleton className="h-[80%] w-[90%]" /></div>;
+  if (!isClient) return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="flex bg-background h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)] overflow-hidden">
@@ -212,9 +191,11 @@ export default function MessagesPage() {
                   activeConversationId === conv.id ? "bg-muted" : "hover:bg-muted/50"
                 )}
               >
-                <Avatar className="h-12 w-12 border">
-                    <AvatarFallback>{conv.lastMessage?.charAt(0) || '?'}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                    <Avatar className="h-12 w-12 border">
+                        <AvatarFallback>{conv.lastMessage?.charAt(0) || '?'}</AvatarFallback>
+                    </Avatar>
+                </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline">
                       <p className="font-semibold truncate">Conversation</p>
@@ -226,8 +207,12 @@ export default function MessagesPage() {
             );
           })}
           {conversations.length === 0 && !convosLoading && (
-              <div className="p-4 text-center text-muted-foreground text-sm">
-                  No active chats. Start one from the Social page!
+              <div className="p-10 text-center text-muted-foreground text-sm">
+                  <MessageCircle className="h-10 w-10 mx-auto opacity-10 mb-4" />
+                  <p>No active chats. Start one from the Social page!</p>
+                  <Button variant="link" asChild className="mt-2">
+                      <Link href="/dashboard/social">Go to Social Circle</Link>
+                  </Button>
               </div>
           )}
           {convosLoading && (
@@ -293,7 +278,7 @@ export default function MessagesPage() {
                           onChange={(e) => setNewMessage(e.target.value)}
                       />
                     </div>
-                    <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0">
+                    <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim()}>
                         <Send className="h-5 w-5"/>
                     </Button>
                 </form>
@@ -301,9 +286,9 @@ export default function MessagesPage() {
           </>
         ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-slate-50/20">
-                <MessageCircle className="w-16 h-16 opacity-20 mb-4"/>
+                <MessageCircle className="w-16 h-16 opacity-10 mb-4"/>
                 <p className="font-headline text-lg">Your Bookshelf of Conversations</p>
-                <p className="text-sm">Select a friend to start chatting</p>
+                <p className="text-sm">Select a reader to start chatting</p>
             </div>
         )}
       </main>

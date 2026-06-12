@@ -4,56 +4,48 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockUsers } from "@/lib/data";
 import type { User } from "@/lib/types";
-import { MessageCircle, UserPlus, ArrowLeft, Search, Users, Share2, Copy } from "lucide-react";
+import { MessageCircle, UserPlus, ArrowLeft, Search, Users, Share2, Copy, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { currentUser } from "@/lib/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useFirestore, useCollection, useUser } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
 
-
-const UserCard = ({ user }: { user: User }) => {
-  const isCurrentUser = user.id === currentUser.id;
+const UserCard = ({ user, currentUserId }: { user: User, currentUserId: string }) => {
+  const isCurrentUser = user.id === currentUserId;
   const profileUrl = isCurrentUser ? '/dashboard/profile' : `/dashboard/user/${user.id}`;
   
   return (
-    <Card>
-      <CardContent className="p-1 flex items-center gap-2">
+    <Card className="hover:bg-muted/30 transition-colors">
+      <CardContent className="p-2 flex items-center gap-3">
         <Link href={profileUrl}>
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-12 w-12 border">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
           </Avatar>
         </Link>
-        <div className="flex-grow">
+        <div className="flex-grow min-w-0">
           <Link href={profileUrl} className="hover:underline">
-            <p className="font-semibold font-headline text-sm">{user.name}</p>
+            <p className="font-semibold font-headline text-sm truncate">{user.name}</p>
           </Link>
-          <p className="text-xs text-muted-foreground">Level: {user.level.toFixed(1)}</p>
+          <p className="text-xs text-muted-foreground">Level: {user.level?.toFixed(1) || '0.0'}</p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {!isCurrentUser && (
             <>
-              {user.isMutual ? (
-                <>
-                  <Button variant="ghost" size="icon" asChild className="h-7 w-7">
-                    <Link href={`/dashboard/messages?chatWith=${user.id}`}>
-                      <MessageCircle className="h-4 w-4"/>
-                    </Link>
-                  </Button>
-                  <Button variant="secondary" size="sm" className="h-7 px-2 text-xs">Unfollow</Button>
-                </>
-              ) : user.isFollowing ? (
-                <Button variant="secondary" size="sm" className="h-7 px-2 text-xs">Unfollow</Button>
-              ) : (
-                <Button size="sm" className="h-7 px-2 text-xs">
-                  <UserPlus className="mr-1 h-3 w-3"/> Follow
+                <Button variant="outline" size="sm" asChild className="h-8">
+                <Link href={`/dashboard/messages?chatWith=${user.id}`}>
+                    <MessageCircle className="h-4 w-4 mr-1"/>
+                    Chat
+                </Link>
                 </Button>
-              )}
+                <Button variant="secondary" size="sm" className="h-8">
+                    <UserPlus className="mr-1 h-3 w-3"/> Follow
+                </Button>
             </>
           )}
         </div>
@@ -61,12 +53,6 @@ const UserCard = ({ user }: { user: User }) => {
     </Card>
   );
 };
-
-const UserList = ({ users }: { users: User[] }) => (
-  <div className="space-y-1">
-    {users.map(user => <UserCard key={user.id} user={user} />)}
-  </div>
-);
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg
@@ -87,26 +73,21 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props} fill="currentColor"><title>WhatsApp</title><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.06 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zM9.53 8.51c.24-.12.55-.27.8-.39.25-.12.42-.18.58-.18.16 0 .31.06.43.18.12.12.18.27.18.42s-.06.3-.18.42c-.12.12-.27.18-.42.18h-.12c-.15 0-.3-.03-.45-.09-.52-.22-.98-.56-1.38-1.01-.41-.46-.61-.98-.61-1.56 0-.58.2-1.09.61-1.56s.9-.73 1.48-.84c.58-.11 1.15-.05 1.7.18.55.23.99.58 1.32 1.05.33.47.49 1.01.49 1.61 0 .6-.16 1.14-.49 1.61-.33.47-.77.82-1.32 1.05-.25.11-.5.19-.75.24-.25.06-.5.09-.75.09-.33 0-.65-.06-.96-.18l-3.3 1.1.84-3.21c-.48-.6-.73-1.28-.73-2.01 0-.73.25-1.41.73-2.01.49-.6 1.1-.94 1.8-.94.7 0 1.35.34 1.8.94.49.6.73 1.28.73 2.01 0 .73-.25 1.41-.73 2.01z"/></svg>
 );
 
-
-// Mock data for Facebook friends
-const mockFacebookFriends = [
-  { id: 'fb-1', name: 'Zayn Malik', avatarUrl: 'https://picsum.photos/seed/fb1/100/100' },
-  { id: 'fb-2', name: 'Liam Payne', avatarUrl: 'https://picsum.photos/seed/fb2/100/100' },
-  { id: 'fb-3', name: 'Harry Styles', avatarUrl: 'https://picsum.photos/seed/fb3/100/100' },
-  { id: 'fb-4', name: 'Niall Horan', avatarUrl: 'https://picsum.photos/seed/fb4/100/100' },
-  { id: 'fb-5', name: 'Louis Tomlinson', avatarUrl: 'https://picsum.photos/seed/fb5/100/100' },
-  { id: 'fb-6', name: 'Taylor Swift', avatarUrl: 'https://picsum.photos/seed/fb6/100/100' },
-  { id: 'fb-7', name: 'Selena Gomez', avatarUrl: 'https://picsum.photos/seed/fb7/100/100' },
-  { id: 'fb-8', name: 'Justin Bieber', avatarUrl: 'https://picsum.photos/seed/fb8/100/100' },
-  { id: 'fb-9', name: 'Ariana Grande', avatarUrl: 'https://picsum.photos/seed/fb9/100/100' },
-];
-
 export default function SocialPage() {
+  const { user: authUser } = useUser();
+  const firestore = useFirestore();
   const [isClient, setIsClient] = useState(false);
   const [view, setView] = useState<'tabs' | 'invite'>('tabs');
   const [invitedFriends, setInvitedFriends] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const usersQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'));
+  }, [firestore]);
+
+  const { data: allUsers, loading: usersLoading } = useCollection<User>(usersQuery);
 
   useEffect(() => {
     setIsClient(true);
@@ -156,29 +137,18 @@ export default function SocialPage() {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    if (!allUsers) return [];
+    return allUsers.filter(u => 
+        u.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [allUsers, searchQuery]);
 
-  const filteredFriendsData = mockFacebookFriends.filter(friend =>
-    friend.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleInviteAll = () => {
-    const allFriendIds = filteredFriendsData.map(f => f.id);
-    setInvitedFriends(prev => new Set([...prev, ...allFriendIds]));
-    toast({
-        title: "All visible friends invited!",
-        description: "A place where you can read, flourish and earn money by reading book.",
-    });
-  };
-
-  const friends = mockUsers.filter(u => u.id !== currentUser.id && u.isMutual);
-
-  if (!isClient) {
-    return null;
-  }
+  if (!isClient) return null;
 
   if (view === 'invite') {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="p-4 md:p-6 lg:p-8 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold font-headline">Invite Friends</h1>
           <Button variant="ghost" onClick={() => setView('tabs')}>
@@ -187,45 +157,27 @@ export default function SocialPage() {
           </Button>
         </div>
         
-        <div className="mb-4 space-y-2">
+        <div className="mb-4">
             <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                    placeholder="Search for a friend..."
+                    placeholder="Search for a friend to invite..."
                     className="pl-8"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
-            <Button onClick={handleInviteAll} className="w-full">
-                Invite All
-            </Button>
         </div>
 
         <Card>
           <CardContent className="p-2 space-y-2">
-            {filteredFriendsData.map(friend => {
-              const isInvited = invitedFriends.has(friend.id);
-              return (
-                <Card key={friend.id}>
-                  <CardContent className="p-2 flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-                      <AvatarFallback>{friend.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <p className="flex-1 font-semibold">{friend.name}</p>
-                    <Button
-                      size="sm"
-                      onClick={() => handleInviteFriend(friend.id, friend.name)}
-                      disabled={isInvited}
-                      className={cn(isInvited && "bg-green-500 hover:bg-green-600")}
-                    >
-                      {isInvited ? 'Invited' : 'Invite'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+             <div className="p-4 text-center text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto opacity-20 mb-4" />
+                <p>Connect with your Facebook friends to see them here.</p>
+                <Button className="mt-4 bg-[#1877F2] hover:bg-[#166fe5] text-white">
+                   <FacebookIcon className="h-4 w-4 mr-2" /> Connect Facebook
+                </Button>
+             </div>
           </CardContent>
         </Card>
       </div>
@@ -233,22 +185,28 @@ export default function SocialPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
-      <h1 className="text-2xl font-bold font-headline text-center mb-4">Social Circle</h1>
-      <Tabs defaultValue="friends">
-        <div className="grid w-full grid-cols-4 items-center bg-transparent p-0 gap-1">
-          <TabsList className="col-span-2 grid w-full grid-cols-2 bg-transparent p-0 gap-1">
-              <TabsTrigger value="friends" className="rounded-md bg-red-300 text-red-800 data-[state=active]:bg-red-400 px-1 py-1 h-8 text-xs"><Users className="w-4 h-4 mr-1" />Friends</TabsTrigger>
-              <TabsTrigger value="search" className="rounded-md bg-blue-500 text-white data-[state=active]:bg-blue-600 px-1 py-1 h-8 text-xs">Search</TabsTrigger>
-          </TabsList>
-           <DropdownMenu>
+    <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold font-headline text-center mb-6">Social Circle</h1>
+      
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+                placeholder="Search users by name..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button className="rounded-md bg-green-500 hover:bg-green-600 text-white px-1 py-1 h-8 text-xs">
-                        <Share2 className="w-4 h-4 mr-1" />
-                        Share
+                    <Button variant="outline" className="bg-green-500 hover:bg-green-600 text-white border-none">
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share App
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleShare('facebook')}>
                         <FacebookIcon className="w-4 h-4 mr-2" />
                         <span>Facebook</span>
@@ -268,16 +226,35 @@ export default function SocialPage() {
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-          <Button onClick={() => setView('invite')} className="rounded-md bg-red-300 hover:bg-red-400 text-red-800 px-1 py-1 h-8 text-xs">
-              <FacebookIcon className="w-4 h-4 mr-1 text-blue-600" />
-              Invite
-          </Button>
-        </div>
-        <TabsContent value="search" className="mt-2">
-          <UserList users={mockUsers} />
+            <Button onClick={() => setView('invite')} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white border-none">
+                <FacebookIcon className="w-4 h-4 mr-2" />
+                Invite
+            </Button>
+          </div>
+      </div>
+
+      <Tabs defaultValue="all">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="all">Discover Readers</TabsTrigger>
+            <TabsTrigger value="following">Following</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="mt-0">
+            {usersLoading ? (
+                <div className="flex justify-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : filteredUsers.length > 0 ? (
+                <div className="grid gap-2">
+                    {filteredUsers.map(u => (
+                        <UserCard key={u.id} user={u} currentUserId={authUser?.uid || ''} />
+                    ))}
+                </div>
+            ) : (
+                <p className="text-center text-muted-foreground py-20">No users found matching your search.</p>
+            )}
         </TabsContent>
-        <TabsContent value="friends" className="mt-2">
-          <UserList users={friends} />
+        <TabsContent value="following" className="mt-0">
+             <p className="text-center text-muted-foreground py-20">You haven't followed any readers yet.</p>
         </TabsContent>
       </Tabs>
     </div>

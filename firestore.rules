@@ -2,15 +2,13 @@ rules_version = '2';
 
 /**
  * FIRESTORE SECURITY RULES
- * UPDATED: 2024-07-29T19:30:00Z - FORCING FRESH RE-DEPLOYMENT
- * PURPOSE: Allow full access to authenticated users for the community prototype.
- * Restricted to madhusudan.182@gmail.com for admin-level sensitive paths if needed, 
- * but for simplicity in development, keeping wide open for all authenticated users.
+ * UPDATED: 2024-07-29T21:00:00Z - FORCING FRESH RE-DEPLOYMENT FOR CHAT AND POSTS
+ * PURPOSE: Allow full access to authenticated users for community features.
  */
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Wide open rules for all authenticated users to resolve list/get permission errors.
+    // Wide open rules for all authenticated users to enable community interaction
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
