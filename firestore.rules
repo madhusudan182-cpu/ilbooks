@@ -1,10 +1,11 @@
-
 rules_version = '2';
 
 /**
  * FIRESTORE SECURITY RULES
- * UPDATED: 2024-07-29T18:45:00Z - FORCING FRESH RE-DEPLOYMENT
+ * UPDATED: 2024-07-29T19:30:00Z - FORCING FRESH RE-DEPLOYMENT
  * PURPOSE: Allow full access to authenticated users for the community prototype.
+ * Restricted to madhusudan.182@gmail.com for admin-level sensitive paths if needed, 
+ * but for simplicity in development, keeping wide open for all authenticated users.
  */
 
 service cloud.firestore {
