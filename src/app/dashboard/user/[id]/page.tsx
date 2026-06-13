@@ -21,7 +21,7 @@ export default function UserProfilePage() {
   const posts = mockPosts.filter(p => p.author.id === userId);
 
   const handleFollow = () => {
-    toast({ title: user?.isFollowing ? `Unfollowed ${user.name}` : `Following ${user.name}`, duration: 2000 });
+    toast({ title: user?.isFollowing ? `Unfollowed ${user.name}` : `Following ${user?.name}`, duration: 2000 });
     // In a real app, you would update the state here
   };
   

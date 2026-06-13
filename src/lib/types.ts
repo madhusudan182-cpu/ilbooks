@@ -12,6 +12,8 @@ export type User = {
   isFollowing: boolean;
   isMutual: boolean;
   isAdmin?: boolean;
+  district?: string;
+  thana?: string;
 };
 
 export type Post = {

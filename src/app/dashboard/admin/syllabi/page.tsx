@@ -120,18 +120,21 @@ export default function AllSyllabiPage() {
     };
     
     const handleEditedSubjectChange = (id: string, field: 'name' | 'marks' | 'topics', value: string | number) => {
-        setEditedSubjects(currentSubjects => currentSubjects.map(s => {
-            if (s.id === id) {
-                if (field === 'topics') {
-                    return { ...s, topics: (value as string).split('\n') };
-                }
-                if (field === 'marks') {
-                    return { ...s, marks: Number(value) || 0 };
-                }
-                return { ...s, [field]: value };
-            }
-            return s;
-        }));
+    setEditedSubjects((prevSubjects) => 
+    prevSubjects.map((s) => {
+      if (s.id === id) {
+        if (field === 'topics') {
+          return { ...s, topics: (value as string).split('\n') };
+        }
+        // এখানে ভ্যালুটিকে নির্দিষ্ট টাইপে কাস্ট করে দিচ্ছি যাতে টাইপস্ক্রিপ্ট খুশি থাকে
+        return { 
+          ...s, 
+          [field]: field === 'marks' ? Number(value) : String(value) 
+        };
+        }
+        return s;
+        })
+        );
     };
 
     const handleAddSubject = () => {

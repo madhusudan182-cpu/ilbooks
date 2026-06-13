@@ -53,14 +53,11 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...props} />
-        ),
-      }}
+      
+      components={({
+        IconLeft: (props: any) => <ChevronLeft {...props} />,
+        IconRight: (props: any) => <ChevronRight {...props} />,
+      } as any)} // এখানে 'as any' যোগ করুন
       {...props}
     />
   )

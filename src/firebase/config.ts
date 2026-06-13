@@ -1,9 +1,9 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyCn-akbdFtUis55j6HAhxwQtpYTKJJ6uU0",
-  authDomain: "studio-7175103333-eb9b0.firebaseapp.com",
-  projectId: "studio-7175103333-eb9b0",
-  storageBucket: "studio-7175103333-eb9b0.appspot.com",
-  messagingSenderId: "131580562261",
-  appId: "1:131580562261:web:7cdabf3a3a94310504fddc",
+  apiKey: "AIzaSyDpIIAxo4u932msHjCDXG357-UxZPmjmbo",
+  authDomain: "bd-job-preparation-59001-7613b.firebaseapp.com",
+  projectId: "bd-job-preparation-59001-7613b",
+  storageBucket: "bd-job-preparation-59001-7613b.firebasestorage.app",
+  messagingSenderId: "371000081986",
+  appId: "1:371000081986:web:0cc4a0ffdd1c4c6c1437db",
   measurementId: ""
 };

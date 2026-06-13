@@ -45,7 +45,7 @@ export default function ProfilePage() {
     }
   }, [profile, isEditing]);
 
-  const selectedDistrict = editedProfile.district || "";
+  const selectedDistrict = (editedProfile as any).district || "";
   const thanas = thanasByDistrict[selectedDistrict] || [];
 
   const handleDistrictChange = (district: string) => {
