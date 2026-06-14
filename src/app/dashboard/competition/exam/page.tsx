@@ -68,8 +68,18 @@ function ExamContent() {
 
   const questionsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'questions'), where('level', '==', levelStr));
-  }, [firestore, levelStr]);
+    
+    // 💡 আমরা কনসোলে প্রিন্ট করে দেখব levelStr এর ভেতর আসলে কী লেখা আছে
+    console.log("🔍 Testing Level String Value:", typeof levelStr, `"${levelStr}"`);
+    
+    // কোনো স্পেস থাকলে তা ডিলিট করার জন্য trim() ব্যবহার করা ভালো
+    const cleanSearchLevel = levelStr ? levelStr.toString().trim() : "";
+    
+    return query(
+        collection(firestore, 'questions'), 
+        where('level', '==', cleanSearchLevel)
+    );
+}, [firestore, levelStr]);
 
   const { data: allQuestionsFromDB, loading: questionsLoading } = useCollection<Question>(questionsQuery);
   
@@ -99,20 +109,48 @@ function ExamContent() {
         return;
     }
 
-    if (questionsLoading || syllabusLoading) {
+       if (questionsLoading || syllabusLoading) {
       return; 
     }
   
     let questionPool: Question[] | null = null;
   
     if (allQuestionsFromDB && allQuestionsFromDB.length > 0) {
-      questionPool = allQuestionsFromDB;
+      // 💡 ফায়ারবেস থেকে আসা অবজেক্ট/ম্যাপ ডেটা স্ট্রাকচারকে কনভার্ট করা হচ্ছে
+      questionPool = allQuestionsFromDB.map((doc: any) => {
+        let formattedAnswers: any[] = [];
+        
+        // যদি ফায়ারবেসে অপশনগুলো ১, ২, ৩ অবজেক্ট আকারে থাকে
+        if (doc && typeof doc === 'object') {
+          const keys = Object.keys(doc).filter(key => !isNaN(Number(key)));
+          if (keys.length > 0) {
+            formattedAnswers = keys.map(key => ({
+              text: doc[key].text || "",
+              isCorrect: doc[key].isCorrect || false
+            }));
+          } else if (Array.isArray(doc.answers)) {
+            formattedAnswers = doc.answers;
+          }
+        }
+
+        return {
+          id: doc.id || `db-${Date.now()}-${Math.random()}`,
+          questionText: doc.questionText || "",
+          subject: doc.subject || "",
+          level: doc.level || "0.1",
+          answers: formattedAnswers
+        };
+      }) as unknown as Question[];
+
+      console.log("✅ Processed Question Pool from DB:", questionPool);
     } else {
+      console.log("⚠️ No questions found for level:", levelStr);
       setExamQuestions([]); 
       return;
     }
+
   
-    let finalQuestions: Question[] = [];
+        let finalQuestions: Question[] = [];
     const syllabusToUse = syllabus && Object.keys(syllabus.subjects).length > 0 ? syllabus : null;
   
     if (syllabusToUse) {
@@ -120,9 +158,23 @@ function ExamContent() {
       for (const subjectNameWithColon in syllabusToUse.subjects) {
         const subjectSyllabus = syllabusToUse.subjects[subjectNameWithColon];
         const subjectName = subjectNameWithColon.trim().replace(/:$/, '').trim();
-        const questionsForSubject = questionPool.filter(q => q.subject === subjectName);
         
-        const questionsToTake = Math.min(questionsForSubject.length, subjectSyllabus.marks);
+        // 💡 সাবজেক্টের নাম বাংলা/ইংরেজি বা বড়-ছোট হাতের অক্ষর যাই হোক, নিখুঁত ম্যাচ নিশ্চিত করার ম্যাজিক ফিল্টার
+        const questionsForSubject = questionPool.filter(q => {
+          const dbSubject = (q.subject || "").toString().trim().toLowerCase();
+          const targetSub = subjectName.toLowerCase();
+          
+          // "Bengali" এর সাথে "বাংলা" বা "English" এর সাথে "ইংরেজি" ম্যাচ করার ফলব্যাক ম্যাপ
+          if (targetSub === "বাংলা" || targetSub === "bengali") {
+            return dbSubject === "bengali" || dbSubject === "বাংলা";
+          }
+          if (targetSub === "ইংরেজি" || targetSub === "english") {
+            return dbSubject === "english" || dbSubject === "ইংরেজি";
+          }
+          return dbSubject === targetSub;
+        });
+        
+        const questionsToTake = Math.min(questionsForSubject.length, subjectSyllabus.marks || 10);
   
         if (questionsToTake > 0) {
           const shuffled = shuffleArray([...questionsForSubject]);
@@ -130,11 +182,15 @@ function ExamContent() {
         }
       }
       finalQuestions = tempFinalQuestions;
-    } else if (questionPool && questionPool.length > 0) {
+    } 
+    
+    // যদি কোনো কারণে সিলেবাস ম্যাচ না-ও করে, তবুও পরীক্ষা সচল রাখতে ডাটা পুলের প্রশ্ন ব্যাকআপ হিসেবে নেওয়া
+    if (finalQuestions.length === 0 && questionPool && questionPool.length > 0) {
       const questionsBySubject: Record<string, Question[]> = {};
       questionPool.forEach(q => {
-        if (!questionsBySubject[q.subject]) questionsBySubject[q.subject] = [];
-        questionsBySubject[q.subject].push(q);
+        const subName = q.subject || "General";
+        if (!questionsBySubject[subName]) questionsBySubject[subName] = [];
+        questionsBySubject[subName].push(q);
       });
   
       for (const subjectName in questionsBySubject) {
@@ -144,24 +200,17 @@ function ExamContent() {
       }
     }
   
+    // প্রশ্ন এবং অপশনগুলোকে ওলট-পালট করে ফাইনাল সেটআপ করা
     const questionsWithShuffledAnswers = shuffleArray(finalQuestions).map(q => ({
         ...q,
-        answers: shuffleArray([...q.answers])
+        answers: Array.isArray(q.answers) ? shuffleArray([...q.answers]) : []
     }));
 
+    console.log("🎯 Final Exam Questions Ready to Render:", questionsWithShuffledAnswers.length);
     setExamQuestions(questionsWithShuffledAnswers);
   
   }, [isLevelZero, allQuestionsFromDB, syllabus, questionsLoading, syllabusLoading, levelStr]);
 
-
-  useEffect(() => {
-    if (examQuestions) {
-      setUserAnswers(Array(examQuestions.length).fill(null));
-      setCurrentQuestionIndex(0);
-      setTimeLeft(examQuestions.length > 0 ? TOTAL_TIME_PER_QUESTION : 0);
-      setSelectedOption(null);
-    }
-  }, [examQuestions]);
   
   const handleFinishExam = useCallback(() => {
     if (!examQuestions || examQuestions.length === 0 || !user || !firestore || !profile) {
