@@ -56,21 +56,26 @@ export default function HomePage() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(firestore, 'posts'), {
-        content: postContent,
-        author: {
-          id: user.uid,
-          name: profile.name || 'Anonymous',
-          avatarUrl: profile.avatarUrl || `https://picsum.photos/seed/${user.uid}/100/100`,
-          level: profile.level ?? 0.0
-        },
-        createdAt: serverTimestamp(),
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        // Adding a placeholder image if needed for variety in prototype
-        imageUrl: Math.random() > 0.7 ? `https://picsum.photos/seed/${Date.now()}/800/400` : null
-      });
+          // 💡 আপনার নতুন এবং ক্লিন পোস্ট ক্রিয়েশন লজিক
+    await addDoc(collection(firestore, 'posts'), {
+      content: postContent,
+      author: {
+        id: user.uid,
+        name: profile.name || 'Anonymous',
+        avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
+        // 💡 নোট: এখানে সরাসরি 'level' ফিল্ডটি সেভ করার দরকার নেই। 
+        // যখন পোস্টগুলো রিড/রেন্ডার করা হবে, তখন আমরা ইউজারের লাইভ প্রোফাইল থেকে লেভেল দেখাবো।
+        // তবে ব্যাকআপ বা পুরোনো কোড যেন না ভাঙে, সেজন্য শুধু আইডি রেখে দিচ্ছি।
+      },
+      createdAt: serverTimestamp(),
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      // ❌ ডামি র্যান্ডম ইমেজ জেনারেটরটি সম্পূর্ণ ফেলে দেওয়া হলো। 
+      // কাস্টমার যদি ভবিষ্যতে ছবি আপলোড করতে চায়, তখন আমরা ডায়নামিক imageUrl সেট করব।
+      imageUrl: null 
+    });
+
       setPostContent("");
       setIsPosting(false);
       toast({ title: "Post published!" });
@@ -166,7 +171,9 @@ export default function HomePage() {
             const isMe = user && post.author.id === user.uid;
             const authorName = post.author.name;
             const authorAvatar = post.author.avatarUrl;
-            const authorLevel = post.author.level ?? 0.0;
+                    // 💡 নিজের পোস্ট হলে সরাসরি লাইভ প্রোফাইল থেকে লেভেল দেখাবে, অন্যথায় ডেটাবেজের লেভেল দেখাবে
+            const authorLevel = isMe && profile ? (profile.level ?? 0.0) : (post.author.level ?? 0.0);
+
             const profileUrl = isMe ? "/dashboard/profile" : `/dashboard/user/${post.author.id}`;
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
             

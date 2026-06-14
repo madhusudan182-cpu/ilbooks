@@ -194,7 +194,7 @@ export default function CompetitionPage() {
     }
 
     const [majorLevel] = competitionLevel.split('.').map(Number);
-    const buttonText = majorLevel < 1 ? "Proceed to bKash & Start Exam" : "Register via bKash";
+    const buttonText = majorLevel < 1 ? "Proceed to payment and Start Exam" : "Registration";
     const scheduleMessage = examScheduleMessages[majorLevel];
 
     return (
@@ -270,7 +270,7 @@ export default function CompetitionPage() {
                             <p className="text-muted-foreground">To participate in the exam, a fee of <span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span> is required for each attempt.</p>
                             <p className="font-semibold">Accepted Payment Methods:</p>
                             <div className="flex gap-4 items-center text-sm text-muted-foreground">
-                                <span className="font-bold text-pink-600">bKash</span>
+                                <span className="font-bold text-pink-600">bKash, Rocket, Nagad, Visa Card etc.</span>
                             </div>
                         </CardContent>
                     </Card>

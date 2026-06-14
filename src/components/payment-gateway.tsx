@@ -42,16 +42,14 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
 
     setLoading(true);
 
-    // 💡 ম্যাজিক ফলব্যাক লজিক: যদি productName ফাকা থাকে বা সংখ্যা না থাকে, 
-    // তবে স্ক্রিনের টেক্সট বা সেশন স্টোরেজ থেকে রিয়েল-টাইম লেভেলটি খুঁজে বের করবে।
-    let targetLevel = productName || "0.0";
-    
-    // স্ক্রিনে "Your Current Level: 0.1" লেখা থাকলে সেখান থেকে 0.1 বের করার চেষ্টা করবে
+    // 💡 ম্যাজিক লজিক: ইউজার বর্তমানে ব্রাউজারের কোন পেজে আছেন (বুকশপ, পেট্রন নাকি কম্পিটিশন) তা ইউআরএল থেকে স্বয়ংক্রিয়ভাবে ডিটেক্ট করা হচ্ছে
+    let currentPaymentType = "exam";
     if (typeof window !== 'undefined') {
-      const pageText = document.body.innerText || "";
-      const levelMatch = pageText.match(/Current Level:\s*(\d+\.\d+)/i) || pageText.match(/Level\s*(\d+\.\d+)/i);
-      if (levelMatch && levelMatch[1]) {
-        targetLevel = levelMatch[1];
+      const currentPath = window.location.pathname;
+      if (currentPath.includes("book-shop")) {
+        currentPaymentType = "book_shop";
+      } else if (currentPath.includes("patron")) {
+        currentPaymentType = "patron";
       }
     }
 
@@ -61,8 +59,9 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: amount,
-          orderId: "ILB-EXAM-" + Date.now(),
-          level: targetLevel // নিশ্চিতভাবে সঠিক লেভেল সংখ্যাটি ব্যাকএন্ডে যাবে
+          orderId: currentPaymentType === "exam" ? "ILB-EXAM-" + Date.now() : "ILB-ORDER-" + Date.now(),
+          level: productName, // এক্সামের ক্ষেত্রে এটি লেভেল পাস করবে
+          paymentType: currentPaymentType // 💡 ব্যাকএন্ডে টাইপ (book_shop / patron / exam) পাঠানো হচ্ছে
         })
       });
 

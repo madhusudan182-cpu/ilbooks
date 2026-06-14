@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck, Loader2 } from "lucide-react";
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc, getDocs } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
+
+import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc, getDocs, getDoc } from 'firebase/firestore';
+
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -29,7 +31,25 @@ export default function MessagesPage() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
+  const chatWithId = searchParams.get('chatWith');
+  const [partnerUserProfile, setPartnerUserProfile] = useState<any>(null);
 
+  // 💡 কোনো কাস্টম হুকের ঝামেলা ছাড়া সরাসরি গ্লোবাল SDK দিয়ে চ্যাট পার্টনারের প্রোফাইল লোড করা হচ্ছে
+  useEffect(() => {
+    if (!firestore || !chatWithId) {
+      setPartnerUserProfile(null);
+      return;
+    }
+    const userRef = doc(firestore, 'users', chatWithId);
+    getDoc(userRef)
+      .then((snap) => {
+        if (snap.exists()) setPartnerUserProfile(snap.data());
+      })
+      .catch((err) => console.error("Error loading active partner profile:", err));
+  }, [chatWithId, firestore]);
+
+
+  
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -177,36 +197,26 @@ export default function MessagesPage() {
           </div>
         </div>
         <ScrollArea className="flex-1">
-          {conversations.map(conv => {
-             const lastMsgTime = conv.updatedAt?.seconds ? format(new Date(conv.updatedAt.seconds * 1000), 'MMM d') : '';
-             const partnerId = conv.participants?.find((p: string) => p !== user?.uid);
-             return (
-              <div
+            {conversations.map((conv) => {
+            const lastMsgTime = conv.updatedAt?.seconds 
+              ? formatDistanceToNow(new Date(conv.updatedAt.seconds * 1000)) + ' ago' 
+              : '';
+            
+              const partnerId = conv.participants?.find((p: string) => p !== user?.uid);
+
+              return (
+              <ChatInboxRow 
                 key={conv.id}
-                role="button"
-                onClick={() => {
-                  router.push(`/dashboard/messages?chatWith=${partnerId}`);
-                }}
-                className={cn(
-                  "flex items-center gap-3 p-3 border-b cursor-pointer transition-colors",
-                  activeConversationId === conv.id ? "bg-muted" : "hover:bg-muted/50"
-                )}
-              >
-                <div className="relative">
-                    <Avatar className="h-12 w-12 border">
-                        <AvatarFallback>{conv.lastMessage?.charAt(0) || '?'}</AvatarFallback>
-                    </Avatar>
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline">
-                      <p className="font-semibold truncate">Conversation</p>
-                      <span className="text-[10px] text-muted-foreground">{lastMsgTime}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
-                </div>
-              </div>
+                partnerId={partnerId || ""}
+                conv={conv}
+                lastMsgTime={lastMsgTime}
+                firestore={firestore}
+                router={router}
+                activeConversationId={activeConversationId}
+              />
             );
-          })}
+            })}
+
           {conversations.length === 0 && !convosLoading && (
               <div className="p-10 text-center text-muted-foreground text-sm">
                   <MessageCircle className="h-10 w-10 mx-auto opacity-10 mb-4" />
@@ -294,5 +304,52 @@ export default function MessagesPage() {
         )}
       </main>
     </div>
+  );
+}
+
+// 💡 সম্পূর্ণ SDK ইনস্ট্যান্স এরর মুক্ত চূড়ান্ত গ্লোবাল ইনবক্স রো কম্পোনেন্ট
+function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeConversationId }: any) {
+  const [memberProfile, setMemberProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (!firestore || !partnerId) return;
+    
+    const userDocRef = doc(firestore, 'users', partnerId);
+    getDoc(userDocRef)
+      .then((snap: any) => {
+        if (snap.exists()) {
+          setMemberProfile(snap.data());
+        }
+      })
+      .catch((err: any) => console.error("Error loading chat row handle:", err));
+  }, [firestore, partnerId]);
+
+  const nameToDisplay = memberProfile?.name || partnerId || "Conversation";
+
+  return (
+    <button
+      role="button"
+      onClick={() => {
+        router.push(`/dashboard/messages?chatWith=${partnerId}`);
+      }}
+      className={`flex items-center gap-2 p-3 border-b cursor-pointer transition-colors w-full ${
+        activeConversationId === conv.id ? "bg-muted" : "hover:bg-muted/50"
+      }`}
+    >
+      <div className="relative">
+        <Avatar className="h-12 w-12 border">
+          <AvatarImage src={memberProfile?.avatarUrl || ""} />
+          <AvatarFallback>{nameToDisplay.substring(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </div>
+      
+      <div className="flex-1 text-left min-w-0">
+        <div className="flex items-baseline justify-between">
+          <p className="font-semibold truncate text-sm">{nameToDisplay}</p>
+          <span className="text-[10px] text-muted-foreground">{lastMsgTime}</span>
+        </div>
+        <p className="text-xs text-muted-foreground truncate">{conv.lastMessage}</p>
+      </div>
+    </button>
   );
 }

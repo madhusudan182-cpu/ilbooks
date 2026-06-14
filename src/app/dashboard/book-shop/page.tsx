@@ -45,6 +45,30 @@ export default function BookShopPage() {
   const [mobile, setMobile] = useState('');
   const [activeCategory, setActiveCategory] = useState<'level' | 'vocab' | 'popular'>('level');
 
+    // 💡 পেমেন্ট সফল হওয়ার পর স্বয়ংক্রিয়ভাবে কাস্টমারের টিকিট/অ্যাড্রেস ডায়ালগ বক্স ওপেন করার ম্যাজিক কোড
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isPaymentSuccess = searchParams.get('payment') === 'success';
+      
+      if (isPaymentSuccess) {
+        // ১. আপনার কোডের অ্যাড্রেস/টিকিট ডায়ালগ বক্সের স্টেটটি এখানে True করে দেওয়া হলো
+        if (typeof setShowAddressDialog === 'function') {
+          setShowAddressDialog(true);
+        }
+        
+        // ২. ইউআরএল থেকে সুন্দরভাবে ?payment=success লেখাটি মুছে দেওয়া যেন পেজ রিফ্রেশ করলে বারবার টিকিট না আসে
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        toast({
+          title: "Payment Successful!",
+          description: "Please fill up your delivery ticket details below.",
+        });
+      }
+    }
+  }, [toast]);
+
   const booksQuery = useMemo(() => (firestore ? collection(firestore, 'books') : null), [firestore]);
   const { data: books, loading: booksLoading } = useCollection<Book>(booksQuery);
 
