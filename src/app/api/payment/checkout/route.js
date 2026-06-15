@@ -22,9 +22,10 @@ export async function POST(req) {
       // পেট্রন সাবস্ক্রিপশন সফল হলে পেট্রন ড্যাশবোর্ডে যাবে
       successRedirectUrl = `${currentBaseUrl}/dashboard/patron?status=active`;
     } else {
-      // ডিফল্ট বা কম্পিটিশন এক্সামের ক্ষেত্রে লেভেল এক্সট্র্যাক্ট
-      successRedirectUrl = `${currentBaseUrl}/dashboard/competition?payment=success&level=${level || '0.1'}`;
+      // আগের কোডটি পরিবর্তন করে এটি লিখুন
+      successRedirectUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
     }
+
 
     // 🔥 ফায়ারবেস ফায়ারস্টোর ডাটাবেজ আপডেট লজিক
     if (userId) {
@@ -44,10 +45,12 @@ export async function POST(req) {
           });
         } else {
           // কম্পিটিশন বা ডিফল্ট এক্সামের ক্ষেত্রে লেভেল আপডেট
-          await updateDoc(userRef, {
-            unlockedLevel: level || "0.1",
-            isPremium: true,
-          });
+          // আগের কোডটি পরিবর্তন করে এটি লিখুন
+        await updateDoc(userRef, {
+          level: level || "0.1", // এখানে unlockedLevel এর জায়গায়   level হবে
+          isPremium: true,
+        });
+
         }
 
         // পেমেন্টের ট্র্যাকিং হিস্ট্রি আলাদা কালেকশনে জমা রাখা
