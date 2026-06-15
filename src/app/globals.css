@@ -78,11 +78,21 @@ body {
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@keyframes bgPulse {
+  0%, 100% { 
+    background-color: rgba(173, 255, 47, 0.15); /* হালকা সবুজাভ হলুদ (Dim অবস্থা) */
+    transform: scale(0.98);
   }
-  body {
-    @apply bg-background text-foreground;
+  50% { 
+    background-color: rgba(173, 255, 47, 0.85); /* গাঢ় ও ব্রাইট সবুজাভ হলুদ (Bright অবস্থা) */
+    transform: scale(1.02);
+    box-shadow: 0 0 18px rgba(173, 255, 47, 0.6); /* নিয়ন গ্লো ইফেক্ট */
   }
 }
+
+.animate-bg-pulse {
+  animation: bgPulse 1.8s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+

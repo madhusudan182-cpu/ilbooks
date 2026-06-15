@@ -226,7 +226,10 @@ export default function CompetitionPage() {
             <div className="p-4 md:p-6 lg:p-8 space-y-8">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold font-headline">Competition</h1>
-                    <p className="text-muted-foreground mt-2">Test your knowledge, level up, and win prizes!</p>
+                    <p className="text-slate-800 font-medium mt-2 animate-bg-pulse px-4 py-1.5 rounded inline-block">
+  Test your knowledge, level up, and win prizes!
+</p>
+
                     <div className="flex flex-col justify-center items-center gap-2 mt-4">
                         {isClient ? (
                             <Badge className="text-base bg-red-100 text-red-800">Your Current Level: {competitionLevel}</Badge>
