@@ -79,13 +79,14 @@ const EditableBookGrid = ({
                             className="hidden" 
                             ref={(el) => {
                                 if (el) {
-                                fileInputRefs.current[`cover-${book.id}`] = el;
+                                    fileInputRefs.current[`cover-${book.id}`] = el;
                                 } else {
-                                delete fileInputRefs.current[`cover-${book.id}`];
+                                    delete fileInputRefs.current[`cover-${book.id}`];
                                 }
-                            }} 
-                            onChange={(e) => onFileChange(book.id, 'cover', e)} 
-                            />
+                                }}
+                                onChange={(e) => onFileChange(book.id, 'cover', e)}
+                                />
+
                         <Button variant="outline" size="sm" onClick={() => fileInputRefs.current[`cover-${book.id}`]?.click()}>
                             <Upload className="mr-2 h-4 w-4" /> Upload New Cover
                         </Button>
