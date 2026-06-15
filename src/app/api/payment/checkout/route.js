@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase"; // আপনার ফায়ারবেস কনফিগ ফাইলের পাথটি প্রয়োজনে চেক করে নিন
+import { db } from "../../../../lib/firebase";
 import { doc, updateDoc, setDoc } from "firebase/firestore";
 
 export async function POST(req) {
