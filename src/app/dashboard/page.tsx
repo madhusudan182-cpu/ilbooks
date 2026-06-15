@@ -12,7 +12,7 @@ import { MessageCircle, Heart, Share2, Image as ImageIcon, Film, Loader2 } from 
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
-import { doc, collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
+import { doc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
 import type { User } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 
@@ -85,6 +85,8 @@ export default function HomePage() {
       setIsSubmitting(false);
     }
   };
+
+  
 
   const handleLike = () => {
     toast({ title: "Liked post!", duration: 2000 });
@@ -199,7 +201,10 @@ export default function HomePage() {
                       >
                         {authorName}
                       </Link>
-                      <Badge variant="secondary" className="text-xs">Level: {authorLevel.toFixed(1)}</Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        Level: <LiveAuthorLevel authorId={post.author.id} fallbackLevel={authorLevel} firestore={firestore} />
+                      </Badge>
+
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {timeAgo}
@@ -257,4 +262,26 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+
+
+function LiveAuthorLevel({ authorId, fallbackLevel, firestore }: { authorId: string; fallbackLevel: any; firestore: any }) {
+  const [level, setLevel] = useState(fallbackLevel);
+
+  useEffect(() => {
+    if (!authorId || !firestore) return;
+
+    const userDocRef = doc(firestore, "users", authorId);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        setLevel(userData.level ?? userData.admin_level ?? fallbackLevel);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [authorId, firestore, fallbackLevel]);
+
+  return <>{level}</>;
 }

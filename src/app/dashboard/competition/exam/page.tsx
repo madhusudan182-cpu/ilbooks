@@ -33,32 +33,44 @@ const shuffleArray = (array: any[]) => {
 };
 
 function ExamContent() {
-  const searchParams = useSearchParams();
+    const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const levelStr = searchParams.get('level') || '0.0';
   const firestore = useFirestore();
   const { user } = useUser();
+  
+  // ১. প্রোফাইল ডাটা রিড করার হুকগুলো ওপরে নিয়ে আসা হলো
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: profile, loading: profileLoading } = useDoc<UserProfile>(userRef);
 
-  const isLevelZero = levelStr === '0.0';
+  // ২. এখন নিচে নিরাপদে profile ব্যবহার করা যাবে, লাল দাগ চলে যাবে
+  const urlLevel = searchParams.get('level') || '0.0';
+  const levelStr = profile?.level ? parseFloat(String(profile.level)).toFixed(1) : urlLevel;
+
+
+  const isLevelZero = levelStr === '0.0' || levelStr === '0';
   const majorLevel = parseInt(levelStr.split('.')[0], 10);
 
   // Synchronous validation: Ensure the user is taking the exam for their actual level
   useEffect(() => {
-    if (!profileLoading && profile) {
-      const actualLevel = profile.level?.toFixed(1) || "0.0";
-      if (levelStr !== actualLevel) {
-        toast({
-          title: "Synchronization Error",
-          description: `You are at Level ${actualLevel}. Please take the correct exam.`,
-          variant: "destructive",
-        });
-        router.replace('/dashboard/competition');
-      }
-    }
-  }, [profile, profileLoading, levelStr, router, toast]);
+  // ১. প্রোফাইল ডাটা পুরোপুরি লোড হওয়া পর্যন্ত অপেক্ষা করতে হবে
+  if (profileLoading || !profile) return;
+
+  const actualLevelNum = parseFloat(String(profile.level)) || 0.0;
+  
+  // ২. ইউআরএল-এর ভুল levelStr এর বদলে সরাসরি লাইভ লেভেল ব্যবহার করা হচ্ছে
+  const currentExamLevelNum = parseFloat(String(profile.level)) || 0.0;
+
+  if (actualLevelNum.toFixed(1) !== currentExamLevelNum.toFixed(1)) {
+    toast({
+      title: "Synchronization Error",
+      description: `You are at Level ${actualLevelNum.toFixed(1)}. Please take the correct exam.`,
+      variant: "destructive",
+    });
+    router.replace('/dashboard/competition');
+  }
+}, [profile, profileLoading, router, toast]);
+
 
   useEffect(() => {
     if (examHolds[levelStr]) {
@@ -69,17 +81,20 @@ function ExamContent() {
   const questionsQuery = useMemo(() => {
     if (!firestore) return null;
     
-    // 💡 আমরা কনসোলে প্রিন্ট করে দেখব levelStr এর ভেতর আসলে কী লেখা আছে
-    console.log("🔍 Testing Level String Value:", typeof levelStr, `"${levelStr}"`);
-    
-    // কোনো স্পেস থাকলে তা ডিলিট করার জন্য trim() ব্যবহার করা ভালো
-    const cleanSearchLevel = levelStr ? levelStr.toString().trim() : "";
-    
-    return query(
-        collection(firestore, 'questions'), 
-        where('level', '==', cleanSearchLevel)
-    );
-}, [firestore, levelStr]);
+    // প্রোফাইল থেকে একদম লাইভ লেভেলটি নেওয়া হচ্ছে (যেমন: "0.1")
+const liveProfileLevel = profile?.level ? parseFloat(String(profile.level)).toFixed(1) : null;
+
+// যদি ইউআরএল এর levelStr এবং লাইভ লেভেল না মিলে, তবে লাইভ লেভেলটিকেই প্রায়োরিটি দেওয়া হবে
+const finalLevelToSearch = liveProfileLevel || levelStr || "0.0";
+
+console.log("🔍 Final query level used:", finalLevelToSearch);
+
+return query(
+  collection(firestore, 'questions'),
+  where('level', '==', finalLevelToSearch.trim())
+);
+}, [firestore, levelStr, profile]); // profile ডিপেন্ডেন্সি যোগ করা হয়েছে
+
 
   const { data: allQuestionsFromDB, loading: questionsLoading } = useCollection<Question>(questionsQuery);
   

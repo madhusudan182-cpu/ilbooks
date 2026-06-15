@@ -32,7 +32,9 @@ export default function CompetitionPage() {
     const { toast } = useToast();
 
     const [isClient, setIsClient] = useState(false);
-    const competitionLevel = profile?.level?.toFixed(1) || "0.0";
+    // প্রোফাইল লেভেলকে নিরাপদে ফ্লোটে রূপান্তর করে ১ ঘর পর্যন্ত ফিক্স করা হচ্ছে
+    const competitionLevel = profile?.level ? parseFloat(String(profile.level)).toFixed(1) : "0.0";
+
     
     const getExamFee = (levelString: string): number => {
         const [major] = levelString.split('.').map(Number);
@@ -55,11 +57,11 @@ export default function CompetitionPage() {
     }, []);
 
     const syllabusQuery = useMemo(() => {
-        if(firestore && competitionLevel) {
+        if(firestore && competitionLevel && profile) {
             return query(collection(firestore, 'syllabi'), where('level', '==', competitionLevel));
         }
         return null;
-    }, [firestore, competitionLevel]);
+    }, [firestore, competitionLevel, profile]);
 
     const { data: userSyllabusArr, loading: syllabusLoading } = useCollection<Syllabus>(syllabusQuery);
     const userSyllabus = userSyllabusArr?.[0];
@@ -67,7 +69,7 @@ export default function CompetitionPage() {
     const questionsQuery = useMemo(() => {
         if (!firestore || !competitionLevel) return null;
         return query(collection(firestore, 'questions'), where('level', '==', competitionLevel));
-    }, [firestore, competitionLevel]);
+    }, [firestore, competitionLevel, profile]);
 
     const { data: questionsForLevel } = useCollection<Question>(questionsQuery);
 
@@ -140,10 +142,13 @@ export default function CompetitionPage() {
                 errorEmitter.emit('permission-error', permissionError);
             });
 
-        const [majorLevel] = competitionLevel.split('.').map(Number);
-        if (majorLevel < 1) {
-             router.push(`/dashboard/competition/exam?level=${competitionLevel}`);
-        } else {
+        const currentLiveLevel = profile?.level ? String(profile.level) : "0.0";
+            const [majorLevel] = currentLiveLevel.split('.').map(Number);
+
+            if (majorLevel < 1) {
+            router.push(`/dashboard/competition/exam?level=${currentLiveLevel}`);
+            } else {
+
             sessionStorage.setItem(`examRegistered_${competitionLevel}`, 'true');
             setIsRegistered(true);
 
