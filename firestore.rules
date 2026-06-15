@@ -1,15 +1,22 @@
 rules_version = '2';
 
-/**
- * FIRESTORE SECURITY RULES
- * UPDATED: 2024-08-01T18:45:00Z - FORCING RE-DEPLOYMENT
- * PURPOSE: Grant full access to all authenticated users for real-time community features.
- */
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Catch-all rule for all collections and subcollections
-    match /{document=**} {
+    
+    // ইউজার প্রোফাইল রুলস
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ফলো এবং ফ্রেন্ডশিপ রিলেশন টেবিল রুলস
+    match /follows/{followId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // নিউজ ফিড বা পোস্টের রুলস
+    match /posts/{postId} {
+      // প্রোফাইল লকড এবং ব্লক লজিক আমরা ব্যাকএন্ড কোড/কোয়েরি দিয়ে হ্যান্ডেল করব, 
+      // তবে এখানে শুধু লগইন করা ইউজারদের পারমিশন দেওয়া হচ্ছে।
       allow read, write: if request.auth != null;
     }
   }

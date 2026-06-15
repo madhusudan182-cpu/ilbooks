@@ -1,259 +1,330 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Camera, Save, X, Loader2 } from "lucide-react";
-import type { User } from "@/lib/types";
-import { thanasByDistrict } from "@/lib/location-data";
-import { useUser, useFirestore, useDoc } from "@/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { MapPin, Camera, Loader2, Lock, Unlock, Heart, MessageCircle, Share2 } from "lucide-react";
+import { getFirestore, doc, updateDoc, onSnapshot, collection, query, orderBy } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // 🎯 ফায়ারবেস অথেনটিকেশন মডিউল ইমপোর্ট করলাম
 import { useToast } from "@/hooks/use-toast";
 
-const districts = Object.keys(thanasByDistrict);
-const hobbiesList = [
-  "Reading", "Writing", "Poetry", "History", "Science Fiction", 
-  "Fantasy", "Philosophy", "Art", "Travel", "Cooking", 
-  "Gardening", "Gaming", "Music", "Movies", "Sports"
-];
+interface PostData {
+  id: string;
+  userId: string;
+  authorName: string;
+  authorLevel: string;
+  authorAvatar?: string;
+  content: string;
+  imageUrl?: string;
+  createdAt: any;
+  likesCount?: number;
+  commentsCount?: number;
+  sharesCount?: number;
+}
 
 export default function ProfilePage() {
-  const { user, loading: authLoading } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
-  
-  const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
+  const firestore = getFirestore();
+  const auth = getAuth(); // 🎯 ফায়ারবেস অথেনটিকেশন ইনিশিয়েলাইজ করলাম
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState<Partial<User>>({});
-  const [isSaving, setIsSaving] = useState(false);
-  
+  // 👤 ইউজার এবং প্রোফাইল স্টেটসমূহ
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [isProfileLocked, setIsProfileLocked] = useState(false);
+  const [myPosts, setMyPosts] = useState<PostData[]>([]);
+
+  const [counts, setCounts] = useState({
+    friends: 0,
+    following: 0,
+    followers: 0,
+    blocked: 0
+  });
+
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize form state only when not editing or when profile first loads
+  // 🔐 ১. আলাদাভাবে কারেন্ট লগইন থাকা ইউজার ট্র্যাক করার সিকিউর লজিক
   useEffect(() => {
-    if (profile && !isEditing) {
-      setEditedProfile(profile);
-    }
-  }, [profile, isEditing]);
-
-  const selectedDistrict = (editedProfile as any).district || "";
-  const thanas = thanasByDistrict[selectedDistrict] || [];
-
-  const handleDistrictChange = (district: string) => {
-    setEditedProfile(prev => ({ ...prev, district, thana: "" }));
-  };
-
-  const handleProfileChange = (field: keyof User, value: any) => {
-    setEditedProfile(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Basic size check for Firestore base64 storage (limit 1MB)
-      if (file.size > 800000) {
-        toast({
-            variant: "destructive",
-            title: "File too large",
-            description: "Please select an image smaller than 800KB.",
-        });
-        return;
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setProfileLoading(false);
       }
+      setAuthLoading(false);
+    });
+    return () => unsubscribeAuth();
+  }, [auth]);
 
-      const reader = new FileReader();
-      reader.onload = (loadEvent) => {
-        handleProfileChange('avatarUrl', loadEvent.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // 🔄 ২. রিয়েল-টাইমে ডাটাবেস থেকে প্রোফাইল, পোস্ট ও কাউন্টার সিঙ্ক করা
+  useEffect(() => {
+    if (!firestore || !currentUser) return;
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !firestore) return;
+    // ক) নিজের ইউজার প্রোফাইল ডেটা লোড
+    const userRef = doc(firestore, 'users', currentUser.uid);
+    const unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setProfile(data);
+        setIsProfileLocked(data.isLocked || false);
+      }
+      setProfileLoading(false);
+    });
 
-    setIsSaving(true);
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const updateData = {
-        name: editedProfile.name || "",
-        institution: editedProfile.institution || "",
-        district: editedProfile.district || "",
-        thana: editedProfile.thana || "",
-        location: editedProfile.thana && editedProfile.district 
-            ? `${editedProfile.thana}, ${editedProfile.district}, Bangladesh` 
-            : (editedProfile.location || ""),
-        hobbies: editedProfile.hobbies || [],
-        avatarUrl: editedProfile.avatarUrl || "",
-      };
+        // // খ) সম্পূর্ণ পোস্ট কালেকশন লোড
+    const profilePostsQuery = query(
+      collection(firestore, 'posts'),
+      orderBy('createdAt', 'desc')
+    );
 
-      await updateDoc(docRef, updateData);
+    const unsubscribePosts = onSnapshot(profilePostsQuery, (snapshot) => {
+      const postsList: PostData[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        
+        // ডাটাবেস অবজেক্ট স্কিমা অনুযায়ী নিখুঁত এক্সট্রাকশন
+        const authorObj = data.author && typeof data.author === 'object' ? data.author : null;
+        const postAuthorId = authorObj?.id || data.userId || data.uid || 'unknown';
+        const postAuthorName = authorObj?.name || data.authorName || 'Admin Support';
 
-      toast({ title: "Profile updated successfully!" });
-      setIsEditing(false);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: error.message,
+        postsList.push({
+          id: doc.id,
+          userId: postAuthorId,
+          authorName: postAuthorName,
+          authorLevel: data.level !== undefined ? String(data.level) : '0.1',
+          authorAvatar: authorObj?.avatarUrl || data.avatarUrl,
+          content: data.content || '',
+          imageUrl: data.imageUrl || null,
+          createdAt: data.createdAt,
+          likesCount: data.likes || 0,
+          commentsCount: data.comments || 0,
+          sharesCount: data.shares || 0
+        });
       });
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      setMyPosts(postsList);
+    }, (error) => {
+      console.error("Firebase posts read error:", error);
+    });
 
-  const handleCancel = () => {
-    if (profile) setEditedProfile(profile);
-    setIsEditing(false);
+    // গ) সোশ্যাল রিলেশনশিপ কাউন্টিং লজিক
+    const followsQuery = query(collection(firestore, 'follows'));
+    const unsubscribeFollows = onSnapshot(followsQuery, (snapshot) => {
+      const myFollowings = new Set<string>();
+      const myFollowers = new Set<string>();
+      let blockedCount = 0;
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.status === 'BLOCKED') {
+          if (data.followerId === currentUser.uid || data.followingId === currentUser.uid) {
+            blockedCount++;
+          }
+        } else if (data.status === 'ACTIVE') {
+          if (data.followerId === currentUser.uid) myFollowings.add(data.followingId);
+          if (data.followingId === currentUser.uid) myFollowers.add(data.followerId);
+        }
+      });
+
+      let friendsCount = 0;
+      let followingCount = 0;
+      let followersCount = 0;
+
+      myFollowings.forEach(id => {
+        if (myFollowers.has(id)) friendsCount++;
+        else followingCount++;
+      });
+
+      myFollowers.forEach(id => {
+        if (!myFollowings.has(id)) followersCount++;
+      });
+
+      setCounts({
+        friends: friendsCount,
+        following: followingCount,
+        followers: followersCount,
+        blocked: blockedCount
+      });
+    });
+
+    return () => {
+      unsubscribeDoc();
+      unsubscribePosts();
+      unsubscribeFollows();
+    };
+  }, [firestore, currentUser]);
+
+    // 🔐 কারেন্ট ইউজারের আইডি বনাম ডাটাবেস থেকে আসা অবজেক্ট আইডি ম্যাচিং ফিল্টার
+  const displayMyPosts = myPosts.filter(post => {
+    const currentId = currentUser?.uid || auth.currentUser?.uid;
+    if (!currentId) return false;
+
+    const isIdMatch = post.userId && String(post.userId).trim() === String(currentId).trim();
+    const currentProfileName = String(profile?.name || 'Admin Support').toLowerCase().trim();
+    const isNameMatch = post.authorName && String(post.authorName).toLowerCase().trim() === currentProfileName;
+
+    return isIdMatch || isNameMatch;
+  });
+
+      // 🛠️ ভিজ্যুয়াল ডিবাগার টেক্সট জেনারেটর
+  const debugInfo = myPosts.length > 0 ? {
+    totalInDb: myPosts.length,
+    currentUserId: currentUser?.uid || auth.currentUser?.uid,
+    currentProfileName: profile?.name || 'Admin Support',
+    firstPostUserId: myPosts[0].userId,
+    firstPostAuthor: myPosts[0].authorName
+  } : null;
+
+
+  const toggleProfileLock = async () => {
+    if (!firestore || !currentUser) return;
+    try {
+      const nextState = !isProfileLocked;
+      setIsProfileLocked(nextState);
+      const userRef = doc(firestore, 'users', currentUser.uid);
+      await updateDoc(userRef, { isLocked: nextState });
+      toast({
+        title: nextState ? "Profile Locked! 🔒" : "Profile Unlocked! 🔓",
+        description: nextState ? "Only friends can see your feeds." : "Everyone can see your profile and feeds.",
+      });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update security setting.", variant: "destructive" });
+    }
   };
 
   if (authLoading || profileLoading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      </div>
+    );
   }
 
-  if (!profile) return null;
-
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-8">
-      <Card>
+    <div className="max-w-md mx-auto min-h-screen bg-slate-50 p-4 pb-20 font-sans">
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-4">
         <CardContent className="p-6">
-          {isEditing ? (
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="flex flex-col md:flex-row items-start gap-6">
-                 <div className="relative w-24 h-24 flex-shrink-0">
-                    <input type="file" accept="image/*" className="hidden" ref={avatarInputRef} onChange={handleAvatarChange} />
-                    <Avatar className="w-24 h-24 border-4 border-card">
-                        <AvatarImage src={editedProfile.avatarUrl} />
-                        <AvatarFallback>{editedProfile.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <Button type="button" size="icon" variant="outline" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full" onClick={() => avatarInputRef.current?.click()}>
-                        <Camera className="h-4 w-4" />
-                        <span className="sr-only">Upload Picture</span>
-                    </Button>
-                </div>
-                <div className="grid gap-2 w-full">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" value={editedProfile.name || ""} onChange={(e) => handleProfileChange('name', e.target.value)} />
-                </div>
-              </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="institution">Institution</Label>
-                        <Input id="institution" value={editedProfile.institution || ""} onChange={(e) => handleProfileChange('institution', e.target.value)} />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="district">District</Label>
-                        <Select onValueChange={handleDistrictChange} value={editedProfile.district || ""}>
-                        <SelectTrigger id="district">
-                            <SelectValue placeholder="Select your district" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {districts.map(district => (
-                            <SelectItem key={district} value={district} className="capitalize">{district}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="thana">Thana</Label>
-                        <Select disabled={!editedProfile.district} value={editedProfile.thana || ""} onValueChange={(val) => handleProfileChange('thana', val)}>
-                            <SelectTrigger id="thana">
-                                <SelectValue placeholder="Select your thana" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {thanas.map(thana => (
-                                    <SelectItem key={thana} value={thana}>{thana}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="grid gap-2">
-                    <Label>Hobbies</Label>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            {editedProfile.hobbies?.length ? `${editedProfile.hobbies.length} hobbies selected` : "Select your hobbies"}
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                            <ScrollArea className="h-60">
-                                {hobbiesList.map((hobby) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={hobby}
-                                        checked={editedProfile.hobbies?.includes(hobby)}
-                                        onCheckedChange={(checked) => {
-                                            const currentHobbies = editedProfile.hobbies || [];
-                                            const newHobbies = checked 
-                                                ? [...currentHobbies, hobby]
-                                                : currentHobbies.filter((h) => h !== hobby);
-                                            handleProfileChange('hobbies', newHobbies);
-                                        }}
-                                    >
-                                    {hobby}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </ScrollArea>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                        {editedProfile.hobbies?.map(hobby => <Badge key={hobby} variant="secondary">{hobby}</Badge>)}
-                    </div>
-                </div>
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}><X className="mr-2 h-4 w-4" />Cancel</Button>
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="flex flex-col md:flex-row items-start gap-6">
-              <Avatar className="w-24 h-24 border-4 border-card">
-                <AvatarImage src={profile.avatarUrl} />
-                <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
+          <div className="flex flex-col items-center text-center">
+            <div className="relative group mb-4">
+              <Avatar className="w-24 h-24 border-4 border-purple-100 shadow-sm">
+                <AvatarImage src={profile?.avatarUrl} />
+                <AvatarFallback className="text-xl font-bold bg-purple-50 text-purple-700">
+                  {profile?.name ? profile.name.charAt(0) : "U"}
+                </AvatarFallback>
               </Avatar>
-              <div className="flex-grow">
-                <div className="flex items-baseline gap-4">
-                  <h1 className="text-3xl font-bold font-headline">{profile.name}</h1>
-                  <Badge className="text-sm">Level: {profile.level?.toFixed(1) || "0.0"}</Badge>
-                </div>
-                <p className="text-muted-foreground mt-1">{profile.institution}</p>
-                <div className="flex items-center text-muted-foreground text-sm mt-2">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  <span>{profile.location || "Location not set"}</span>
-                </div>
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Hobbies</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.hobbies?.map((hobby) => (
-                      <Badge key={hobby} variant="secondary">{hobby}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+              <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 rounded-full w-8 h-8 shadow-md" onClick={() => avatarInputRef.current?.click()}>
+                <Camera className="w-4 h-4 text-slate-600" />
+              </Button>
+              <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" />
             </div>
-          )}
+
+            <h2 className="text-2xl font-bold text-slate-800">{profile?.name || "Admin Support"}</h2>
+            <Badge className="bg-purple-600 hover:bg-purple-700 my-1 text-xs font-semibold">Level: {profile?.level || "0.1"}</Badge>
+            
+            <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+              <MapPin className="w-3.5 h-3.5 text-purple-500" />
+              <span>{profile?.thana ? `${profile.thana}, ` : ""}{profile?.district || "Bangladesh"}</span>
+            </div>
+
+            <div className="w-full mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="text-left">
+                <p className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  {isProfileLocked ? <Lock className="w-3.5 h-3.5 text-red-500" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />}
+                  Profile Status
+                </p>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  {isProfileLocked ? "Only friends can view your feed" : "Everyone can view your feed"}
+                </p>
+              </div>
+              <Button 
+                onClick={toggleProfileLock}
+                size="sm" 
+                variant={isProfileLocked ? "destructive" : "outline"}
+                className="text-xs font-bold px-3 py-1.5 h-auto rounded-lg transition-all"
+              >
+                {isProfileLocked ? "Unlock Profile" : "Lock Profile"}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-4 gap-1.5 mb-6 text-center font-bold text-[11px]">
+        <button className="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl shadow-sm">
+          <span className="text-sm font-extrabold">{counts.friends}</span>
+          <span>Friends</span>
+        </button>
+        <button className="flex flex-col items-center justify-center bg-amber-500 hover:bg-amber-600 text-white p-2.5 rounded-xl shadow-sm">
+          <span className="text-sm font-extrabold">{counts.following}</span>
+          <span>Following</span>
+        </button>
+        <button className="flex flex-col items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm">
+          <span className="text-sm font-extrabold">{counts.followers}</span>
+          <span>Followers</span>
+        </button>
+                <button className="flex flex-col items-center justify-center bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-xl shadow-sm">
+          <span className="text-sm font-extrabold">{counts.blocked}</span>
+          <span>Blocked</span>
+        </button>
+      </div>
+
+      {/* 📰 ডাইনামিক নিউজ ফিড বা পোস্ট সেকশন */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold text-slate-800 px-1">Your Posts ({displayMyPosts.length})</h3>
+
+         {displayMyPosts.length > 0 ? (
+          displayMyPosts.map((post) => (
+            <Card key={post.id} className="border-0 shadow-sm rounded-2xl bg-white overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Avatar className="w-8 h-8 border border-purple-100">
+                    <AvatarImage src={post.authorAvatar || profile?.avatarUrl} />
+                    <AvatarFallback className="text-xs font-bold bg-purple-50 text-purple-700">
+                      {post.authorName ? post.authorName.charAt(0) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-slate-800">{post.authorName}</h4>
+                      <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-[9px] px-1 py-0 h-auto font-bold">Level: {post.authorLevel}</Badge>
+                    </div>
+                    <p className="text-[9px] text-slate-400 mt-0.5">Post Feed</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed mb-3">{post.content}</p>
+
+                {post.imageUrl && (
+                  <div className="rounded-xl overflow-hidden mb-3 border border-slate-100 max-h-60 flex items-center justify-center bg-slate-50">
+                    <img src={post.imageUrl} alt="Post content" className="w-full h-full object-cover" />
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 text-slate-500 text-[10px] font-bold border-t border-slate-50 pt-2.5 mt-1 px-1">
+                  <div className="flex items-center gap-1">
+                    <Heart className="w-3.5 h-3.5" />
+                    <span>{post.likesCount}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>{post.commentsCount}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>{post.sharesCount}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 text-slate-400 text-xs">
+            You haven't posted anything yet. 📚
+          </div>
+        )}
+      </div>
     </div>
   );
 }
