@@ -16,6 +16,7 @@ import { doc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, u
 
 import type { User } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
+import { useSearchParams } from 'next/navigation';
 
 export default function HomePage() {
   const { user, loading: authLoading } = useUser();
@@ -238,7 +239,7 @@ export default function HomePage() {
                         </span>
                       </Link>
                       <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-600 border border-purple-100 rounded font-bold">
-                        Lvl {Number(authorLevel).toFixed(1)}
+                        Level: {typeof post?.user?.level === 'number' ? post.user.level.toFixed(1) : (Number(post?.user?.level) || 0).toFixed(1)}
                       </Badge>
                     </div>
                     <p className="text-[10px] text-muted-foreground">{timeAgo}</p>

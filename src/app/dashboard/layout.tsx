@@ -3,7 +3,9 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Bell, Shield, Loader2 } from 'lucide-react';
+// লাইন ৬-এ এগুলো যুক্ত করে নিন
+import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Bell, Shield, Loader2, Scale, MessageSquare } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -19,8 +21,10 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
-import { doc } from 'firebase/firestore';
+// বাকি ইম্পোর্টগুলোর সাথে এগুলো যুক্ত করুন
+import { doc, collection, query, where, onSnapshot } from 'firebase/firestore'; 
 import { signOut } from 'firebase/auth';
+
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -50,6 +54,8 @@ const allNavItems: NavItem[] = [
   { href: '/dashboard/messages', title: 'Chat', icon: MessageCircle },
   { href: '/dashboard/social', title: 'Social Circle', icon: Users },
   { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell },
+  { href: '/dashboard/complain', title: 'Complain', icon: MessageSquare },
+  { href: '/dashboard/community-rules', title: 'Community Rules', icon: Scale },
   { href: '/dashboard/admin', title: 'Admin', icon: Shield, adminOnly: true },
 ];
 
@@ -79,6 +85,36 @@ export default function DashboardLayout({
 
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
+
+    const [liveUnreadCount, setLiveUnreadCount] = React.useState(0);
+
+    React.useEffect(() => {
+  // 🔒 সেফটি লক: যদি ইউজার আইডি অথবা ফায়ারস্টোর রেডি না থাকে, তবে কোড ওখানেই থেমে যাবে
+  if (!user?.uid || !firestore) return;
+
+  try {
+    // এখন গ্লোবালি ইম্পোর্ট করা মেথডগুলো সরাসরি ব্যবহার হবে
+    const q = query(
+      collection(firestore, 'notifications'),
+      where('userId', '==', user.uid),
+      where('isRead', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      setLiveUnreadCount(snapshot.size);
+    }, (error: any) => {
+      console.error("Live counter onSnapshot error:", error);
+    });
+
+    return () => unsubscribe();
+  } catch (e) {
+    console.error("Firestore definitive guard caught error:", e);
+  }
+}, [user?.uid, firestore]);
+
+
+
+
 
   React.useEffect(() => {
     setIsClient(true);
@@ -267,17 +303,19 @@ export default function DashboardLayout({
                         <Tooltip>
                             <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <Button
+                              <Button
                                 variant="ghost"
                                 size="icon"
-                                className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                                >
+                                className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                                onClick={() => router.push('/dashboard/notifications')}
+                              >
+
                                 <Bell className="h-8 w-8" />
-                                {notificationCount > 0 && (
-                                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                                    {notificationCount}
+                                   {liveUnreadCount > 0 && (
+                                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
+                                      {liveUnreadCount}
                                     </span>
-                                )}
+                                  )}
                                 <span className="sr-only">Notifications</span>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -289,15 +327,13 @@ export default function DashboardLayout({
                         <DropdownMenuContent align="end" className="w-80">
                             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {notifications.map((notification, index) => (
-                            <DropdownMenuItem key={index} className="flex-col items-start gap-1">
-                                <p className="font-medium">{notification.title}</p>
-                                <p className="text-xs text-muted-foreground">{notification.description}</p>
-                            </DropdownMenuItem>
-                            ))}
+                              {/* নোটিফিকেশন ড্রপডাউন লিস্টটি ক্লীন করা হলো */}
+                              <div className="px-4 py-2 text-center text-xs text-gray-400">
+                                Click to view all live notifications
+                              </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
-                            <Link href="/dashboard/notice-board" className='justify-center'>View all notifications</Link>
+                            <Link href="/dashboard/notifications" className='justify-center'>View all notifications</Link>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                         </DropdownMenu>

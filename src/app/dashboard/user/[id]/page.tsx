@@ -86,7 +86,7 @@ export default function UserProfilePage() {
 
               <div className="flex flex-wrap gap-3 justify-center sm:justify-start text-xs text-slate-400">
                 <Badge variant="secondary" className="bg-purple-950 text-purple-300 border-purple-900">
-                  Lvl {Number(userData.level || 0).toFixed(1)}
+                  Level {Number(userData.level || 0).toFixed(1)}
                 </Badge>
                 {userData.location && (
                   <span className="flex items-center gap-1">

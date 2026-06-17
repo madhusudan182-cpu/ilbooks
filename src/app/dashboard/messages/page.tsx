@@ -27,7 +27,6 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
@@ -48,8 +47,6 @@ export default function MessagesPage() {
       .catch((err) => console.error("Error loading active partner profile:", err));
   }, [chatWithId, firestore]);
 
-
-  
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -251,7 +248,8 @@ export default function MessagesPage() {
                 </Avatar>
                 <div className="flex-grow">
                     <h2 className="font-bold text-base leading-tight">{otherUser.name}</h2>
-                    <p className="text-xs text-muted-foreground">Level: {otherUser.level?.toFixed(1) || '0.0'}</p>
+                    <p className="text-xs text-muted-foreground">Level: {typeof otherUser?.level === 'number' ? otherUser.level.toFixed(1) : (Number(otherUser?.level) || 0).toFixed(1)}
+                    </p>
                 </div>
             </div>
 

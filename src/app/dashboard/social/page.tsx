@@ -6,6 +6,8 @@ import ChatBox from '@/components/ChatBox';
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, getFirestore } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from 'next/navigation';
+
 
 interface UserData {
   id: string;
@@ -15,6 +17,7 @@ interface UserData {
 }
 
 export default function SocialCirclePage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'friends' | 'following' | 'followers' | 'bookworms'>('friends');
@@ -150,8 +153,11 @@ export default function SocialCirclePage() {
         toast({ title: "User Blocked 🚫", description: "They can no longer view your profile.", variant: "destructive" });
       }
       else if (actionType === 'chat' && targetUser) {
-        setActiveChatUser(targetUser);
-      }
+    // userId এর জায়গায় chatWith লিখে দিন
+    router.push(`/dashboard/messages?chatWith=${targetUser.id}`);
+    }
+
+
     } catch (error) {
       toast({ title: "Error", description: "Database operation failed.", variant: "destructive" });
     }
@@ -244,16 +250,7 @@ export default function SocialCirclePage() {
             No active bookworms found in this tab.
           </div>
         )}
-      </div>
-
-      {activeChatUser && currentUser && (
-        <ChatBox
-          currentUserId={currentUser.uid}
-          targetUserId={activeChatUser.id}
-          targetUserName={activeChatUser.name}
-          onClose={() => setActiveChatUser(null)}
-        />
-      )}
+      </div>      
     </div>
   );
 }
