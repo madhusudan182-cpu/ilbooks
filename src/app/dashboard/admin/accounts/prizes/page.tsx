@@ -70,7 +70,7 @@ export default function AdminPrizesPage() {
             userId: user.id,
             userName: user.name,
             userAvatarUrl: user.avatarUrl,
-            level: user.level.toFixed(1),
+            level: user.level ? (String(user.level).includes('.') ? String(user.level) : parseFloat(user.level).toFixed(1)) : "0.0",
             prize: newWinnerPrize,
             status: 'Pending',
         };
@@ -135,7 +135,8 @@ export default function AdminPrizesPage() {
                                         <SelectContent>
                                             {mockUsers.map(user => (
                                                 <SelectItem key={user.id} value={user.id}>
-                                                    {user.name} (Level: {user.level.toFixed(1)})
+                                                    {user.name} (Level: {user.level ? (String(user.level).includes('.') ? String(user.level) : parseFloat(user.level).toFixed(1)) : "0.0"})
+
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

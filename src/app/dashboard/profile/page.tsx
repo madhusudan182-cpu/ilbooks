@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [isProfileLocked, setIsProfileLocked] = useState(false);
   const [myPosts, setMyPosts] = useState<PostData[]>([]);
-
+  const [relationship, setRelationship] = useState<'friend' | 'follower' | 'following' | 'none'>('none');
   const [counts, setCounts] = useState({
     friends: 0,
     following: 0,
@@ -141,6 +141,18 @@ export default function ProfilePage() {
         if (!myFollowings.has(id)) followersCount++;
       });
 
+          // পেমেন্ট ও রিলেশনশিপ সিক্রেট রুল চেক
+    const targetId = currentUser?.uid || "";
+    const isCurrentFriend = myFollowings.has(targetId) && myFollowers.has(targetId);
+    const isCurrentFollower = myFollowers.has(targetId) && !myFollowings.has(targetId);
+    const isCurrentFollowing = myFollowings.has(targetId) && !myFollowers.has(targetId);
+
+    if (isCurrentFriend) setRelationship('friend');
+    else if (isCurrentFollower) setRelationship('follower');
+    else if (isCurrentFollowing) setRelationship('following');
+    else setRelationship('none');
+
+
       setCounts({
         friends: friendsCount,
         following: followingCount,
@@ -156,10 +168,17 @@ export default function ProfilePage() {
     };
   }, [firestore, currentUser]);
 
+    const isOwnProfile = (auth?.currentUser?.uid === currentUser?.uid) || !currentUser?.uid;
+    const showFullProfile = isOwnProfile || relationship === 'friend' || !isProfileLocked;
+
+
     // 🔐 কারেন্ট ইউজারের আইডি বনাম ডাটাবেস থেকে আসা অবজেক্ট আইডি ম্যাচিং ফিল্টার
-  const displayMyPosts = myPosts.filter(post => {
-    const currentId = currentUser?.uid || auth.currentUser?.uid;
-    if (!currentId) return false;
+    const displayMyPosts = myPosts.filter(post => {
+    // 🔒 সিক্রেট রুল: নিজের প্রোফাইল বা ফ্রেন্ড না হলে এবং প্রোফাইল লকড থাকলে কোনো পোস্ট ফিল্টারে আসবে না
+    if (!showFullProfile) return false;
+
+    const currentId = currentUser?.uid || auth?.currentUser?.uid;
+
 
     const isIdMatch = post.userId && String(post.userId).trim() === String(currentId).trim();
     const currentProfileName = String(profile?.name || 'Admin Support').toLowerCase().trim();
@@ -251,77 +270,75 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-4 gap-1.5 mb-6 text-center font-bold text-[11px]">
-        <button className="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl shadow-sm">
-          <span className="text-sm font-extrabold">{counts.friends}</span>
-          <span>Friends</span>
-        </button>
-        <button className="flex flex-col items-center justify-center bg-amber-500 hover:bg-amber-600 text-white p-2.5 rounded-xl shadow-sm">
-          <span className="text-sm font-extrabold">{counts.following}</span>
-          <span>Following</span>
-        </button>
-        <button className="flex flex-col items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm">
-          <span className="text-sm font-extrabold">{counts.followers}</span>
-          <span>Followers</span>
-        </button>
-                <button className="flex flex-col items-center justify-center bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-xl shadow-sm">
-          <span className="text-sm font-extrabold">{counts.blocked}</span>
-          <span>Blocked</span>
-        </button>
-      </div>
+              {/* 🛠️ ডায়নামিক বাটন সেকশন (কন্ডিশন অনুযায়ী বাটন পরিবর্তন) */}
+        <div className="flex items-center gap-2 pt-2 justify-center w-full">
+          {isOwnProfile ? (
+            // নিজের প্রোফাইল হলে শুধু এডিট বাটন থাকবে
+            <Button variant="outline" className="w-full">Edit Profile</Button>
+          ) : (
+            <div className="flex items-center gap-2 w-full justify-center">
+              {/* কন্ডিশন ১: ফ্রেন্ড হলে (Friend Button + Message) */}
+              {relationship === 'friend' && (
+                <>
+                  <Button variant="outline" className="flex items-center gap-1">Friend</Button>
+                  <Button variant="secondary" className="p-2">💬</Button>
+                </>
+              )}
+
+              {/* কন্ডিশন ২ ও ৩: ইউজার২ যদি আপনার ফলোয়ার হয় (Follow Back Button) */}
+              {relationship === 'follower' && (
+                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl">
+                  Follow Back
+                </Button>
+              )}
+
+              {/* কন্ডিশন ৪ ও ৫: আপনি অলরেডি ইউজার২ কে ফলো করে থাকলে (Following Button) */}
+              {relationship === 'following' && (
+                <Button variant="secondary" className="bg-sky-500 text-white hover:bg-sky-600 px-6 py-2 rounded-xl">
+                  Following
+                </Button>
+              )}
+
+              {/* জেনারেল ফলো বাটন (যদি কোনো রিলেশন না থাকে) */}
+              {relationship === 'none' && (
+                <Button className="bg-primary text-primary-foreground px-6 py-2 rounded-xl">
+                  Follow
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+
 
       {/* 📰 ডাইনামিক নিউজ ফিড বা পোস্ট সেকশন */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-800 px-1">Your Posts ({displayMyPosts.length})</h3>
+            {/* 📜 নিউজ ফিড এবং পোস্ট সেকশন */}
+      <div className="space-y-4 w-full mt-4">
+        <h3 className="font-bold text-lg text-foreground px-1">
+          Your Posts ({displayMyPosts.length})
+        </h3>
 
-         {displayMyPosts.length > 0 ? (
-          displayMyPosts.map((post) => (
-            <Card key={post.id} className="border-0 shadow-sm rounded-2xl bg-white overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Avatar className="w-8 h-8 border border-purple-100">
-                    <AvatarImage src={post.authorAvatar || profile?.avatarUrl} />
-                    <AvatarFallback className="text-xs font-bold bg-purple-50 text-purple-700">
-                      {post.authorName ? post.authorName.charAt(0) : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs font-bold text-slate-800">{post.authorName}</h4>
-                      <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-[9px] px-1 py-0 h-auto font-bold">Level: {post.authorLevel}</Badge>
-                    </div>
-                    <p className="text-[9px] text-slate-400 mt-0.5">Post Feed</p>
-                  </div>
+        {showFullProfile ? (
+          // যদি নিজের প্রোফাইল বা ফ্রেন্ড হয়—তবেই পোস্ট রেন্ডার হবে
+          displayMyPosts.length > 0 ? (
+            displayMyPosts.map((post: any) => (
+              <div key={post.id} className="border border-slate-200 rounded-xl bg-white p-4 shadow-sm mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold text-sm">{post.authorName}</span>
                 </div>
-
-                <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed mb-3">{post.content}</p>
-
-                {post.imageUrl && (
-                  <div className="rounded-xl overflow-hidden mb-3 border border-slate-100 max-h-60 flex items-center justify-center bg-slate-50">
-                    <img src={post.imageUrl} alt="Post content" className="w-full h-full object-cover" />
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4 text-slate-500 text-[10px] font-bold border-t border-slate-50 pt-2.5 mt-1 px-1">
-                  <div className="flex items-center gap-1">
-                    <Heart className="w-3.5 h-3.5" />
-                    <span>{post.likesCount}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    <span>{post.commentsCount}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>{post.sharesCount}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                <p className="text-sm">{post.text}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-center py-4">You haven't posted anything yet.</p>
+          )
         ) : (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 text-slate-400 text-xs">
-            You haven't posted anything yet. 📚
+          // 🔒 কন্ডিশন ৩ ও ৫: প্রোফাইল লকড থাকলে এই নোটিফিকেশন স্ক্রিনটি দেখাবে
+          <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl shadow-inner my-4">
+            <div className="text-4xl mb-2">🔒</div>
+            <h4 className="font-bold text-lg text-slate-800">This profile is locked!</h4>
+            <p className="text-xs text-slate-500 mt-1.5 max-w-xs mx-auto">
+              ইউজারের নিউজ ফিড দেখতে তাকে ফলো করুন অথবা ফ্রেন্ড রিলেশনশিপ তৈরি করুন।
+            </p>
           </div>
         )}
       </div>

@@ -84,6 +84,7 @@ export default function CreateProfilePage() {
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, {
         profession,
+        level: "0.0",
         institution,
         district: selectedDistrict,
         thana: selectedThana,

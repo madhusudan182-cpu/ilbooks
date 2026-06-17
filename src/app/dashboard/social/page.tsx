@@ -203,7 +203,7 @@ export default function SocialCirclePage() {
             className="w-full pl-9 pr-2 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 text-slate-700"
           />
         </div>
-        <button className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg shrink-0 whitespace-nowrap shadow-sm">Share App</button>
+        <button className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg shrink-0 whitespace-nowrap shadow-sm">Share</button>
         <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2.5 rounded-lg shrink-0 whitespace-nowrap shadow-sm">Invite</button>
       </div>
 

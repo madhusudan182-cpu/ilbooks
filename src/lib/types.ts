@@ -5,7 +5,7 @@ export type User = {
   id: string;
   name: string;
   avatarUrl: string;
-  level: number;
+  level: string;
   institution: string;
   location: string;
   hobbies: string[];

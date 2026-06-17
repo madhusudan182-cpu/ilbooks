@@ -170,7 +170,7 @@ export default function AllSyllabiPage() {
                         All Syllabi
                     </CardTitle>
                     <CardDescription>
-                        View and manage all competition syllabi from Level 0.0 to 19.9. Changes are saved permanently.
+                        View and manage all competition syllabi from Level "0.0" to 19.9. Changes are saved permanently.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

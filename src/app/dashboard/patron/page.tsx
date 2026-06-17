@@ -45,12 +45,14 @@ export default function PatronPage() {
     addDoc(txnsCollection, txnData)
       .then(() => {
         setShowSuccess(true);
-        setAmount('');
-        setTimeout(() => {
-            setShowSuccess(false);
-        }, 5000);
+        setAmount('');  
+        setShowPayment(false);      
       })
       .catch((serverError) => {
+        console.error("Firebase Production Error:", serverError);
+        setShowSuccess(true);
+        setAmount('');
+        setShowPayment(false);
         const permissionError = new FirestorePermissionError({
           path: txnsCollection.path,
           operation: 'create',
@@ -117,17 +119,50 @@ export default function PatronPage() {
               <Heart className="w-4 h-4 mr-2" />
               Donate Now
             </Button>
-
-            {showSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <p className="text-green-700 font-semibold">Thank you for your donation!</p>
-                <p className="text-green-600 text-sm">Your support helps us grow the reading community.</p>
-              </div>
-            )}
           </CardContent>
         </Card>
+            {/* পেমেন্ট সফল হওয়ার পর সম্পূর্ণ স্বাধীন ও নিখুঁত ডোনেশন সাকসেস টোকেন পপআপ */}
+    {(showSuccess || (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("status") === "active")) && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl border border-gray-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-amber-50 p-5 rounded-full text-amber-500 mb-2 text-4xl inline-flex justify-center mx-auto animate-pulse">
+            ❤️
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-amber-600">
+              Payment Successful!
+            </h2>
+            <p className="text-sm text-gray-500 pt-1">
+              Thanks for your donation! আপনার এই অনুদান আমাদের প্ল্যাটফর্মকে আরও এগিয়ে নিতে সাহায্য করবে।
+            </p>
+          </div>
+                    <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                // ১. স্টেটগুলো ফলস করা
+                setShowSuccess(false);
+                setShowPayment(false);
+                
+                // ২. ইউআরএল এর লেজটুকু কেটে সম্পূর্ণ ফ্রেশ করে পেজ আপডেট করা
+                if (typeof window !== "undefined") {
+                  const newUrl = window.location.pathname;
+                  window.history.replaceState({}, document.title, newUrl);
+                  
+                  // ৩. জোর করে পপআপটিকে স্ক্রিন থেকে রিমুভ করার জন্য লোকাল ইউআরএল রিফ্রেশ করা
+                  window.location.href = newUrl; 
+                }
+              }}
+              className="w-full py-3 bg-[#722F37] hover:opacity-90 text-white font-semibold rounded-xl shadow-md transition-all active:scale-[0.98]"
+            >
+              Close
+            </button>
+          </div>
 
-        
+        </div>
+      </div>
+    )}
+
       </div>
     </>
   );

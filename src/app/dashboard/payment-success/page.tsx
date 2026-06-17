@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId");
+  const orderId = searchParams.get("orderId") || searchParams.get("orderID");
   const level = searchParams.get("level");
 
   return (

@@ -72,7 +72,8 @@ export default function BookShopPage() {
   const booksQuery = useMemo(() => (firestore ? collection(firestore, 'books') : null), [firestore]);
   const { data: books, loading: booksLoading } = useCollection<Book>(booksQuery);
 
-  const userLevel = profile?.level?.toFixed(1) || "0.0";
+  const userLevel = profile?.level ? Number(profile.level).toFixed(1) : "0.0";
+
 
   const displayedBooks = useMemo(() => {
     if (!books) return [];
@@ -119,6 +120,9 @@ export default function BookShopPage() {
     });
   };
 
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+
+
   const handlePaymentSuccess = () => {
     setShowAddressDialog(true);
   };
@@ -155,17 +159,22 @@ export default function BookShopPage() {
 
     addDoc(ordersCollection, newOrder)
       .then(() => {
-        setShowAddressDialog(false);
+        // ১. আগের ঝামেলার নাম, ঠিকানার ডায়ালগ বক্সটি সাথে সাথে সম্পূর্ণ বন্ধ করে দেওয়া
+        setShowAddressDialog(false); 
+        
+        // ২. ডাটা সেভ নিশ্চিত হওয়ার পর সাকসেস টোকেন স্ক্রিনটি একদম ফ্রেশভাবে ওপেন করা
+        setIsFormSubmitted(true); 
+        
         toast({
           title: 'Thanks for your information!',
           description: 'Your order has been placed.',
           duration: 2000,
         });
-        setCart([]);
-        setName('');
-        setAddress('');
-        setMobile('');
+        
+        setCart([]); // শপিং কার্ট খালি করা
       })
+
+
       .catch(async (serverError) => {
         console.error('Error placing order:', serverError);
         const permissionError = new FirestorePermissionError({
@@ -404,6 +413,40 @@ export default function BookShopPage() {
             </Card>
           </div>
         </div>
+              {/* পেমেন্ট সফল হওয়ার পর এক্সাম পেজের মতো সাকসেস টোকেন ও থ্যাঙ্ক ইউ মেসেজ স্ক্রিন (Step 5) */}
+      {isFormSubmitted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-xl border border-gray-200 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-green-50 p-5 rounded-full text-green-500 mb-2 text-4xl inline-flex justify-center mx-auto">
+              🎉
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-emerald-600">
+                Your Payment is Successful!
+              </h2>
+              <p className="text-sm text-gray-500 pt-1">
+                আপনার ডেলিভারি তথ্যটি সফলভাবে সংরক্ষিত হয়েছে। আমাদের বক্সে তথ্য জমা দেওয়ার জন্য আপনাকে অসংখ্য ধন্যবাদ!
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFormSubmitted(false);     // সাকসেস টোকেন উইন্ডো বন্ধ হবে
+                  setShowAddressDialog(false);   // মেইন ফর্ম ডায়ালগ বক্স বন্ধ নিশ্চিত করা
+                  setName('');                   // ইনপুট ফিল্ডগুলো ফ্রেশ করা
+                  setAddress('');
+                  setMobile('');
+                }}
+                className="w-full py-3 bg-[#722F37] hover:opacity-95 text-white font-semibold rounded-xl shadow-md transition-all active:scale-[0.98]"
+              >
+                Close & Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
     </>
   );

@@ -12,7 +12,8 @@ import { MessageCircle, Heart, Share2, Image as ImageIcon, Film, Loader2 } from 
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
-import { doc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+import { doc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, increment, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+
 import type { User } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 
@@ -87,14 +88,54 @@ export default function HomePage() {
   };
 
   
+  const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
 
-  const handleLike = () => {
-    toast({ title: "Liked post!", duration: 2000 });
+  const handleLike = async (postId: string) => {
+    if (!user || !firestore) return;
+    const likeRef = doc(firestore, `posts/${postId}/likes`, user.uid);
+    const postRef = doc(firestore, 'posts', postId);
+    try {
+      const likeSnap = await getDoc(likeRef);
+      if (likeSnap.exists()) {
+        await deleteDoc(likeRef);
+        await updateDoc(postRef, { likes: increment(-1) });
+        toast({ title: "Removed like" });
+      } else {
+        await setDoc(likeRef, { likedAt: serverTimestamp() });
+        await updateDoc(postRef, { likes: increment(1) });
+        toast({ title: "Liked post!" });
+      }
+    } catch (error: any) {
+      console.error("Like error: ", error);
+    }
+  };
+
+  const handleAddComment = async (postId: string) => {
+    if (!user || !firestore || !profile || !commentText[postId]?.trim()) return;
+    const currentComment = commentText[postId].trim();
+    try {
+      await addDoc(collection(firestore, `posts/${postId}/comments`), {
+        text: currentComment,
+        author: {
+          id: user.uid,
+          name: profile.name || 'Anonymous',
+          avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
+        },
+        createdAt: serverTimestamp()
+      });
+      const postRef = doc(firestore, 'posts', postId);
+      await updateDoc(postRef, { comments: increment(1) });
+      setCommentText(prev => ({ ...prev, [postId]: "" }));
+      toast({ title: "Comment added!" });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Failed to comment", description: error.message });
+    }
   };
 
   const handleShare = () => {
     toast({ title: "Sharing options coming soon!", duration: 2000 });
   };
+
 
   if (authLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -179,80 +220,96 @@ export default function HomePage() {
             const profileUrl = isMe ? "/dashboard/profile" : `/dashboard/user/${post.author.id}`;
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
             
-            return (
-              <Card key={post.id} className="overflow-hidden">
-                <CardHeader className="flex flex-row items-center gap-3 p-3">
-                  <Link href={profileUrl}>
-                    <Avatar className="h-10 w-10 border">
-                      <AvatarImage
-                        src={authorAvatar}
-                        alt={authorName}
-                      />
-                      <AvatarFallback>
-                        {authorName.charAt(0)}
-                      </AvatarFallback>
+                        return (
+              <Card key={post.id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-xl">
+                {/* 👤 পোস্ট হেডার */}
+                <CardHeader className="flex flex-row items-center gap-3 p-3 pb-2">
+                  <Link href={profileUrl} className="active:scale-95 transition-transform shrink-0">
+                    <Avatar className="h-9 w-9 border">
+                      <AvatarImage src={authorAvatar} alt={authorName} />
+                      <AvatarFallback>{authorName ? authorName.charAt(0) : 'U'}</AvatarFallback>
                     </Avatar>
                   </Link>
-                  <div className="grid gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={profileUrl}
-                        className="font-headline font-semibold hover:underline text-base"
-                      >
-                        {authorName}
+                  <div className="grid gap-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Link href={profileUrl}>
+                        <span className="font-semibold text-sm hover:text-pink-500 hover:underline cursor-pointer transition-colors truncate block max-w-[180px]">
+                          {authorName}
+                        </span>
                       </Link>
-                      <Badge variant="secondary" className="text-xs">
-                        Level: <LiveAuthorLevel authorId={post.author.id} fallbackLevel={authorLevel} firestore={firestore} />
+                      <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-600 border border-purple-100 rounded font-bold">
+                        Lvl {Number(authorLevel).toFixed(1)}
                       </Badge>
-
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {timeAgo}
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
                   </div>
                 </CardHeader>
-                <CardContent className="px-3 pt-0 pb-2">
-                  <p className="whitespace-pre-wrap text-sm">{post.content}</p>
-                  {post.imageUrl && (
-                    <div className="mt-2 relative aspect-[16/9] rounded-md overflow-hidden border">
-                      <Image
-                        src={post.imageUrl}
-                        alt="Post image"
-                        fill
-                        className="object-cover"
-                        data-ai-hint="library books"
-                      />
-                    </div>
-                  )}
+
+                {/* 📝 পোস্ট কন্টেন্ট */}
+                <CardContent className="p-3 pt-1 pb-3 text-sm text-slate-700">
+                  <p className="whitespace-pre-wrap">{post.content}</p>
                 </CardContent>
-                <CardFooter className="flex justify-between p-1 border-t bg-muted/5">
-                  <div className="flex">
-                    <Button variant="ghost" size="sm" onClick={handleLike}>
-                      <Heart className="w-4 h-4 mr-1" />
-                      <span className="text-xs">{post.likes || 0}</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setCommentingOn(commentingOn === post.id ? null : post.id)}>
-                      <MessageCircle className="w-4 h-4 mr-1" />
-                      <span className="text-xs">{post.comments || 0}</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleShare}>
-                      <Share2 className="w-4 h-4 mr-1" />
-                      <span className="text-xs">{post.shares || 0}</span>
-                    </Button>
-                  </div>
+
+                {/* 👍 💬 🔗 অ্যাকশন বাটনসমূহ (একেবারে কাছাকাছি ও সুন্দরভাবে সাজানো) */}
+                <CardFooter className="flex items-center gap-6 p-2 px-3 border-t bg-slate-50/50 justify-start">
+                  {/* লাইক বাটন */}
+                  <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors active:scale-90 duration-100">
+                    <Heart className="h-4 w-4 shrink-0" />
+                    <span className="text-xs font-medium">{post.likes || 0}</span>
+                  </button>
+
+                  {/* কমেন্ট বাটন (ক্লিক করলে ওপেন হবে) */}
+                  <button onClick={() => setCommentingOn(commentingOn === post.id ? null : post.id)} className="flex items-center gap-1 text-slate-500 hover:text-purple-500 transition-colors active:scale-90 duration-100">
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    <span className="text-xs font-medium">{post.comments || 0}</span>
+                  </button>
+
+                  {/* শেয়ার বাটন */}
+                  <button onClick={handleShare} className="flex items-center gap-1 text-slate-500 hover:text-blue-500 transition-colors active:scale-90 duration-100">
+                    <Share2 className="h-4 w-4 shrink-0" />
+                    <span className="text-xs font-medium">{post.shares || 0}</span>
+                  </button>
                 </CardFooter>
+
+                {/* 💬 লাইভ কমেন্ট সেকশন (বাটনে ক্লিক করলে ডাইনামিকালি লোড হবে) */}
                 {commentingOn === post.id && (
-                  <div className="p-3 border-t bg-muted/30">
-                    <Textarea placeholder="Write your comment..." className="mb-2 text-sm bg-background" />
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setCommentingOn(null)}>Cancel</Button>
-                      <Button size="sm" onClick={() => setCommentingOn(null)}>Comment</Button>
-                    </div>
+                  <div className="p-3 bg-slate-50/70 border-t border-slate-100 space-y-3">
+                    {/* কমেন্ট ইনপুট বক্স (সিঙ্গেল বক্স ডিজাইন) */}
+                                        {/* 📝 আপডেট করা কমেন্ট ফর্ম (Enter সাপোর্ট এবং অটো-ক্লোজ লজিকসহ) */}
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault(); // পেজ রিফ্রেশ হওয়া বন্ধ করবে
+                        handleAddComment(post.id);
+                        setCommentingOn(null); // কমেন্ট সাবমিট হলে বক্স অটো বন্ধ হয়ে যাবে
+                      }}
+                      className="flex gap-2"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Write a comment..."
+                        value={commentText[post.id] || ""}
+                        onChange={(e) => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
+                        className="flex-1 bg-white border border-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-purple-600 shadow-sm text-slate-800"
+                      />
+                      <Button 
+                        type="submit" // টাইপ সাবমিট করায় Enter বাটন কাজ করবে
+                        size="sm" 
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 rounded-xl h-[34px]"
+                        disabled={!commentText[post.id]?.trim()}
+                      >
+                        Comment
+                      </Button>
+                    </form>
+
+
+                    {/* 👇 ৩. লাইভ কমেন্ট লিস্ট (Descending Order-এ দেখানোর কাস্টম কম্পোনেন্ট) */}
+                    <LiveCommentsList postId={post.id} firestore={firestore} />
                   </div>
                 )}
               </Card>
             );
           })
+
         ) : (
             <div className="text-center py-20 text-muted-foreground">
                 <ImageIcon className="h-12 w-12 mx-auto opacity-20 mb-4" />
@@ -285,3 +342,59 @@ function LiveAuthorLevel({ authorId, fallbackLevel, firestore }: { authorId: str
 
   return <>{level}</>;
 }
+
+// 💬 ফায়ারবেস থেকে লাইভ কমেন্ট Descending অর্ডার-এ তুলে আনার কম্পোনেন্ট
+function LiveCommentsList({ postId, firestore }: { postId: string; firestore: any }) {
+  const [comments, setComments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!firestore || !postId) return;
+
+    const commentsQuery = query(
+      collection(firestore, `posts/${postId}/comments`),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setComments(docs);
+      setLoading(false);
+    }, (error) => {
+      console.error("Comments sub-fetch error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [postId, firestore]);
+
+  if (loading) return <p className="text-[11px] text-slate-400 italic pl-1">Loading comments...</p>;
+  if (comments.length === 0) return null;
+
+  return (
+    <div className="space-y-2.5 pt-2 border-t border-slate-100 max-h-[200px] overflow-y-auto pr-1">
+      {comments.map((comment: any) => {
+        const commentTime = comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate()) + ' ago' : 'Just now';
+        return (
+          <div key={comment.id} className="flex items-start gap-2 bg-white p-2 rounded-xl border border-slate-100/80 shadow-sm">
+            <Avatar className="h-6 w-6 border shrink-0">
+              <AvatarImage src={comment.author?.avatarUrl} alt={comment.author?.name} />
+              <AvatarFallback>{comment.author?.name ? comment.author.name.charAt(0) : 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="grid gap-0.5 min-w-0">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xs font-bold text-slate-800 truncate max-w-[120px]">{comment.author?.name}</span>
+                <span className="text-[9px] text-slate-400 shrink-0">{commentTime}</span>
+              </div>
+              <p className="text-xs text-slate-600 break-words">{comment.text}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+

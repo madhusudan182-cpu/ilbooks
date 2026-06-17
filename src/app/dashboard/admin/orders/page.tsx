@@ -121,7 +121,8 @@ export default function AdminOrdersPage() {
                                                     <p className="font-semibold">{order.customerName}</p>
                                                     {user ? (
                                                         <p className="text-sm text-muted-foreground">
-                                                            {user.name} &bull; Level: {user.level.toFixed(1)}
+                                                            {user.level ? (String(user.level).includes('.') ? String(user.level) : parseFloat(user.level).toFixed(1)) : "0.0"}
+
                                                         </p>
                                                     ) : (
                                                         <p className="text-sm text-muted-foreground">User ID: {order.userId}</p>

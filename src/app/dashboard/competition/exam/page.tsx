@@ -109,8 +109,9 @@ return query(
   const [examQuestions, setExamQuestions] = useState<Question[] | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<(string | null)[]>([]);
-  const [timeLeft, setTimeLeft] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_PER_QUESTION);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isExamActive, setIsExamActive] = useState(false);
 
   useEffect(() => {
     if (isLevelZero) {
@@ -127,7 +128,9 @@ return query(
        if (questionsLoading || syllabusLoading) {
       return; 
     }
-  
+    
+    
+
     let questionPool: Question[] | null = null;
   
     if (allQuestionsFromDB && allQuestionsFromDB.length > 0) {
@@ -288,7 +291,7 @@ return query(
     const totalPercentage = totalMarks > 0 ? (totalObtainedMarks / totalMarks) * 100 : 0;
 
     if (overallStatus === 'Passed') {
-        const currentLevelNum = profile.level || 0;
+        const currentLevelNum = Number(profile.level) || 0;
         const major = Math.floor(currentLevelNum);
         const minor = Math.round((currentLevelNum - major) * 10);
         
@@ -359,19 +362,22 @@ return query(
   const currentQuestion = examQuestions ? examQuestions[currentQuestionIndex] : null;
 
   useEffect(() => {
-    if (!examQuestions || examQuestions.length === 0 || !currentQuestion) return;
+  if (!isExamActive) return;
+  if (!examQuestions || examQuestions.length === 0 || !currentQuestion) return;
 
-    if (timeLeft === 0) {
-      handleNext();
-      return;
-    }
+  const timer = setInterval(() => {
+    setTimeLeft((prev) => {
+      if (prev <= 1) {
+        handleNext();
+        return TOTAL_TIME_PER_QUESTION; 
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
+  return () => clearInterval(timer);
+}, [examQuestions, currentQuestion, handleNext, isExamActive]);
 
-    return () => clearInterval(timer);
-  }, [timeLeft, examQuestions, handleNext, currentQuestion]);
 
 
   const handleAnswerSelect = (answer: string) => {
@@ -427,6 +433,28 @@ return query(
                 </CardContent>
             </Card>
         </main>
+    );
+  }
+
+  if (!isExamActive) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center max-w-md mx-auto my-10 bg-card border border-border rounded-2xl shadow-xl">
+        <div className="bg-green-50 dark:bg-green-950/30 p-5 rounded-full text-green-500 mb-4 text-4xl">
+          🎉
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          Payment Successful!
+        </h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          আপনার পেমেন্টটি সফলভাবে সম্পন্ন হয়েছে। পরীক্ষা শুরু করতে নিচের বাটনে ক্লিক করুন।
+        </p>
+        <button 
+          onClick={() => setIsExamActive(true)} 
+          className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl shadow-md hover:opacity-95 active:scale-[0.98] transition-all"
+        >
+          Start Your Exam
+        </button>
+      </div>
     );
   }
 

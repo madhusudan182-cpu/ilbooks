@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface UserRowProps {
   id: string;
@@ -36,15 +37,22 @@ export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowi
   return (
     <div className="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
       
-      {/* বামপাশ: প্রোফাইল ছবি, নাম এবং লেভেল */}
-      <div className="flex items-center gap-3 cursor-pointer">
-        <div className="w-11 h-11 bg-purple-100 rounded-full overflow-hidden flex items-center justify-center text-purple-600 font-bold border border-purple-200 shrink-0">
-          {avatarUrl ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" /> : name.charAt(0)}
-        </div>
+      {/* বামপাশ: প্রোফাইল ছবি, নাম এবং লেভেল (লিঙ্কসহ আপডেট করা হয়েছে) */}
+      <div className="flex items-center gap-3">
+        {/* প্রোফাইল ছবি লিঙ্ক */}
+        <Link href={`/dashboard/user/${id}`} className="shrink-0 active:scale-95 transition-transform">
+          <div className="w-11 h-11 bg-purple-100 rounded-full overflow-hidden flex items-center justify-center text-purple-600 font-bold border border-purple-200">
+            {avatarUrl ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" /> : name.charAt(0)}
+          </div>
+        </Link>
+        
         <div className="min-w-0">
-          <h4 className="text-sm font-bold text-slate-800 truncate hover:text-purple-700 transition-colors">
-            {name}
-          </h4>
+          {/* নাম লিঙ্ক */}
+          <Link href={`/dashboard/user/${id}`}>
+            <h4 className="text-sm font-bold text-slate-800 truncate hover:text-purple-700 hover:underline cursor-pointer transition-all">
+              {name}
+            </h4>
+          </Link>
           <p className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 font-medium">
             Level: {level}
           </p>

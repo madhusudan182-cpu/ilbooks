@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../../firebase";
+import { db } from "@/firebase";
 import { doc, updateDoc, setDoc } from "firebase/firestore";
 
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { amount, orderId, level, paymentType, userId } = body; // ফ্রন্টএন্ড থেকে userId ও পাস করতে হবে
+    let { amount, orderId, level, paymentType, userId } = body;
+
 
     const currentOrderId = orderId || "ILB-" + Date.now();
     const host = req.headers.get("host") || "localhost:9002";

@@ -212,6 +212,7 @@ export default function CompetitionPage() {
                 onSuccess={handlePaymentSuccess}
             />
 
+
             <AlertDialog open={showComingSoonDialog} onOpenChange={setShowComingSoonDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
