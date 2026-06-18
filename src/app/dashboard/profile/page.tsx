@@ -45,6 +45,45 @@ export default function ProfilePage() {
   });
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
+ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file || !currentUser || !firestore) return;
+
+  // ছবির সাইজ ২ মেগাবাইটের বেশি হলে সতর্ক করা (ফায়ারস্টোর টেক্সট সাইজ লিমিটের জন্য)
+  if (file.size > 2 * 1024 * 1024) {
+    alert("ছবিটি অনেক বড়! দয়া করে ২ এমবি (2MB) এর চেয়ে ছোট ছবি সিলেক্ট করুন।");
+    return;
+  }
+
+  // ১. সাথে সাথে স্ক্রিনে ছবি পরিবর্তনের প্রিভিউ দেখানোর জন্য
+  const previewUrl = URL.createObjectURL(file);
+  setProfile((prev: any) => prev ? { ...prev, avatarUrl: previewUrl } : null);
+
+  try {
+    // ২. ছবিটিকে টেক্সট বা Base64-এ রূপান্তর করার ম্যাজিক লজিক
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+
+      // ৩. সরাসরি ফায়ারস্টোর ডাটাবেজে ইউজারের ডকুমেন্ট আপডেট করা (কোনো স্টোরেজ বাকেটের প্রয়োজন নেই!)
+      const { doc, updateDoc } = await import("firebase/firestore");
+      const userRef = doc(firestore, 'users', currentUser.uid);
+      
+      await updateDoc(userRef, {
+        avatarUrl: base64String
+      });
+
+      console.log("প্রোফাইল পিকচার ফায়ারস্টোরে স্থায়ীভাবে সেভ হয়েছে!");
+      alert("প্রোফাইল পিকচার সফলভাবে পরিবর্তন হয়েছে!");
+    };
+  } catch (error) {
+    console.error("Firestore Update Error:", error);
+    alert("ছবি সেভ করতে সমস্যা হয়েছে। দয়া করে আবার চেষ্টা করুন।");
+  }
+};
+
+
 
   // 🔐 ১. আলাদাভাবে কারেন্ট লগইন থাকা ইউজার ট্র্যাক করার সিকিউর লজিক
   useEffect(() => {
@@ -236,7 +275,13 @@ export default function ProfilePage() {
               <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 rounded-full w-8 h-8 shadow-md" onClick={() => avatarInputRef.current?.click()}>
                 <Camera className="w-4 h-4 text-slate-600" />
               </Button>
-              <input type="file" ref={avatarInputRef} className="hidden" accept="image/*" />
+              <input 
+                type="file" 
+                ref={avatarInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleAvatarChange} 
+              />
             </div>
 
             <h2 className="text-2xl font-bold text-slate-800">{profile?.name || "Admin Support"}</h2>
