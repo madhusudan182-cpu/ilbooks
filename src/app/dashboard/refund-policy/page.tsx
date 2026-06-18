@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function RefundPolicy() {
   return (
@@ -32,9 +33,18 @@ export default function RefundPolicy() {
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-3 text-gray-700">4. How to Request a Refund</h2>
-        <p>If your scenario falls under the eligible conditions, please submit a request within 7 days of purchase by contacting our support team at <span className="text-blue-500 font-medium">https://ilbooks.vercel.app/dashboard/complain</span> with your transaction details. Verified valid refunds will be credited back via the original payment channel (EPS Gateway) within 7–10 working days.</p>
-      </section>
+  <h2 className="text-xl font-semibold mb-3 text-gray-700">4. How to Request a Refund</h2>
+  <p>
+    If your scenario falls under the eligible conditions, please submit a request within 7 days of purchase by contacting our support team at{' '}
+    <Link 
+      href="/dashboard/complain" 
+      className="text-blue-500 font-medium hover:underline break-all"
+    >
+      https://vercel.app
+    </Link>{' '}
+    with your transaction details. Verified valid refunds will be credited back via the original payment channel (EPS Gateway) within 7–10 working days.
+  </p>
+</section>
     </div>
   );
 }

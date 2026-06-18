@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function PrivacyPolicy() {
   return (
@@ -39,9 +40,17 @@ export default function PrivacyPolicy() {
       </section>
 
       <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-3 text-gray-700">5. Contact Us</h2>
-        <p>If you have any questions or concerns about this Privacy Policy, please reach out to us at: <span className="text-blue-500 font-medium">https://ilbooks.vercel.app/dashboard/complain</span></p>
-      </section>
+  <h2 className="text-xl font-semibold mb-3 text-gray-700">5. Contact Us</h2>
+  <p>
+    If you have any questions or concerns about this Privacy Policy, please reach out to us at:{' '}
+    <Link 
+      href="/dashboard/complain" 
+      className="text-blue-500 font-medium hover:underline break-all"
+    >
+      https://ilbooks.vercel.app/dashboard/complain
+    </Link>
+  </p>
+</section>
     </div>
   );
 }
