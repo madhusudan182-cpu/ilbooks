@@ -32,6 +32,9 @@ export default function HomePage() {
   const { data: posts, loading: postsLoading } = useCollection<any>(postsQuery);
 
   const [postContent, setPostContent] = useState("");
+  const [postImage, setPostImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const [isPosting, setIsPosting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -52,37 +55,52 @@ export default function HomePage() {
     videoInputRef.current?.click();
   };
 
-  const handleCreatePost = async (e: React.FormEvent) => {
+    const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postContent.trim() || !user || !firestore || !profile) return;
+    if ((!postContent.trim() && !postImage) || !user || !firestore || !profile) return;
 
     setIsSubmitting(true);
     try {
-          // 💡 আপনার নতুন এবং ক্লিন পোস্ট ক্রিয়েশন লজিক
-    await addDoc(collection(firestore, 'posts'), {
-      content: postContent,
-      author: {
-        id: user.uid,
-        name: profile.name || 'Anonymous',
-        avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
-        // 💡 নোট: এখানে সরাসরি 'level' ফিল্ডটি সেভ করার দরকার নেই। 
-        // যখন পোস্টগুলো রিড/রেন্ডার করা হবে, তখন আমরা ইউজারের লাইভ প্রোফাইল থেকে লেভেল দেখাবো।
-        // তবে ব্যাকআপ বা পুরোনো কোড যেন না ভাঙে, সেজন্য শুধু আইডি রেখে দিচ্ছি।
-      },
-      createdAt: serverTimestamp(),
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      // ❌ ডামি র্যান্ডম ইমেজ জেনারেটরটি সম্পূর্ণ ফেলে দেওয়া হলো। 
-      // কাস্টমার যদি ভবিষ্যতে ছবি আপলোড করতে চায়, তখন আমরা ডায়নামিক imageUrl সেট করব।
-      imageUrl: null 
-    });
+      let finalImageUrl = null;
 
+      // ১. ইউজার ছবি সিলেক্ট করে থাকলে সেটি ফায়ারবেস স্টোরেজে আপলোড করা
+      if (postImage) {
+        const firebaseStorage = await import("firebase/storage");
+        const storage = firebaseStorage.getStorage();
+        const storageRef = firebaseStorage.ref(storage, `posts/${user.uid}_${Date.now()}`);
+        
+        console.log("Uploading post image...");
+        await firebaseStorage.uploadBytes(storageRef, postImage);
+        finalImageUrl = await firebaseStorage.getDownloadURL(storageRef);
+        console.log("Post image uploaded successfully! URL:", finalImageUrl);
+      }
+
+      // ২. ফায়ারস্টোর ডাটাবেজে পোস্ট সেভ করা
+      const firebaseFirestore = await import("firebase/firestore");
+      await firebaseFirestore.addDoc(firebaseFirestore.collection(firestore, 'posts'), {
+        content: postContent,
+        author: {
+          id: user.uid,
+          name: profile.name || 'Anonymous',
+          avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
+        },
+        createdAt: firebaseFirestore.serverTimestamp(),
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        imageUrl: finalImageUrl
+      });
+
+      // ৩. স্টেটগুলো রিসেট করা
       setPostContent("");
+      setPostImage(null);
+      if (typeof setImagePreview === 'function') setImagePreview(null);
       setIsPosting(false);
       toast({ title: "Post published!" });
+
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Failed to post", description: error.message });
+      console.error("Post creation error:", error);
+      toast({ title: "Failed to publish post", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -169,6 +187,18 @@ export default function HomePage() {
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
                 />
+                {imagePreview && (
+                  <div className="relative mt-2 w-full max-h-60 overflow-hidden rounded-lg border border-slate-700">
+                    <img src={imagePreview} alt="Selected preview" className="w-full h-auto object-cover max-h-60" />
+                    <button 
+                      type="button"
+                      onClick={() => { setPostImage(null); setImagePreview(null); }}
+                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 text-xs transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </form>
             </div>
           </div>
@@ -176,7 +206,20 @@ export default function HomePage() {
         {isPosting && (
           <CardFooter className="flex items-center justify-between p-2 border-t">
             <div className="flex">
-                <input type="file" ref={imageInputRef} accept="image/*" className="hidden" />
+                <input 
+                  type="file" 
+                  ref={imageInputRef} 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]; // এখানে অবশ্যই [0] হতে হবে
+                    if (file) {
+                      setPostImage(file);
+                      setImagePreview(URL.createObjectURL(file));
+                      console.log("Image selected:", file.name);
+                    }
+                  }}
+                /> 
                 <input type="file" ref={videoInputRef} accept="video/*" className="hidden" />
                 <Button variant="ghost" size="icon" onClick={handleImageClick}>
                     <ImageIcon className="h-5 w-5 text-muted-foreground" />
@@ -195,7 +238,7 @@ export default function HomePage() {
                     size="sm" 
                     className="bg-pink-500 hover:bg-pink-600 text-white"
                     onClick={handleCreatePost}
-                    disabled={isSubmitting || !postContent.trim()}
+                    disabled={isSubmitting || (!postContent.trim() && !postImage)}
                 >
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Post"}
                 </Button>
