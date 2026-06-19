@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
@@ -53,23 +53,41 @@ export default function SignupPage() {
       // madhusudan.182@gmail.com is strictly defined as the only owner
       const isAdmin = email.toLowerCase() === 'madhusudan.182@gmail.com';
       
-      await setDoc(doc(firestore, 'users', user.uid), {
-        name,
-        email,
-        mobile,
-        level: "0.0",
-        isAdmin: isAdmin,
-        avatarUrl: `https://picsum.photos/seed/${user.uid}/100/100`,
-        hobbies: [],
-        location: '',
-        institution: '',
-      });
+          // ১. ফায়ারস্টোরে ইউজারের মেইন প্রোফাইল তৈরি করা
+    await setDoc(doc(firestore, "users", user.uid), {
+      uid: user.uid,
+      name: "",
+      email: email,
+      level: "0.0",
+      avatarUrl: `https://picsum.photos{user.uid}/100/100`,
+      bio: "",
+      location: "",
+      isAdmin: false,
+    });
 
-      toast({
-        title: "Account created successfully!",
-        description: isAdmin ? "Welcome, Owner." : "Let's complete your profile.",
-      });
-      router.push('/create-profile');
+    // 🚀 নোটিফিকেশন ১: Welcome Message (স্বয়ংক্রিয়ভাবে যুক্ত হবে)
+    await addDoc(collection(firestore, 'notifications'), {
+      targetUserId: user.uid,
+      isSeen: false,
+      text: "You are welcome to the realm of Bookworms! Enjoy your reading and raise your Level by taking exam!",
+      createdAt: serverTimestamp()
+    });
+
+    // 🚀 নোটিফিকেশন ২: Community Rules Guide (স্বয়ংক্রিয়ভাবে যুক্ত হবে)
+    await addDoc(collection(firestore, 'notifications'), {
+      targetUserId: user.uid,
+      isSeen: false,
+      text: "Before you do anything, please read our 'Community Rules' from navigation menu bar.",
+      createdAt: serverTimestamp()
+    });
+
+    toast({
+      title: "Account created successfully!",
+      description: "Welcome to Bookworm community. Let's complete your profile.",
+    });
+    
+    router.push("/dashboard/profile/edit"); // সরাসরি প্রোফাইল কমপ্লিট করার পেজে নিয়ে যাওয়া
+
     } catch (error: any) {
       toast({
         variant: "destructive",

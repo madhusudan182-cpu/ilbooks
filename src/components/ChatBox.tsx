@@ -15,6 +15,7 @@ interface ChatBoxProps {
 
 interface Message {
   id: string;
+  seen: boolean;
   senderId: string;
   text: string;
   createdAt: any;
@@ -32,7 +33,7 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
     ? `${currentUserId}_${targetUserId}` 
     : `${targetUserId}_${currentUserId}`;
 
-  // 🔄 রিয়েল-টাইমে মেসেজ লোড করার লজিক
+   // 💬 রিয়েল-টাইমে মেসেজ লোড করার লজিক (৩৬ নাম্বার লাইন থেকে পরিবর্তন শুরু)
   useEffect(() => {
     if (!firestore) return;
 
@@ -42,8 +43,9 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
       orderBy('createdAt', 'asc')
     );
 
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
       const list: Message[] = [];
+      
       snapshot.forEach((doc) => {
         const data = doc.data();
         list.push({
@@ -51,20 +53,35 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
           senderId: data.senderId,
           text: data.text,
           createdAt: data.createdAt,
+          seen: data.seen, // 👈 ডাটাবেজ থেকে seen স্ট্যাটাসটি নেওয়া হচ্ছে
         });
       });
+
       setMessages(list);
       setLoading(false);
-      
-      // নতুন মেসেজ আসলে স্ক্রল নিচে নামিয়ে দেওয়া
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    }, (error) => {
-      console.error("Chat error: ", error);
-      setLoading(false);
+
+      // 🚀 নতুন লজিক: অন্য ইউজারের পাঠানো যে মেসেজগুলো এখনো আপনি দেখেননি (seen: false), সেগুলো ফিল্টার করুন
+      const unreadDocs = snapshot.docs.filter((doc) => {
+        const data = doc.data();
+        return data.senderId === targetUserId && data.seen === false;
+      });
+
+      // যদি কোনো আনরিড মেসেজ থাকে, তবে ফায়ারবেসে সেগুলোকে একবারে 'seen: true' করে দিন
+      if (unreadDocs.length > 0) {
+        const { writeBatch } = await import('firebase/firestore');
+        const batch = writeBatch(firestore);
+        
+        unreadDocs.forEach((msgDoc) => {
+          batch.update(msgDoc.ref, { seen: true });
+        });
+        
+        await batch.commit(); // ডাটাবেজে সাথে সাথে আপডেট হয়ে যাবে
+      }
     });
 
     return () => unsubscribe();
-  }, [firestore, chatRoomId]);
+  }, [firestore, chatRoomId, targetUserId]); // useEffect এখানে শেষ হচ্ছে
+
 
   // ✉️ মেসেজ পাঠানোর ফাংশন
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -81,6 +98,7 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
         receiverId: targetUserId,
         text: textToSend,
         createdAt: serverTimestamp(),
+        seen: false,
       });
     } catch (error) {
       console.error("Failed to send message: ", error);

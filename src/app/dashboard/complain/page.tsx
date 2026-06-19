@@ -18,13 +18,29 @@ export default function ComplainPage() {
     try {
       // ডাইনামিকালি ফায়ারবেস ইমপোর্ট করা হচ্ছে, যাতে ফাইলের ওপরে কোনো পাথ না দেওয়া লাগে
       const { addDoc, collection, serverTimestamp, getFirestore } = await import('firebase/firestore');
+      const { getAuth } = await import("firebase/auth");
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
       const { initializeApp, getApps } = await import('firebase/app');
       
       // ফায়ারবেস অ্যাপ অলরেডি ইনিশিয়ালাইজড থাকলে সেটা নেবে, নাহলে ফাঁকা অবজেক্ট বা ডিফল্ট চেক করবে
       const firestoreInstance = getFirestore();
+      const { getDoc, doc } = await import("firebase/firestore");
+      let realUserName = 'Unknown User';
+
+      if (currentUser) {
+        const userDocRef = doc(firestoreInstance, 'users', currentUser.uid);
+        const userSnapshot = await getDoc(userDocRef);
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.data();
+          // ডাটাবেজে আপনার নামের ফিল্ডের নাম 'name' বা 'username' যা আছে তা এখানে দিন
+          realUserName = userData.name || userData.username || 'Unknown User';
+        }
+      }
 
       await addDoc(collection(firestoreInstance, 'complains'), {
-        userId: 'current_user_id', // আপনি চাইলে লেআউট থেকে আইডি পাঠাতে পারেন বা পরে অ্যাডমিন প্যানেলে এটি হ্যান্ডেল করতে পারেন
+        userId: currentUser?.uid || 'Anonymous',
+        userName: realUserName,
         type: complainType,
         complain: complainText,
         createdAt: serverTimestamp(),

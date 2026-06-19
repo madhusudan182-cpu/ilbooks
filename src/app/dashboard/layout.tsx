@@ -96,8 +96,9 @@ export default function DashboardLayout({
     // এখন গ্লোবালি ইম্পোর্ট করা মেথডগুলো সরাসরি ব্যবহার হবে
     const q = query(
       collection(firestore, 'notifications'),
-      where('userId', '==', user.uid),
-      where('isRead', '==', false)
+      where('targetUserId', '==', user.uid),
+      where('isSeen', '==', false)
+
     );
 
     const unsubscribe = onSnapshot(q, (snapshot: any) => {
@@ -110,10 +111,7 @@ export default function DashboardLayout({
   } catch (e) {
     console.error("Firestore definitive guard caught error:", e);
   }
-}, [user?.uid, firestore]);
-
-
-
+}, [user, firestore]);
 
 
   React.useEffect(() => {
@@ -194,7 +192,15 @@ export default function DashboardLayout({
                             pathname === item.href && "bg-muted text-primary"
                         )}
                       >
-                        <item.icon className="h-5 w-5" />
+                        <div className="relative">
+                          <item.icon className="h-5 w-5" />
+                          {item.title === 'Notifications' && liveUnreadCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                              {liveUnreadCount}
+                            </span>
+                          )}
+                        </div>
+
                         {item.title}
                       </Link>
                     ))}
@@ -230,7 +236,15 @@ export default function DashboardLayout({
                               pathname === item.href && "text-primary"
                           )}
                         >
-                          <item.icon className="h-5 w-5" />
+                          <div className="relative">
+                            <item.icon className="h-5 w-5" />
+                            {item.title === 'Notifications' && liveUnreadCount > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                                {liveUnreadCount}
+                              </span>
+                            )}
+                          </div>
+
                           <span>{item.title}</span>
                         </Link>
                       </DropdownMenuItem>
@@ -309,15 +323,13 @@ export default function DashboardLayout({
                                 className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
                                 onClick={() => router.push('/dashboard/notifications')}
                               >
-
                                 <Bell className="h-8 w-8" />
-                                   {liveUnreadCount > 0 && (
-                                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
-                                      {liveUnreadCount}
-                                    </span>
-                                  )}
-                                <span className="sr-only">Notifications</span>
-                                </Button>
+                                {liveUnreadCount > 0 && (
+                                  <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                                    {liveUnreadCount}
+                                  </span>
+                                )}
+                              </Button>
                             </DropdownMenuTrigger>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">

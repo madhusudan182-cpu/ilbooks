@@ -210,6 +210,7 @@ export default function MessagesPage() {
                 firestore={firestore}
                 router={router}
                 activeConversationId={activeConversationId}
+                isUnread={conv.lastMessageSenderId !== user?.uid && conv.seen === false}
               />
             );
             })}
@@ -306,7 +307,7 @@ export default function MessagesPage() {
 }
 
 // 💡 সম্পূর্ণ SDK ইনস্ট্যান্স এরর মুক্ত চূড়ান্ত গ্লোবাল ইনবক্স রো কম্পোনেন্ট
-function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeConversationId }: any) {
+function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeConversationId, isUnread }: any) {
   const [memberProfile, setMemberProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -321,19 +322,24 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
       })
       .catch((err: any) => console.error("Error loading chat row handle:", err));
   }, [firestore, partnerId]);
+  const isActive = activeConversationId === conv.id;
+  const rowBackground = isActive
+    ? "bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200" // একটিভ চ্যাট
+    : isUnread
+    ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 font-semibold" // 👈 আনরিড চ্যাটের বিশেষ ব্যাকগ্রাউন্ড কালার
+    : "hover:bg-gray-50 dark:hover:bg-slate-800/50";
 
   const nameToDisplay = memberProfile?.name || partnerId || "Conversation";
 
-  return (
+    return (
     <button
       role="button"
       onClick={() => {
         router.push(`/dashboard/messages?chatWith=${partnerId}`);
       }}
-      className={`flex items-center gap-2 p-3 border-b cursor-pointer transition-colors w-full ${
-        activeConversationId === conv.id ? "bg-muted" : "hover:bg-muted/50"
-      }`}
+      className={`flex items-center gap-2 p-3 border-b cursor-pointer transition-colors w-full ${rowBackground}`}
     >
+
       <div className="relative">
         <Avatar className="h-12 w-12 border">
           <AvatarImage src={memberProfile?.avatarUrl || ""} />

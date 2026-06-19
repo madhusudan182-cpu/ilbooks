@@ -9,6 +9,7 @@ import { MapPin, Camera, Loader2, Lock, Unlock, Heart, MessageCircle, Share2 } f
 import { getFirestore, doc, updateDoc, onSnapshot, collection, query, orderBy } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth"; // 🎯 ফায়ারবেস অথেনটিকেশন মডিউল ইমপোর্ট করলাম
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from 'next/navigation';
 
 interface PostData {
   id: string;
@@ -25,6 +26,7 @@ interface PostData {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { toast } = useToast();
   const firestore = getFirestore();
   const auth = getAuth(); // 🎯 ফায়ারবেস অথেনটিকেশন ইনিশিয়েলাইজ করলাম
@@ -319,7 +321,8 @@ export default function ProfilePage() {
         <div className="flex items-center gap-2 pt-2 justify-center w-full">
           {isOwnProfile ? (
             // নিজের প্রোফাইল হলে শুধু এডিট বাটন থাকবে
-            <Button variant="outline" className="w-full">Edit Profile</Button>
+            <Button variant="outline" className="w-full" onClick={() => router.push('/dashboard/profile/edit')}>Edit Profile</Button>
+
           ) : (
             <div className="flex items-center gap-2 w-full justify-center">
               {/* কন্ডিশন ১: ফ্রেন্ড হলে (Friend Button + Message) */}
