@@ -86,7 +86,27 @@ export default function DashboardLayout({
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
-    const [liveUnreadCount, setLiveUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+  if (!firestore || !user?.uid) return;
+
+  const chatQuery = query(
+    collection(firestore, 'messages'),
+    where('receiverId', '==', user.uid),
+    where('seen', '==', false)
+  );
+
+  const unsubscribeChat = onSnapshot(chatQuery, (snapshot: any) => {
+    setUnreadChats(snapshot.size); 
+  }, (error: any) => {
+    console.error("Error fetching unread chats count:", error);
+  });
+
+  return () => unsubscribeChat();
+}, [firestore, user?.uid]);
+
+  const [liveUnreadCount, setLiveUnreadCount] = React.useState(0);
+  const [unreadChats, setUnreadChats] = React.useState(0);
 
     React.useEffect(() => {
   // 🔒 সেফটি লক: যদি ইউজার আইডি অথবা ফায়ারস্টোর রেডি না থাকে, তবে কোড ওখানেই থেমে যাবে
@@ -200,7 +220,11 @@ export default function DashboardLayout({
                             </span>
                           )}
                         </div>
-
+                          {item.title === 'Chat' && unreadChats > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                            {unreadChats}
+                          </span>
+                        )}
                         {item.title}
                       </Link>
                     ))}
@@ -243,8 +267,12 @@ export default function DashboardLayout({
                                 {liveUnreadCount}
                               </span>
                             )}
+                            {item.title === 'Chat' && unreadChats > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                                {unreadChats}
+                              </span>
+                            )}
                           </div>
-
                           <span>{item.title}</span>
                         </Link>
                       </DropdownMenuItem>

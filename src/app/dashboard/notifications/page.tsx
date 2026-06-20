@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore } from "@/firebase"; // আপনার প্রোজেক্টের আসল কাস্টম হুক পাথ
 import { Bell, Heart, MessageSquare, UserPlus, ShieldAlert, Loader2 } from 'lucide-react';
+import { collection, query, where, orderBy, onSnapshot, doc, writeBatch } from 'firebase/firestore';
+
 
 export default function NotificationsPage() {
   const { user } = useUser();
@@ -16,7 +18,6 @@ export default function NotificationsPage() {
     // 🔒 ফায়ারবেস ক্র্যাশ লক: ইউজার আইডি বা ডাটাবেজ কানেকশন সম্পূর্ণ রেডি না হওয়া পর্যন্ত কোড রান করবে না
     if (!user?.uid || !dbInstance) return;
 
-    const { collection, query, where, orderBy, onSnapshot, doc, writeBatch } = require('firebase/firestore');
 
     try {
       const q = query(

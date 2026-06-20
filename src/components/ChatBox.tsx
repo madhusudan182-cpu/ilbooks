@@ -35,7 +35,34 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
 
    // 💬 রিয়েল-টাইমে মেসেজ লোড করার লজিক (৩৬ নাম্বার লাইন থেকে পরিবর্তন শুরু)
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore || !chatRoomId || !currentUserId || !targetUserId) return;
+
+    const markMessagesAsSeen = async () => {
+      try {
+        const { query, collection, where, getDocs, writeBatch } = require('firebase/firestore');
+        const q = query(
+          collection(firestore, 'messages'),
+          where('chatRoomId', '==', chatRoomId),
+          where('senderId', '==', targetUserId), 
+          where('receiverId', '==', currentUserId), 
+          where('seen', '==', false)
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const batch = writeBatch(firestore);
+          querySnapshot.forEach((doc: any) => {
+            batch.update(doc.ref, { seen: true });
+          });
+          await batch.commit();
+        }
+      } catch (error) {
+        console.error("Failed to mark messages as seen: ", error);
+      }
+    };
+
+    markMessagesAsSeen();
 
     const messagesQuery = query(
       collection(firestore, 'messages'),
