@@ -44,6 +44,14 @@ const EditableBookGrid = ({
     onRemoveBook: (bookId: string) => void;
 }) => {
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+      const setFileInputRef = (bookId: string, el: HTMLInputElement | null) => {
+    if (el) {
+      fileInputRefs.current[`cover-${bookId}`] = el;
+    } else {
+      delete fileInputRefs.current[`cover-${bookId}`];
+    }
+  };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {booksToEdit.map((book) => (
@@ -77,13 +85,8 @@ const EditableBookGrid = ({
                             type="file" 
                             accept="image/*" 
                             className="hidden" 
-                            ref={(el) => {
-                                if (el) {
-                                    fileInputRefs.current[`cover-${book.id}`] = el;
-                                } else {
-                                    delete fileInputRefs.current[`cover-${book.id}`];
-                                }
-                            }}
+                            ref={(el) => setFileInputRef(book.id, el)}
+
                                 onChange={(e) => onFileChange(book.id, 'cover', e)}
                                 />
 
