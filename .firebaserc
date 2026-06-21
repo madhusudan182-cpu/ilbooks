@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "bd-job-preparation-59001-7613b"
+  },
+  "targets": {
+    "bd-job-preparation-59001-7613b": {
+      "hosting": {
+        "ilbooks": [
+          "ilbooks"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

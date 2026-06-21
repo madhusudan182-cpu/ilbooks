@@ -1,0 +1,64 @@
+{
+  "placeholderImages": [
+    {
+      "id": "book-cover-1",
+      "description": "Abstract painting for a book cover",
+      "imageUrl": "https://images.unsplash.com/flagged/photo-1567934150921-7632371abb32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHBhaW50aW5nfGVufDB8fHx8MTc3MDEyODY1N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract painting"
+    },
+    {
+      "id": "book-cover-2",
+      "description": "Landscape photo for a book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1632742707012-4c69a38f8b42?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxsYW5kc2NhcGUlMjBwaG90b3xlbnwwfHx8fDE3NzAxMzg0MTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "landscape photo"
+    },
+    {
+      "id": "book-cover-3",
+      "description": "Architectural detail for a book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1534159224451-e27efd044c3a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxhcmNoaXRlY3R1cmUlMjBkZXRhaWx8ZW58MHx8fHwxNzcwMTc0MTU0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "architecture detail"
+    },
+    {
+      "id": "book-cover-4",
+      "description": "Nature close-up for a book cover",
+      "imageUrl": "https://images.unsplash.com/photo-1580133318324-f2f76d987dd8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBtYWNyb3xlbnwwfHx8fDE3NzAxNzQxNTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "nature macro"
+    },
+    {
+      "id": "avatar-1",
+      "description": "Placeholder for user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1624794448959-4b2b2f424a9e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwb3J0cmFpdCUyMHBlcnNvbnxlbnwwfHx8fDE3NzAwOTc3Nzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "portrait person"
+    },
+    {
+      "id": "avatar-2",
+      "description": "Placeholder for user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1607529378676-a20456ee2f6b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBzbWlsaW5nfGVufDB8fHx8MTc3MDE0OTI4OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person smiling"
+    },
+    {
+      "id": "avatar-3",
+      "description": "Placeholder for user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1656778669500-7afe7f78c3d0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHJlYWRpbmd8ZW58MHx8fHwxNzcwMTAxMjE1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman reading"
+    },
+    {
+      "id": "avatar-4",
+      "description": "Placeholder for user avatar",
+      "imageUrl": "https://images.unsplash.com/photo-1557862921-37829c790f19?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MDA4ODY0NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man glasses"
+    },
+    {
+      "id": "post-image-1",
+      "description": "Image for a social media post",
+      "imageUrl": "https://images.unsplash.com/photo-1579370318443-8da816457e3d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsaWJyYXJ5JTIwYm9va3N8ZW58MHx8fHwxNzcwMTM2NjkwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "library books"
+    },
+    {
+      "id": "post-image-2",
+      "description": "Image for a social media post",
+      "imageUrl": "https://images.unsplash.com/photo-1569231082737-c54d1a8ebc14?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb2ZmZWUlMjBib29rfGVufDB8fHx8MTc3MDE0NTUzM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coffee book"
+    }
+  ]
+}

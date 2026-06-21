@@ -1,0 +1,159 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The user's full name." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "mobile": { "type": "string", "description": "The user's mobile number." },
+        "level": { "type": "number", "description": "The user's competition level." },
+        "isAdmin": { "type": "boolean", "description": "Flag to indicate if user is an admin." },
+        "profession": { "type": "string" },
+        "institution": { "type": "string" },
+        "district": { "type": "string" },
+        "thana": { "type": "string" },
+        "hobbies": { "type": "array", "items": { "type": "string" } },
+        "avatarUrl": { "type": "string" }
+      },
+      "required": ["name", "email"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Represents a customer's book order.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the user who placed the order." },
+        "customerName": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "books": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "author": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" }
+            },
+            "required": ["id", "title", "price", "quantity"]
+          }
+        },
+        "totalAmount": { "type": "number" },
+        "orderDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Paid", "Shipped", "Delivered"] }
+      },
+      "required": ["userId", "customerName", "deliveryAddress", "mobileNumber", "books", "totalAmount", "orderDate", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Represents a financial transaction record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["Exam Fee", "Book Shop", "Patronage"] },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" }
+      },
+      "required": ["userId", "amount", "type", "date", "status"]
+    },
+    "ExamResult": {
+      "title": "Exam Result",
+      "description": "Represents a user's performance in a competition level exam.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "level": { "type": "string" },
+        "totalMarks": { "type": "number" },
+        "totalObtainedMarks": { "type": "number" },
+        "totalPercentage": { "type": "number" },
+        "overallStatus": { "type": "string", "enum": ["Passed", "Failed"] },
+        "examDate": { "type": "string", "format": "date-time" },
+        "subjects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subject": { "type": "string" },
+              "totalMarks": { "type": "number" },
+              "obtainedMarks": { "type": "number" },
+              "status": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["userId", "level", "totalMarks", "totalObtainedMarks", "overallStatus", "examDate"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Represents a chat thread between users.",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["participants", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a single message in a conversation.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "seen"] }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["password", "google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "Stores user profile information."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/backend/entities/Order" },
+      "description": "Stores customer book orders."
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/backend/entities/Transaction" },
+      "description": "Log of all financial transactions."
+    },
+    "/results/{resultId}": {
+      "schema": { "$ref": "#/backend/entities/ExamResult" },
+      "description": "Stores exam results for level progression."
+    },
+    "/conversations/{convoId}": {
+      "schema": { "$ref": "#/backend/entities/Conversation" },
+      "description": "Stores chat conversation metadata."
+    },
+    "/conversations/{convoId}/messages/{msgId}": {
+      "schema": { "$ref": "#/backend/entities/Message" },
+      "description": "Stores individual messages within a conversation."
+    },
+    "/syllabi/{level}": {
+      "schema": { "$ref": "#/backend/entities/Syllabus" },
+      "description": "Stores the syllabus for each competition level."
+    },
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/backend/entities/Book" },
+      "description": "Stores all books for the book shop and competitions."
+    },
+    "/questions/{questionId}": {
+      "schema": { "$ref": "#/backend/entities/Question" },
+      "description": "Stores all exam questions for all levels."
+    }
+  }
+}

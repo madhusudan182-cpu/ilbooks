@@ -1,0 +1,58 @@
+export const examSchedules: { [key: number]: { day: number, dayName: string, start: number, end: number } } = {
+    1: { day: 5, dayName: 'Friday', start: 9, end: 10 },
+    2: { day: 5, dayName: 'Friday', start: 10, end: 11 },
+    3: { day: 5, dayName: 'Friday', start: 20, end: 21 },
+    4: { day: 5, dayName: 'Friday', start: 21, end: 22 },
+    5: { day: 6, dayName: 'Saturday', start: 9, end: 10 },
+    6: { day: 6, dayName: 'Saturday', start: 10, end: 11 },
+    7: { day: 6, dayName: 'Saturday', start: 20, end: 21 },
+    8: { day: 6, dayName: 'Saturday', start: 21, end: 22 },
+    9: { day: 0, dayName: 'Sunday', start: 20, end: 21 },
+    10: { day: 0, dayName: 'Sunday', start: 21, end: 22 },
+    11: { day: 1, dayName: 'Monday', start: 20, end: 21 },
+    12: { day: 1, dayName: 'Monday', start: 21, end: 22 },
+    13: { day: 2, dayName: 'Tuesday', start: 20, end: 21 },
+    14: { day: 2, dayName: 'Tuesday', start: 21, end: 22 },
+    15: { day: 3, dayName: 'Wednesday', start: 20, end: 21 },
+    16: { day: 3, dayName: 'Wednesday', start: 21, end: 22 },
+    17: { day: 4, dayName: 'Thursday', start: 20, end: 21 },
+    18: { day: 4, dayName: 'Thursday', start: 21, end: 22 },
+    19: { day: 4, dayName: 'Thursday', start: 22, end: 23 },
+};
+
+export const examScheduleMessages: { [key: number]: string } = {
+    1: "The exam of this Level will take place on every Friday from 9 a.m. to 10 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    2: "The exam of this Level will take place on Friday from 10 a.m. to 11 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    3: "The exam of this Level will take place on Friday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    4: "The exam of this Level will take place on Friday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    5: "The exam of this Level will take place on Saturday from 9 a.m. to 10 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    6: "The exam of this Level will take place on Saturday from 10 a.m. to 11 a.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    7: "The exam of this Level will take place on Saturday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    8: "The exam of this Level will take place on Saturday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    9: "The exam of this Level will take place on Sunday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    10: "The exam of this Level will take place on Sunday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    11: "The exam of this Level will take place on Monday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    12: "The exam of this Level will take place on Monday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    13: "The exam of this Level will take place on Tuesday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    14: "The exam of this Level will take place on Tuesday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    15: "The exam of this Level will take place on Wednesday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    16: "The exam of this Level will take place on Wednesday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    17: "The exam of this Level will take place on Thursday from 8 p.m. to 9 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    18: "The exam of this Level will take place on Thursday from 9 p.m. to 10 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+    19: "The exam of this Level will take place on Thursday from 10 p.m. to 11 p.m. So, before you go for registration, take a good look at the Syllabus and prepare yourself for a better result!",
+};
+
+// Mock state for exam holds. In a real app, this would be in a database.
+// The key is the specific sub-level string (e.g., "3.1").
+export let examHolds: Record<string, boolean> = {
+    '3.0': true,
+    '3.1': true,
+    '3.2': true,
+    '3.3': true,
+    '3.4': true,
+    '3.5': true,
+    '3.6': true,
+    '3.7': true,
+    '3.8': true,
+    '3.9': true,
+};
