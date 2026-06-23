@@ -3,5 +3,13 @@
     "hosting": {
       "site": "ilbooks"
     }
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }
