@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 // লাইন ৬-এ এগুলো যুক্ত করে নিন
 import { BookOpen, LogOut, Home, Trophy, Crown, MessageCircle, Users, Grid3x3, Bell, Shield, Loader2, Scale, MessageSquare } from 'lucide-react';
-
+import LiveNotificationBadge from '@/components/LiveNotificationBadge'; // ফাইলের সঠিক পাথ অনুযায়ী দিন
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import LiveDropdownList from '@/components/LiveDropdownList'; // ফাইলের সঠিক পাথ অনুযায়ী দিন
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +23,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 // বাকি ইম্পোর্টগুলোর সাথে এগুলো যুক্ত করুন
-import { doc, collection, query, where, onSnapshot } from 'firebase/firestore'; 
+import { doc, collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'; 
 import { signOut } from 'firebase/auth';
 
 import { 
@@ -107,6 +108,30 @@ export default function DashboardLayout({
 
   const [liveUnreadCount, setLiveUnreadCount] = React.useState(0);
   const [unreadChats, setUnreadChats] = React.useState(0);
+  const [unreadNotifications, setUnreadNotifications] = React.useState(0);
+
+    // ১. নোটিফিকেশন কাউন্টের জন্য একটি গ্লোবাল স্টেট
+  const [globalNotifCount, setGlobalNotifCount] = React.useState(0);
+
+  // ২. লুপের বাইরে সম্পূর্ণ স্বাধীন রিয়েল-টাইম নোটিফিকেশন লিসেনার
+  React.useEffect(() => {
+    if (!user?.uid || !firestore) return;
+
+    const notifQuery = query(
+      collection(firestore, 'user_notifications'),
+      where('userId', '==', user.uid),
+      where('isRead', '==', false)
+    );
+
+    const unsubscribeNotifGlobal = onSnapshot(notifQuery, (snapshot) => {
+      setGlobalNotifCount(snapshot.size);
+    }, (error) => {
+      console.error("Global notif fetch error: ", error);
+    });
+
+    return () => unsubscribeNotifGlobal();
+  }, [user?.uid, firestore]);
+
 
     React.useEffect(() => {
   // 🔒 সেফটি লক: যদি ইউজার আইডি অথবা ফায়ারস্টোর রেডি না থাকে, তবে কোড ওখানেই থেমে যাবে
@@ -120,6 +145,8 @@ export default function DashboardLayout({
       where('isSeen', '==', false)
 
     );
+
+   
 
     const unsubscribe = onSnapshot(q, (snapshot: any) => {
       setLiveUnreadCount(snapshot.size);
@@ -339,46 +366,46 @@ export default function DashboardLayout({
           <div className="mx-auto flex h-10 items-center justify-center gap-1 p-2">
                 <TooltipProvider>
                 {[...iconNavItems, { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }].map((item) => {
-                    if (item.title === 'Notifications') {
+                  if (item.title === 'Notifications') {
                     return (
-                        <DropdownMenu key="notifications-dropdown">
+                      <DropdownMenu key="notifications-dropdown">
                         <Tooltip>
-                            <TooltipTrigger asChild>
+                          <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
-                                onClick={() => router.push('/dashboard/notifications')}
                               >
                                 <Bell className="h-8 w-8" />
-                                {liveUnreadCount > 0 && (
+                                {globalNotifCount > 0 && (
                                   <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
-                                    {liveUnreadCount}
+                                    {globalNotifCount}
                                   </span>
                                 )}
                               </Button>
                             </DropdownMenuTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
                             <p>Notifications</p>
-                            </TooltipContent>
+                          </TooltipContent>
                         </Tooltip>
-                        <DropdownMenuContent align="end" className="w-80">
-                            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                              {/* নোটিফিকেশন ড্রপডাউন লিস্টটি ক্লীন করা হলো */}
-                              <div className="px-4 py-2 text-center text-xs text-gray-400">
-                                Click to view all live notifications
-                              </div>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                            <Link href="/dashboard/notifications" className='justify-center'>View all notifications</Link>
-                            </DropdownMenuItem>
+
+                        <DropdownMenuContent align="end" className="w-80 bg-white border border-gray-100 p-2 shadow-lg rounded-md z-50">
+                          <DropdownMenuLabel className="font-bold text-gray-800 px-2 py-1 text-sm">Notifications</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                            <LiveDropdownList userId={user?.uid} />
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href="/dashboard/notice-board" className="w-full text-center text-xs text-blue-600 justify-center font-medium">
+                              View all notifications
+                            </Link>
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
-                        </DropdownMenu>
-                    )
-                    }
+                      </DropdownMenu>
+                    );
+                  }
+
                     return (
                     <Tooltip key={item.href}>
                     <TooltipTrigger asChild>

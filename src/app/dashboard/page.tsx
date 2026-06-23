@@ -298,7 +298,7 @@ export default function HomePage() {
                 <CardFooter className="flex items-center gap-6 p-2 px-3 border-t bg-slate-50/50 justify-start">
                   {/* লাইক বাটন */}
                   <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors active:scale-90 duration-100">
-                    <Heart className="h-4 w-4 shrink-0" />
+                    <Heart className={`h-4 w-4 shrink-0 ${post.isLiked ? "text-red-500 fill-red-500" : ""}`} />
                     <span className="text-xs font-medium">{post.likes || 0}</span>
                   </button>
 

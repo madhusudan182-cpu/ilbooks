@@ -36,9 +36,25 @@ export default function BookShopPage() {
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
 
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [showPayment, setShowPayment] = useState(false);
-  const { toast } = useToast();
+  const [cart, setCart] = useState<CartItem[]>(() => {
+  if (typeof window !== 'undefined') {
+    const savedCart = localStorage.getItem('book_cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  }
+  return [];
+});
+
+const [showPayment, setShowPayment] = useState(false);
+const { toast } = useToast();
+
+// 💡 ঠিক এই জায়গায় কোডটি পেস্ট করুন
+useEffect(() => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('book_cart', JSON.stringify(cart));
+  }
+}, [cart]);
+
+
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
