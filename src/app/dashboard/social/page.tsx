@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db as firestore } from '@/firebase/config';
+import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import UserRow from "@/components/UserRow";
 
@@ -14,6 +15,7 @@ interface UserData {
 }
 
 export default function SocialCirclePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const router = useRouter();
   const [tabParam, setTabParam] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -181,11 +183,12 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
       <h1 className="text-2xl font-bold text-center mb-6">Social Circle</h1>
       
       {/* ট্যাব ডিজাইন */}
-      <div className="flex justify-center gap-2 mb-6">
-        {(['friends', 'following', 'followers', 'bookworms'] as const).map((tab) => (
+      {/* 🚀 পরিবর্তিত নতুন কোড */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory max-w-full">
+        {['friends', 'following', 'followers', 'bookworms'].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => setActiveTab(tab as any)}
             className={`px-4 py-2 rounded-lg capitalize ${
               activeTab === tab ? 'bg-purple-700 text-white' : 'bg-slate-200 text-slate-700'
             }`}
