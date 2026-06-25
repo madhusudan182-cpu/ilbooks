@@ -1,11 +1,6 @@
 {
-  "apphosting": {
-    "hosting": {
-      "site": "ilbooks"
-    }
-  },
   "hosting": {
-    "public": "public",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",

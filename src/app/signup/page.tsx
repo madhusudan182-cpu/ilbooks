@@ -59,7 +59,7 @@ export default function SignupPage() {
       name: "",
       email: email,
       level: "0.0",
-      avatarUrl: `https://picsum.photos{user.uid}/100/100`,
+      avatarUrl: `https://picsum.photos/${user.uid}/100/100`,
       bio: "",
       location: "",
       isAdmin: false,

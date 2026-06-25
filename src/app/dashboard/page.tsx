@@ -82,7 +82,7 @@ export default function HomePage() {
         author: {
           id: user.uid,
           name: profile.name || 'Anonymous',
-          avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
+          avatarUrl: profile.avatarUrl || `https://picsum.photos/${user.uid}/100/100`,
         },
         createdAt: firebaseFirestore.serverTimestamp(),
         likes: 0,
@@ -138,7 +138,7 @@ export default function HomePage() {
         author: {
           id: user.uid,
           name: profile.name || 'Anonymous',
-          avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
+          avatarUrl: profile.avatarUrl || `https://picsum.photos/${user.uid}/100/100`,
         },
         createdAt: serverTimestamp()
       });

@@ -8,7 +8,7 @@ interface UserRowProps {
   name: string;
   level: string;
   avatarUrl?: string;
-  tabType: 'friends' | 'following' | 'followers' | 'bookworms';
+  tabType: 'friends' | 'following' | 'followers' | 'bookworms' | 'blocked';
   isFollowing?: boolean;
   isFriend?: boolean;
   isFollower?: boolean; // 👈 সে আপনাকে ফলো করেছে কি না তা জানার জন্য নতুন প্রপস

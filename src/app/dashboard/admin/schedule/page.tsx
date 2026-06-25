@@ -1,59 +1,76 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CalendarClock, Ban, PlayCircle, BellRing, Settings } from 'lucide-react';
-import { examSchedules, examHolds } from '@/lib/exam-schedule';
+import { ArrowLeft, CalendarClock, Ban, PlayCircle } from 'lucide-react';
+import { examSchedules } from '@/lib/exam-schedule';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
+// ফায়ারবেস ইম্পোর্টসমূহ (আপনার প্রজেক্টের সঠিক পাথ অনুযায়ী db ইম্পোর্ট করুন)
+import { db } from '@/firebase/config'; 
+import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+
 export default function AdminSchedulePage() {
-    const [holds, setHolds] = useState(examHolds);
+    // ডাটাবেজের রিয়েল-টাইম হোল্ড স্টেট ট্র্যাকিং
+    const [dbHolds, setDbHolds] = useState<Record<string, boolean>>({});
+    const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
-    const handleToggleHold = (levelKey: string) => {
-        const newHolds = { ...holds, [levelKey]: !holds[levelKey] };
-        // This mutates the imported object, simulating a persistent state for this exercise
-        examHolds[levelKey] = newHolds[levelKey];
-        setHolds(newHolds);
+    // ফায়ারবেস থেকে রিয়েল-টাইম ডেটা লোড
+    useEffect(() => {
+        const scheduleRef = collection(db, 'exam_settings');
+        const unsubscribe = onSnapshot(scheduleRef, (snapshot) => {
+            const holdsData: Record<string, boolean> = {};
+            snapshot.docs.forEach((docSnap) => {
+                const data = docSnap.data();
+                // যদি স্টেটাস 'On Hold' হয় তবে true, অন্যথায় false
+                holdsData[docSnap.id] = data.status === 'On Hold';
+            });
+            setDbHolds(holdsData);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching schedules: ", error);
+            setLoading(false);
+        });
 
-        if (newHolds[levelKey]) {
-            toast({ title: `Exam for Level ${levelKey} is now ON HOLD.` });
-        } else {
+        return () => unsubscribe();
+    }, []);
+
+    // ডাটাবেজে অ্যাক্টিভ/হোল্ড স্টেট পরিবর্তন করার ফাংশন
+    const handleToggleHold = async (subLevelKey: string) => {
+        const currentStatus = dbHolds[subLevelKey]; // true মানে On Hold, false মানে Active
+        const nextStatus = !currentStatus;
+        
+        try {
+            const docRef = doc(db, 'exam_settings', subLevelKey);
+            // ফায়ারবেস ডাটাবেজে স্টেট আপডেট
+            await setDoc(docRef, {
+                status: nextStatus ? 'On Hold' : 'Active',
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+
             toast({ 
-                title: `Exam for Level ${levelKey} is now ACTIVE.`,
-                description: "A notification has been sent to registered users."
+                title: nextStatus ? `Level ${subLevelKey} is now ON HOLD.` : `Level ${subLevelKey} is now ACTIVE.`,
+                variant: nextStatus ? "destructive" : "default"
+            });
+        } catch (error) {
+            console.error("Error updating status: ", error);
+            toast({
+                title: "Error updating schedule",
+                description: "Something went wrong. Please try again.",
+                variant: "destructive"
             });
         }
     };
 
-    const handleSendNotice = (level: string) => {
-        toast({
-            title: "Notice Sent!",
-            description: `A notification has been sent to all registered users for Level ${level}.`,
-        });
-    };
-
-    const handleScheduleChange = (level: string) => {
-        toast({
-            title: "Schedule Updated",
-            description: `The exam schedule for Level ${level} has been changed.`,
-        });
+    if (loading) {
+        return <div className="p-8 text-center text-muted-foreground">Loading schedules from database...</div>;
     }
 
     return (
@@ -80,7 +97,9 @@ export default function AdminSchedulePage() {
                      <Accordion type="multiple" className="w-full">
                         {Object.entries(examSchedules).map(([level, schedule]) => {
                             const majorLevel = parseInt(level, 10);
-                            const someSubLevelsOnHold = [...Array(10)].some((_, i) => !!holds[`${majorLevel}.${i}`]);
+                            
+                            // চেক করা হচ্ছে এই মেজরের কোনো সাব-লেভেল অন-হোল্ড আছে কি না
+                            const someSubLevelsOnHold = [...Array(10)].some((_, i) => !!dbHolds[`${majorLevel}.${i}`]);
                             
                             return (
                                 <AccordionItem value={`level-${level}`} key={level}>
@@ -112,7 +131,7 @@ export default function AdminSchedulePage() {
                                                 <TableBody>
                                                     {[...Array(10)].map((_, i) => {
                                                         const subLevelKey = `${majorLevel}.${i}`;
-                                                        const isHeld = !!holds[subLevelKey];
+                                                        const isHeld = !!dbHolds[subLevelKey];
                                                         return (
                                                             <TableRow key={subLevelKey}>
                                                                 <TableCell className="font-semibold">{subLevelKey}</TableCell>
@@ -131,50 +150,6 @@ export default function AdminSchedulePage() {
                                                                             {isHeld ? <PlayCircle className="mr-2 h-4 w-4" /> : <Ban className="mr-2 h-4 w-4" />}
                                                                             {isHeld ? 'Release' : 'Hold'}
                                                                         </Button>
-
-                                                                        <Dialog>
-                                                                            <DialogTrigger asChild>
-                                                                                <Button size="sm" variant="outline">
-                                                                                    <BellRing className="mr-2 h-4 w-4"/>
-                                                                                    Notice
-                                                                                </Button>
-                                                                            </DialogTrigger>
-                                                                            <DialogContent>
-                                                                                <DialogHeader>
-                                                                                    <DialogTitle>Generate Notice for Level {subLevelKey}</DialogTitle>
-                                                                                    <DialogDescription>
-                                                                                        This message will be sent as a notification to all registered users of this level.
-                                                                                    </DialogDescription>
-                                                                                </DialogHeader>
-                                                                                <Textarea placeholder="Write your notice here..." rows={5}/>
-                                                                                <DialogFooter>
-                                                                                    <DialogTrigger asChild><Button variant="outline">Cancel</Button></DialogTrigger>
-                                                                                    <DialogTrigger asChild><Button onClick={() => handleSendNotice(subLevelKey)}>Send Notice</Button></DialogTrigger>
-                                                                                </DialogFooter>
-                                                                            </DialogContent>
-                                                                        </Dialog>
-
-                                                                        <Dialog>
-                                                                            <DialogTrigger asChild>
-                                                                                <Button size="sm" variant="outline">
-                                                                                    <Settings className="mr-2 h-4 w-4"/>
-                                                                                    Change
-                                                                                </Button>
-                                                                            </DialogTrigger>
-                                                                            <DialogContent>
-                                                                                <DialogHeader>
-                                                                                    <DialogTitle>Change Schedule for Level {subLevelKey} (Demo)</DialogTitle>
-                                                                                    <DialogDescription>
-                                                                                        This is a demonstration. In a real app, you'd have inputs to change the day and time.
-                                                                                    </DialogDescription>
-                                                                                </DialogHeader>
-                                                                                <p className="py-4 text-center text-muted-foreground">(Schedule editing form would be here)</p>
-                                                                                <DialogFooter>
-                                                                                    <DialogTrigger asChild><Button variant="outline">Cancel</Button></DialogTrigger>
-                                                                                    <DialogTrigger asChild><Button onClick={() => handleScheduleChange(subLevelKey)}>Save Changes</Button></DialogTrigger>
-                                                                                </DialogFooter>
-                                                                            </DialogContent>
-                                                                        </Dialog>
                                                                     </div>
                                                                 </TableCell>
                                                             </TableRow>
@@ -187,7 +162,7 @@ export default function AdminSchedulePage() {
                                 </AccordionItem>
                             );
                         })}
-                    </Accordion>
+                     </Accordion>
                 </CardContent>
             </Card>
         </div>

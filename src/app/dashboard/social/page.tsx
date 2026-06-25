@@ -1,13 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import UserRow from '@/components/UserRow';
-import ChatBox from '@/components/ChatBox';
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, getFirestore } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from 'next/navigation';
-
+import { useEffect, useState } from "react";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { db as firestore } from '@/firebase/config';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import UserRow from "@/components/UserRow";
 
 interface UserData {
   id: string;
@@ -16,33 +13,49 @@ interface UserData {
   avatarUrl?: string;
 }
 
-export default function SocialCirclePage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'friends' | 'following' | 'followers' | 'bookworms'>('friends');
-  
+export default function SocialCirclePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const [tabParam, setTabParam] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    searchParams.then((params) => {
+      setTabParam(params?.tab);
+    });
+  }, [searchParams]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<'friends' | 'following' | 'followers' | 'bookworms' | 'blocked'>('friends');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [dbUsers, setDbUsers] = useState<UserData[]>([]);
   const [relations, setRelations] = useState<{ [key: string]: 'following' | 'follower' | 'friends' | 'blocked' }>({});
-  const [activeChatUser, setActiveChatUser] = useState<UserData | null>(null);
 
-  const firestore = getFirestore();
-  const auth = getAuth();
-
-  // ১. ইউজার অথেনটিকেশন স্টেট চেক
+  // ১. ইউজার অথেন্টিকেশন স্টেট ট্র্যাকিং
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) setCurrentUser(user);
+    const unsubscribeAuth = onAuthStateChanged(getAuth(), (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
     });
     return () => unsubscribeAuth();
-  }, [auth]);
+  }, []);
 
-  // ২. রিয়েল-টাইমে ফায়ারবেস ডাটাবেস থেকে ইউজার এবং রিলেশন ডেটা লোড
+  // ২. ট্যাব প্যারামিটার এবং স্টেট সিঙ্ক করার জন্য ইফেক্ট
+  useEffect(() => {
+    if (tabParam) {
+      const validTabs = ['friends', 'following', 'followers', 'bookworms', 'blocked'];
+      const lowerParam = tabParam.toLowerCase();
+      if (validTabs.includes(lowerParam)) {
+        setActiveTab(lowerParam as any);
+      }
+    }
+  }, [tabParam]);
+
+  // ৩. রিয়েল-টাইম ফায়ারবেস ডেটাবেস থেকে ইউজার এবং রিলেশন ডেটা লোড (Ultimate Strict Logic)
   useEffect(() => {
     if (!firestore || !currentUser) return;
 
-    // সম্পূর্ণ ইউজার লিস্ট লোড (Bookworms)
+    // (ক) সম্পূর্ণ ইউজারের লিস্ট লোড করা
     const usersQuery = query(collection(firestore, 'users'));
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersList: UserData[] = [];
@@ -60,167 +73,121 @@ export default function SocialCirclePage() {
       setDbUsers(usersList);
     });
 
-    // 🔗 রিলেশনশিপ ম্যাপ তৈরির ১০০% নিখুঁত লজিক (যা রিফ্রেশ করলেও ডেটা ধরে রাখবে)
+    // (খ) ফলো রিলেশনশিপ ট্র্যাকিং করার নিখুঁত লিসেনার
     const followsQuery = query(
       collection(firestore, 'follows'),
       where('status', '==', 'ACTIVE')
     );
-    
+
     const unsubscribeFollows = onSnapshot(followsQuery, (snapshot) => {
-      const activeRelations: { [key: string]: 'following' | 'follower' | 'friends' | 'blocked' } = {};
-      
       const myFollowings = new Set<string>();
       const myFollowers = new Set<string>();
 
-      // ডাটাবেস থেকে কে কাকে ফলো করেছে তা আলাদাভাবে দুটি সেটে জমা করা
+      // ফায়ারবেস স্ন্যাপশট থেকে স্বাধীনভাবে ফলোয়ার এবং ফলোয়িং আলাদা করা
       snapshot.forEach((doc) => {
         const data = doc.data();
         if (data.followerId === currentUser.uid) {
-          myFollowings.add(data.followingId);
+          myFollowings.add(data.followingId); // আমি যাদের ফলো করি
         }
         if (data.followingId === currentUser.uid) {
-          myFollowers.add(data.followerId);
+          myFollowers.add(data.followerId); // যারা আমাকে ফলো করে
         }
       });
 
-      // বুকওয়ার্মের প্রতিটা ইউজারের সাথে আপনার বর্তমান রিলেশনশিপ ক্যালকুলেট করা
+      const nextActiveRelations: { [key: string]: 'following' | 'follower' | 'friends' | 'blocked' } = {};
+
+      // ডাটাবেসে থাকা প্রতিটা ইউজারের সাথে আমার সুনির্দিষ্ট সম্পর্ক আলাদা করা
       snapshot.forEach((doc) => {
         const data = doc.data();
         const targetId = data.followerId === currentUser.uid ? data.followingId : data.followerId;
-        
-        const iFollow = myFollowings.has(targetId);
-        const theyFollow = myFollowers.has(targetId);
 
-        if (iFollow && theyFollow) {
-          activeRelations[targetId] = 'friends';
-        } else if (iFollow) {
-          activeRelations[targetId] = 'following';
-        } else if (theyFollow) {
-          activeRelations[targetId] = 'follower';
+        if (targetId !== currentUser.uid) {
+          const iFollow = myFollowings.has(targetId);
+          const theyFollow = myFollowers.has(targetId);
+
+          if (iFollow && theyFollow) {
+            nextActiveRelations[targetId] = 'friends';
+          } else if (iFollow) {
+            nextActiveRelations[targetId] = 'following';
+          } else if (theyFollow) {
+            nextActiveRelations[targetId] = 'follower';
+          }
         }
       });
 
-      // ব্যাকআপ সেফটি চেক (যদি স্ন্যাপশট লুপে কোনো ইউজার বাদ পড়ে, তবে ডাইরেক্ট সেট থেকে চেক করবে)
-      myFollowings.forEach(id => {
-        if (!activeRelations[id]) {
-          activeRelations[id] = myFollowers.has(id) ? 'friends' : 'following';
-        }
-      });
-      myFollowers.forEach(id => {
-        if (!activeRelations[id]) {
-          activeRelations[id] = myFollowings.has(id) ? 'friends' : 'follower';
-        }
-      });
-
-      setRelations(activeRelations);
+      setRelations(nextActiveRelations);
     });
 
     return () => {
       unsubscribeUsers();
       unsubscribeFollows();
     };
-  }, [firestore, currentUser, dbUsers.length]); // dbUsers.length ট্র্যাকিং বাগ প্রতিরোধ করবে
+  }, [firestore, currentUser]);
 
-  const handleUserAction = async (actionType: 'chat' | 'unfollow' | 'block' | 'follow' | 'unblock', targetUserId: string) => {
+  // ৪. আপনার দেওয়া ৪টি কন্ডিশন অনুযায়ী নিখুঁত ট্যাব ফিল্টারিং ইঞ্জিন
+  const displayUsers = dbUsers.filter(user => {
+    const userRelation = relations[user.id]; // এটি 'friends', 'following', 'follower' বা undefined হবে
+    let matchesTab = false;
+
+    if (activeTab === 'bookworms') {
+      // কন্ডিশন ৪: বুকওয়ার্মস ট্যাবে সবাই (All Users) থাকবে, সম্পর্ক থাকুক বা না থাকুক
+      matchesTab = true;
+    } else if (activeTab === 'friends') {
+      // কন্ডিশন ১: যখন দুজন দুজনকে ফলো করে, শুধু তখনই 'friends' হবে
+      matchesTab = userRelation === 'friends';
+    } else if (activeTab === 'following') {
+      // কন্ডিশন ২: আপনি যাদের ফলো করছেন (তারা শুধু Following ট্যাবে থাকবে)
+      matchesTab = userRelation === 'following';
+    } else if (activeTab === 'followers') {
+      // কন্ডিশন ৩: যারা আপনাকে ফলো করছে কিন্তু আপনি ব্যাক করেননি (তারা শুধু Followers ট্যাবে থাকবে)
+      matchesTab = userRelation === 'follower';
+    }
+
+    return matchesTab;
+  });
+  // ৫. ফলো এবং আনফলো করার শক্তিশালী এবং সমন্বিত হ্যান্ডলার অ্যাকশন (Fixed deleteDoc)
+  const handleUserAction = async (actionType: string, targetUserId: string) => {
     if (!firestore || !currentUser) return;
 
-    const targetUser = dbUsers.find(u => u.id === targetUserId);
-
     try {
+      // ইউজার পেজের সাথে হুবহু মিল রেখে আইডি তৈরি
+      const followDocId = `${currentUser.uid}_${targetUserId}`;
+      const followRef = doc(firestore, 'follows', followDocId);
+
       if (actionType === 'follow') {
-        const followRef = doc(firestore, 'follows', `${currentUser.uid}_${targetUserId}`);
+        // ইউজার পেজের মতো হুবহু ACTIVE ডকুমেন্ট তৈরি করা
         await setDoc(followRef, {
           followerId: currentUser.uid,
           followingId: targetUserId,
           status: 'ACTIVE',
-          createdAt: new Date()
+          createdAt: new Date().toISOString()
         });
-        toast({ title: "Success", description: "You are now following this bookworm! 🎉" });
+        alert("Following successfully!");
       } 
       else if (actionType === 'unfollow') {
-        const followRef = doc(firestore, 'follows', `${currentUser.uid}_${targetUserId}`);
+        // আপনার ইউজার পেজের মতো ডকুমেন্টটি সম্পূর্ণ ডিলিট করে দেওয়া
+        // এটি করার সাথে সাথে ফায়ারবেস লিসেনার রিয়েল-টাইমে এই ইউজারকে ট্যাব থেকে সরিয়ে দেবে!
         await deleteDoc(followRef);
-        toast({ title: "Unfollowed", description: "Removed from your following list." });
-      } 
-      else if (actionType === 'block') {
-        const followRef = doc(firestore, 'follows', `${currentUser.uid}_${targetUserId}`);
-        await setDoc(followRef, {
-          followerId: currentUser.uid,
-          followingId: targetUserId,
-          status: 'BLOCKED',
-          createdAt: new Date()
-        });
-        toast({ title: "User Blocked 🚫", description: "They can no longer view your profile.", variant: "destructive" });
+        alert("Unfollowed successfully.");
       }
-      else if (actionType === 'chat' && targetUser) {
-    // userId এর জায়গায় chatWith লিখে দিন
-    router.push(`/dashboard/messages?chatWith=${targetUser.id}`);
-    }
-
-
     } catch (error) {
-      toast({ title: "Error", description: "Database operation failed.", variant: "destructive" });
+      console.error("Action error:", error);
+      alert("Database operation failed.");
     }
   };
 
-    // 🔍 ৪-ট্যাব মিউচুয়াল এক্সক্লুসিভ ফিল্টারিং ইঞ্জিন (আপনার রিকোয়ারমেন্ট অনুযায়ী শতভাগ নিখুঁত)
-  const displayUsers = dbUsers.filter(user => {
-    const userRelation = relations[user.id];
-    let matchesTab = false;
-    
-    if (activeTab === 'bookworms') {
-      matchesTab = true; // বুকওয়ার্মস ট্যাবে সবাই থাকবে (ফ্রেন্ড, ফলোয়ার, অপরিচিত সবাই)
-    } 
-    else if (activeTab === 'friends') {
-      // শুধু মিউচুয়াল ফ্রেন্ডরা থাকবে
-      matchesTab = userRelation === 'friends';
-    } 
-    else if (activeTab === 'following') {
-      // 🎯 কঠোর নিয়ম: শুধু একতরফা ফলোয়িং থাকবে। ফ্রেন্ড (friends) হলে এখান থেকে সম্পূর্ণ উধাও হয়ে যাবে!
-      matchesTab = userRelation === 'following';
-    } 
-    else if (activeTab === 'followers') {
-      // 🎯 কঠোর নিয়ম: শুধু একতরফা ফলোয়ার্স থাকবে। ফ্রেন্ড (friends) হলে এখান থেকে সম্পূর্ণ উধাও হয়ে যাবে!
-      matchesTab = userRelation === 'follower';
-    }
-
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
-
-
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-50 p-4 pb-20 font-sans relative">
-      <h1 className="text-center text-3xl font-bold text-purple-800 my-6">Social Circle</h1>
-
-      {/* সার্চ এবং বাটন রো */}
-      <div className="flex flex-row items-center gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-100 w-full mb-6">
-        <div className="relative flex-1 min-w-0">
-          <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-            <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.604 10.604z" />
-            </svg>
-          </span>
-          <input
-            type="text"
-            placeholder="Search real bookworms..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-2 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 text-slate-700"
-          />
-        </div>
-        <button className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg shrink-0 whitespace-nowrap shadow-sm">Share</button>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2.5 rounded-lg shrink-0 whitespace-nowrap shadow-sm">Invite</button>
-      </div>
-
-      {/* ৪টি ট্যাব বাটন */}
-      <div className="grid grid-cols-4 gap-1 bg-slate-200/60 p-1 rounded-xl mb-4 text-center">
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-center mb-6">Social Circle</h1>
+      
+      {/* ট্যাব ডিজাইন */}
+      <div className="flex justify-center gap-2 mb-6">
         {(['friends', 'following', 'followers', 'bookworms'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`py-2 text-xs font-bold rounded-lg capitalize transition-all ${
-              activeTab === tab ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            className={`px-4 py-2 rounded-lg capitalize ${
+              activeTab === tab ? 'bg-purple-700 text-white' : 'bg-slate-200 text-slate-700'
             }`}
           >
             {tab}
@@ -229,7 +196,7 @@ export default function SocialCirclePage() {
       </div>
 
       {/* ইউজার লিস্ট এরিয়া */}
-      <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-100 min-h-[300px] flex flex-col">
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 min-h-[300px] flex flex-col">
         {displayUsers.length > 0 ? (
           displayUsers.map((user) => (
             <UserRow
@@ -238,19 +205,19 @@ export default function SocialCirclePage() {
               name={user.name}
               level={user.level}
               avatarUrl={user.avatarUrl}
-              tabType={activeTab}
+              tabType={activeTab as any}
               isFollowing={relations[user.id] === 'following' || relations[user.id] === 'friends'}
               isFriend={relations[user.id] === 'friends'}
-              isFollower={relations[user.id] === 'follower'} // 👈 এই নতুন লাইনটি ম্যাপের ভেতর যোগ করে দিন
+              isFollower={relations[user.id] === 'follower'}
               onAction={handleUserAction}
             />
           ))
         ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm py-12">
-            No active bookworms found in this tab.
+          <div className="flex flex-col flex-1 items-center justify-center text-slate-400 text-sm py-12">
+            No bookworms found in this tab.
           </div>
         )}
-      </div>      
+      </div>
     </div>
   );
 }

@@ -10,6 +10,8 @@ import { getFirestore, doc, updateDoc, onSnapshot, collection, query, orderBy } 
 import { getAuth, onAuthStateChanged } from "firebase/auth"; // 🎯 ফায়ারবেস অথেনটিকেশন মডিউল ইমপোর্ট করলাম
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
 
 interface PostData {
   id: string;
@@ -39,6 +41,8 @@ export default function ProfilePage() {
   const [isProfileLocked, setIsProfileLocked] = useState(false);
   const [myPosts, setMyPosts] = useState<PostData[]>([]);
   const [relationship, setRelationship] = useState<'friend' | 'follower' | 'following' | 'none'>('none');
+  const [liveLevel, setLiveLevel] = useState('0.1');
+
   const [counts, setCounts] = useState({
     friends: 0,
     following: 0,
@@ -52,8 +56,8 @@ export default function ProfilePage() {
   if (!file || !currentUser || !firestore) return;
 
   // ছবির সাইজ ২ মেগাবাইটের বেশি হলে সতর্ক করা (ফায়ারস্টোর টেক্সট সাইজ লিমিটের জন্য)
-  if (file.size > 2 * 1024 * 1024) {
-    alert("ছবিটি অনেক বড়! দয়া করে ২ এমবি (2MB) এর চেয়ে ছোট ছবি সিলেক্ট করুন।");
+  if (file.size > 5 * 1024 * 1024) {
+    alert("ছবিটি অনেক বড়! দয়া করে 5 এমবি (5MB) এর চেয়ে ছোট ছবি সিলেক্ট করুন।");
     return;
   }
 
@@ -85,6 +89,30 @@ export default function ProfilePage() {
   }
 };
 
+useEffect(() => {
+  const targetId = profile?.id || profile?.uid || currentUser?.uid; 
+
+  if (!firestore || !targetId) return;
+
+  const userDocRef = doc(firestore, 'users', targetId);
+
+  const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // ✅ 'setLiveLevel' (Capital L) ব্যবহার করে এররটি সমাধান করা হলো
+      if (data.level !== undefined && data.level !== null) {
+        setLiveLevel(data.level.toString()); 
+      } else {
+        setLiveLevel('0.1'); 
+      }
+    }
+  }, (error) => {
+    console.error("Error syncing profile level: ", error);
+  });
+
+  return () => unsubscribe();
+}, [firestore, profile, currentUser?.uid]);
 
 
   // 🔐 ১. আলাদাভাবে কারেন্ট লগইন থাকা ইউজার ট্র্যাক করার সিকিউর লজিক
@@ -287,7 +315,7 @@ export default function ProfilePage() {
             </div>
 
             <h2 className="text-2xl font-bold text-slate-800">{profile?.name || "Admin Support"}</h2>
-            <Badge className="bg-purple-600 hover:bg-purple-700 my-1 text-xs font-semibold">Level: {profile?.level || "0.1"}</Badge>
+            <Badge className="bg-purple-600 hover:bg-purple-700 my-1 text-xs font-semibold">Level: {parseFloat(liveLevel || '0').toFixed(1)}</Badge>
             
             <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
               <MapPin className="w-3.5 h-3.5 text-purple-500" />
@@ -320,10 +348,32 @@ export default function ProfilePage() {
               {/* 🛠️ ডায়নামিক বাটন সেকশন (কন্ডিশন অনুযায়ী বাটন পরিবর্তন) */}
         <div className="flex items-center gap-2 pt-2 justify-center w-full">
           {isOwnProfile ? (
-            // নিজের প্রোফাইল হলে শুধু এডিট বাটন থাকবে
-            <Button variant="outline" className="w-full" onClick={() => router.push('/dashboard/profile/edit')}>Edit Profile</Button>
+  <div className="w-full space-y-4 mb-4">
+    {/* হারিয়ে যাওয়া সোশ্যাল বার - শুধুমাত্র নিজের প্রোফাইলে দৃশ্যমান */}
+    <div className="w-full bg-background border rounded-lg p-2 shadow-sm">
+        <div className="grid grid-cols-4 gap-2 text-center text-xs md:text-sm font-medium text-muted-foreground">
+          <Link href="/dashboard/social?tab=friends" className="hover:text-primary hover:bg-muted py-1.5 rounded-md transition-all">
+            Friends
+          </Link>
+          <Link href="/dashboard/social?tab=following" className="hover:text-primary hover:bg-muted py-1.5 rounded-md transition-all">
+            Following
+          </Link>
+          <Link href="/dashboard/social?tab=followers" className="hover:text-primary hover:bg-muted py-1.5 rounded-md transition-all">
+            Followers
+          </Link>
+          <Link href="/dashboard/profile/blocked" className="hover:text-primary hover:bg-muted py-1.5 rounded-md transition-all">
+            Blocked
+          </Link>
+        </div>
+    </div>
 
-          ) : (
+    {/* আপনার আসল এডিট প্রোফাইল বাটন */}
+    <Button variant="outline" className="w-full" onClick={() => router.push('/dashboard/profile/edit')}>
+      Edit Profile
+    </Button>
+  </div>
+) : (
+
             <div className="flex items-center gap-2 w-full justify-center">
               {/* কন্ডিশন ১: ফ্রেন্ড হলে (Friend Button + Message) */}
               {relationship === 'friend' && (
