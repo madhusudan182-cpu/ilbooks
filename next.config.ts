@@ -1,9 +1,9 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export',
-    typescript: {
+  output: 'standalone', // 👈 ৫ নম্বর লাইনে 'export' কেটে এটি বসানো হয়েছে
+  typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
@@ -14,13 +14,13 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placehold.co',
+        hostname: 'placeholder.co',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: '://unsplash.com',
         port: '',
         pathname: '/**',
       },

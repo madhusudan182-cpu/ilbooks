@@ -7,4 +7,5 @@ export function generateStaticParams() {
 export default function Page() {
   return <UserClientProfile />; 
 }
-export const dynamic = 'force-static'; 
+export const dynamic = 'force-dynamic';
+ 
