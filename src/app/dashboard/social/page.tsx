@@ -182,21 +182,22 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
     <div className="p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Social Circle</h1>
       
-      {/* ট্যাব ডিজাইন */}
-      {/* 🚀 পরিবর্তিত নতুন কোড */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory max-w-full">
-        {['friends', 'following', 'followers', 'bookworms'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2 rounded-lg capitalize ${
-              activeTab === tab ? 'bg-purple-700 text-white' : 'bg-slate-200 text-slate-700'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      {/* 📝 পরিবর্তিত রেসপন্সিভ ট্যাব ডিজাইন */}
+        <div className="flex w-full justify-between gap-1 items-center mb-6 md:justify-start md:gap-2">
+          {['friends', 'following', 'followers', 'bookworms'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`flex-1 text-center py-1.5 px-0.5 text-[10px] min-[360px]:text-[11px] sm:text-xs md:text-sm md:flex-none md:px-4 md:py-2 font-semibold rounded-lg capitalize transition-all active:scale-95 ${
+                activeTab === tab
+                  ? 'bg-purple-700 text-white shadow-sm'
+                  : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
       {/* ইউজার লিস্ট এরিয়া */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 min-h-[300px] flex flex-col">
