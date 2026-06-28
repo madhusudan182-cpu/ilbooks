@@ -23,7 +23,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 // বাকি ইম্পোর্টগুলোর সাথে এগুলো যুক্ত করুন
-import { doc, collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'; 
+import { doc, collection, query, where, onSnapshot, orderBy, collectionGroup } from 'firebase/firestore'; 
 import { signOut } from 'firebase/auth';
 
 import { 
@@ -87,24 +87,37 @@ export default function DashboardLayout({
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
+     React.useEffect(() => {
+    if (!firestore || !user?.uid) return;
 
-  React.useEffect(() => {
-  if (!firestore || !user?.uid) return;
+    // আপনার ফায়ারবেস কনসোলের ৩ নম্বর ইনডেক্স (receiverId + status) অনুযায়ী তৈরি নিখুঁত কুয়েরি
+    const chatQuery = query(
+      collectionGroup(firestore, 'messages'),
+      where('receiverId', '==', user.uid),
+      where('status', '==', 'sent')
+    );
 
-  const chatQuery = query(
-    collection(firestore, 'messages'),
-    where('receiverId', '==', user.uid),
-    where('seen', '==', false)
-  );
+    const unsubscribeChat = onSnapshot(chatQuery, (snapshot) => {
+      const unreadConversations = new Set();
+      
+      snapshot.docs.forEach(doc => {
+        const msgData = doc.data();
+        
+        // মেসেজের প্যারেন্ট চ্যাট রুমের আইডি (conversationId) ইউনিক সেটে যোগ করা
+        const convId = msgData.conversationId || doc.ref.parent.parent?.id;
+        if (convId) {
+          unreadConversations.add(convId);
+        }
+      });
 
-  const unsubscribeChat = onSnapshot(chatQuery, (snapshot: any) => {
-    setUnreadChats(snapshot.size); 
-  }, (error: any) => {
-    console.error("Error fetching unread chats count:", error);
-  });
+      // ইউনিক আনরিড চ্যাটের টোটাল সংখ্যা স্টেট-এ আপডেট করা হলো
+      setUnreadChats(unreadConversations.size);
+    }, (error) => {
+      console.error("Dashboard global chat listener error:", error);
+    });
 
-  return () => unsubscribeChat();
-}, [firestore, user?.uid]);
+    return () => unsubscribeChat();
+  }, [firestore, user?.uid]);
 
   const [liveUnreadCount, setLiveUnreadCount] = React.useState(0);
   const [unreadChats, setUnreadChats] = React.useState(0);
@@ -113,54 +126,52 @@ export default function DashboardLayout({
     // ১. নোটিফিকেশন কাউন্টের জন্য একটি গ্লোবাল স্টেট
   const [globalNotifCount, setGlobalNotifCount] = React.useState(0);
 
-  // ২. লুপের বাইরে সম্পূর্ণ স্বাধীন রিয়েল-টাইম নোটিফিকেশন লিসেনার
+    // ২. লুপের বাইরে সম্পূর্ণ স্বাধীন রিয়েল-টাইম নোটিফিকেশন লিসেনার
   React.useEffect(() => {
     if (!user?.uid || !firestore) return;
 
-    const notifQuery = query(
+    // অ্যাডমিন নোটিফিকেশনের লিসেনার
+    const adminNotifQuery = query(
       collection(firestore, 'user_notifications'),
       where('userId', '==', user.uid),
       where('isRead', '==', false)
     );
 
-    const unsubscribeNotifGlobal = onSnapshot(notifQuery, (snapshot) => {
-      setGlobalNotifCount(snapshot.size);
-    }, (error) => {
-      console.error("Global notif fetch error: ", error);
-    });
-
-    return () => unsubscribeNotifGlobal();
-  }, [user?.uid, firestore]);
-
-
-    React.useEffect(() => {
-  // 🔒 সেফটি লক: যদি ইউজার আইডি অথবা ফায়ারস্টোর রেডি না থাকে, তবে কোড ওখানেই থেমে যাবে
-  if (!user?.uid || !firestore) return;
-
-  try {
-    // এখন গ্লোবালি ইম্পোর্ট করা মেথডগুলো সরাসরি ব্যবহার হবে
-    const q = query(
+    // সাইন-আপ ও সোশ্যাল নোটিফিকেশনের লিসেনার
+    const socialNotifQuery = query(
       collection(firestore, 'notifications'),
       where('targetUserId', '==', user.uid),
       where('isSeen', '==', false)
-
     );
 
-   
+    let currentAdminCount = 0;
+    let currentSocialCount = 0;
 
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      setLiveUnreadCount(snapshot.size);
-    }, (error: any) => {
-      console.error("Live counter onSnapshot error:", error);
+    // অ্যাডমিন নোটিফিকেশন রিয়েল-টাইম ট্র্যাক করা
+    const unsubscribeAdmin = onSnapshot(adminNotifQuery, (snapshot) => {
+      currentAdminCount = snapshot.size;
+      setGlobalNotifCount(currentAdminCount + currentSocialCount);
+    }, (error) => {
+      console.error("Admin notif fetch error: ", error);
     });
 
-    return () => unsubscribe();
-  } catch (e) {
-    console.error("Firestore definitive guard caught error:", e);
-  }
-}, [user, firestore]);
+    // সাইন-আপ ও সোশ্যাল নোটিফিকেশন রিয়েল-টাইম ট্র্যাক করা
+    const unsubscribeSocial = onSnapshot(socialNotifQuery, (snapshot) => {
+      currentSocialCount = snapshot.size;
+      setLiveUnreadCount(currentSocialCount); // মোবাইল ভিউর জন্য স্টেট আপডেট
+      setGlobalNotifCount(currentAdminCount + currentSocialCount);
+    }, (error) => {
+      console.error("Social notif fetch error: ", error);
+    });
+
+    return () => {
+      unsubscribeAdmin();
+      unsubscribeSocial();
+    };
+  }, [user?.uid, firestore]);
 
 
+    
   React.useEffect(() => {
     setIsClient(true);
   }, []);
@@ -197,7 +208,8 @@ export default function DashboardLayout({
   if (!user) return null;
 
   const userName = profile?.name || user.displayName || user.email?.split('@')[0] || 'User';
-  const userAvatar = profile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`;
+  const userAvatar = profile?.avatarUrl || user.photoURL || "https://dicebear.com";
+
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -230,30 +242,34 @@ export default function DashboardLayout({
                   <ScrollArea className="flex-1">
                     <nav className="grid gap-2 p-4 text-lg font-medium">
                       {allNavItems.filter(item => !item.adminOnly || isAdmin).map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setIsSheetOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                            pathname === item.href && "bg-muted text-primary"
+                                          <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsSheetOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                        pathname === item.href && "bg-muted text-primary"
+                      )}
+                    >
+                      <div className="relative">
+                        <item.icon className="h-5 w-5" />
+                        
+                        {item.title === 'Notifications' && liveUnreadCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                            {liveUnreadCount}
+                          </span>
                         )}
-                      >
-                        <div className="relative">
-                          <item.icon className="h-5 w-5" />
-                          {item.title === 'Notifications' && liveUnreadCount > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
-                              {liveUnreadCount}
-                            </span>
-                          )}
-                        </div>
-                          {item.title === 'Chat' && unreadChats > 0 && (
+
+                        {item.title.toLowerCase() === 'Chat' && unreadChats > 0 && (
                           <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
                             {unreadChats}
                           </span>
                         )}
-                        {item.title}
-                      </Link>
+                      </div>
+                      
+                      {item.title}
+                    </Link>
+
                     ))}
                     </nav>
                   </ScrollArea>
@@ -287,19 +303,24 @@ export default function DashboardLayout({
                               pathname === item.href && "text-primary"
                           )}
                         >
-                          <div className="relative">
-                            <item.icon className="h-5 w-5" />
-                            {item.title === 'Notifications' && liveUnreadCount > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
-                                {liveUnreadCount}
-                              </span>
-                            )}
-                            {item.title === 'Chat' && unreadChats > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
-                                {unreadChats}
-                              </span>
-                            )}
-                          </div>
+                                              <div className="relative">
+                      <item.icon className="h-5 w-5" />
+                      
+                      {/* Notifications-এর লাল ব্যাজ */}
+                      {item.title === 'Notifications' && liveUnreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                          {liveUnreadCount}
+                        </span>
+                      )}
+
+                      {/* Chat-এর লাল ব্যাজ */}
+                      {item.title.toLowerCase() === 'Chat' && unreadChats > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                          {unreadChats}
+                        </span>
+                      )}
+                    </div>
+
                           <span>{item.title}</span>
                         </Link>
                       </DropdownMenuItem>
@@ -416,8 +437,17 @@ export default function DashboardLayout({
                             pathname === item.href && "bg-accent text-accent-foreground"
                         )}
                         >
-                        <item.icon className="h-5 w-5" />
-                        <span className="sr-only">{item.title}</span>
+                          {/* ৪৪০ নম্বর লাইনের জায়গায় এটি বসান */}
+                          <div className="relative">
+                            <item.icon className="h-5 w-5" />
+                            {item.title.toLowerCase() === 'chat' && unreadChats > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                                {unreadChats}
+                              </span>
+                            )}
+                          </div>
+                          <span className="sr-only">{item.title}</span>
+
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
@@ -436,3 +466,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+

@@ -72,10 +72,10 @@ export default function MessagesPage() {
     });
   }, [rawConversations]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!firestore || !activeConversationId) {
-        setMessages([]);
-        return;
+      setMessages([]);
+      return;
     }
 
     const messagesQuery = query(
@@ -83,21 +83,38 @@ export default function MessagesPage() {
     );
 
     const unsubscribe = onSnapshot(
-      messagesQuery, 
+      messagesQuery,
       (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })).sort((a: any, b: any) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-        setMessages(msgs);
+        }));
+
+        const sortedMsgs = msgs.sort((a: any, b: any) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+        setMessages(sortedMsgs);
+
+        // --- নোটিফিকেশন ক্লিয়ারিং লজিক ---
+        // চ্যাট বক্স ওপেন থাকা অবস্থায় অন্য কোনো মেসেজ আসলে বা আগের আনরিড মেসেজ থাকলে তা 'seen' হয়ে যাবে
+        snapshot.docs.forEach((messageDoc) => {
+          const msgData = messageDoc.data();
+          // মেসেজটি যদি অন্য কেউ পাঠিয়ে থাকে এবং স্ট্যাটাস যদি এখনও 'sent' থাকে
+          if (user && msgData.senderId !== user.uid && msgData.status === 'sent') {
+            const msgDocRef = doc(firestore, 'conversations', activeConversationId, 'messages', messageDoc.id);
+            // ডাটাবেজে স্ট্যাটাস আপডেট করে 'seen' করে দেওয়া হচ্ছে
+            updateDoc(msgDocRef, { status: 'seen' }).catch((err) => 
+              console.error("Failed to mark message as seen:", err)
+            );
+          }
+        });
       },
       (err) => {
-          console.error("Messages listener error:", err);
+        console.error("Messages listener error:", err);
       }
     );
 
     return () => unsubscribe();
-  }, [firestore, activeConversationId]);
+  }, [firestore, activeConversationId, user]);
+
 
   useEffect(() => {
       const chatWithId = searchParams.get('chatWith');
@@ -159,6 +176,7 @@ export default function MessagesPage() {
 
       const msgData = {
           senderId: user.uid,
+          receiverId: chatWithId,
           text: newMessage,
           createdAt: serverTimestamp(),
           status: 'sent'
@@ -202,7 +220,7 @@ export default function MessagesPage() {
               const partnerId = conv.participants?.find((p: string) => p !== user?.uid);
 
               return (
-              <ChatInboxRow 
+              <ChatInboxRow
                 key={conv.id}
                 partnerId={partnerId || ""}
                 conv={conv}
@@ -210,8 +228,9 @@ export default function MessagesPage() {
                 firestore={firestore}
                 router={router}
                 activeConversationId={activeConversationId}
-                isUnread={conv.lastMessageSenderId !== user?.uid && conv.seen === false}
+                currentUserId={user?.uid} // এই নতুন লাইনটি এখানে যোগ করুন
               />
+
             );
             })}
 
@@ -306,32 +325,53 @@ export default function MessagesPage() {
   );
 }
 
-// 💡 সম্পূর্ণ SDK ইনস্ট্যান্স এরর মুক্ত চূড়ান্ত গ্লোবাল ইনবক্স রো কম্পোনেন্ট
-function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeConversationId, isUnread }: any) {
+// সম্পূর্ণ সংশোধিত চ্যাট রো কম্পোনেন্ট (আনরিড মেসেজ কাউন্টার সহ)
+function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeConversationId, currentUserId }: any) {
   const [memberProfile, setMemberProfile] = useState<any>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
 
+  // ১. চ্যাট পার্টনারের প্রোফাইল ডাটা লোড করা
   useEffect(() => {
     if (!firestore || !partnerId) return;
-    
     const userDocRef = doc(firestore, 'users', partnerId);
     getDoc(userDocRef)
       .then((snap: any) => {
-        if (snap.exists()) {
-          setMemberProfile(snap.data());
-        }
+        if (snap.exists()) setMemberProfile(snap.data());
       })
       .catch((err: any) => console.error("Error loading chat row handle:", err));
   }, [firestore, partnerId]);
+
+  // ২. রিয়েল-টাইমে এই নির্দিষ্ট চ্যাট রুমে কতটি আনরিড মেসেজ আছে তা গণনা করা
+  useEffect(() => {
+    if (!firestore || !conv.id || !currentUserId) return;
+    
+        const unreadMessagesQuery = query(
+      collection(firestore, 'conversations', conv.id, 'messages'),
+      where('senderId', '==', partnerId),
+      where('status', '==', 'sent') // এটি আপডেট করুন
+    );
+
+
+    const unsubscribe = onSnapshot(unreadMessagesQuery, (snapshot) => {
+      setUnreadCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, [firestore, conv.id, partnerId, currentUserId]);
+
   const isActive = activeConversationId === conv.id;
+  const isUnread = unreadCount > 0;
+
+  // আপনার দেওয়া রিকোয়ারমেন্ট শিট অনুযায়ী ব্যাকগ্রাউন্ড ডিজাইন সেট করা
   const rowBackground = isActive
-    ? "bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200" // একটিভ চ্যাট
+    ? "bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200" 
     : isUnread
-    ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 font-semibold" // 👈 আনরিড চ্যাটের বিশেষ ব্যাকগ্রাউন্ড কালার
+    ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 font-semibold" // আনরিড চ্যাটের বিশেষ ব্যাকগ্রাউন্ড
     : "hover:bg-gray-50 dark:hover:bg-slate-800/50";
 
   const nameToDisplay = memberProfile?.name || partnerId || "Conversation";
 
-    return (
+  return (
     <button
       role="button"
       onClick={() => {
@@ -339,7 +379,6 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
       }}
       className={`flex items-center gap-2 p-3 border-b cursor-pointer transition-colors w-full ${rowBackground}`}
     >
-
       <div className="relative">
         <Avatar className="h-12 w-12 border">
           <AvatarImage src={memberProfile?.avatarUrl || ""} />
@@ -349,10 +388,20 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
       
       <div className="flex-1 text-left min-w-0">
         <div className="flex items-baseline justify-between">
-          <p className="font-semibold truncate text-sm">{nameToDisplay}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold truncate text-sm">{nameToDisplay}</p>
+            {/* আপনার রিকোয়ারমেন্ট (b) অনুযায়ী নামের পাশে লাল কালারের আনরিড কাউন্ট ব্যাজ */}
+            {isUnread && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                {unreadCount}
+              </span>
+            )}
+          </div>
           <span className="text-[10px] text-muted-foreground">{lastMsgTime}</span>
         </div>
-        <p className="text-xs text-muted-foreground truncate">{conv.lastMessage}</p>
+        <p className={`text-xs truncate ${isUnread ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
+          {conv.lastMessage}
+        </p>
       </div>
     </button>
   );

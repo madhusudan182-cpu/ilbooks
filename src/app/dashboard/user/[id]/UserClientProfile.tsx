@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, query, collection, orderBy, where, onSnapshot, setDoc, deleteDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { triggerSocialNotification } from "@/utils/notifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +104,10 @@ export default function UserClientProfile() {
         status: 'ACTIVE',
         createdAt: new Date().toISOString()
       });
+      // ফলো করার নোটিফিকেশন ট্রিগার
+      const notifType = relationStatus === 'follower' ? 'FOLLOW_BACK' : 'FOLLOW';
+      await triggerSocialNotification(firestore, targetUserId, currentUser, notifType);
+
       toast({ title: "Success", description: "You are now following this bookworm!" });
     } catch (error) {
       console.error("Error executing follow back: ", error);
@@ -120,6 +125,9 @@ export default function UserClientProfile() {
     try {
       const followRef = doc(firestore, 'follows', `${currentUser.uid}_${targetUserId}`);
       await deleteDoc(followRef);
+      // আনফলো করলে আগের নোটিফিকেশন মুছে ফেলার ট্রিগার
+      await triggerSocialNotification(firestore, targetUserId, currentUser, 'UNFOLLOW');
+
       toast({ title: "Unfollowed", description: "Removed from your following list." });
     } catch (error) {
       console.error("Error during unfollow execution: ", error);

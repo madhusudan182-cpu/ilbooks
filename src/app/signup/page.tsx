@@ -1,5 +1,4 @@
 'use client';
-
 import { useState } from 'react';
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
@@ -16,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
@@ -46,49 +45,52 @@ export default function SignupPage() {
 
     setIsLoading(true);
     try {
+      // ১. ফায়ারবেস অথ দিয়ে ইউজার তৈরি করা
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create profile in Firestore
-      // madhusudan.182@gmail.com is strictly defined as the only owner
-      const isAdmin = email.toLowerCase() === 'madhusudan.182@gmail.com';
-      
-          // ১. ফায়ারস্টোরে ইউজারের মেইন প্রোফাইল তৈরি করা
-    await setDoc(doc(firestore, "users", user.uid), {
-      uid: user.uid,
-      name: "",
-      email: email,
-      level: "0.0",
-      avatarUrl: `https://picsum.photos/${user.uid}/100/100`,
-      bio: "",
-      location: "",
-      isAdmin: false,
-    });
+      // ২. ফায়ারস্টোরে ইউজারের মেইন প্রোফাইল তৈরি করা
+      await setDoc(doc(firestore, "users", user.uid), {
+        uid: user.uid,
+        name: name,
+        email: email,
+        level: "0.0",
+        avatarUrl: "https://dicebear.com",
+        bio: "",
+        location: "",
+        isAdmin: false,
+      });
 
-    // 🚀 নোটিফিকেশন ১: Welcome Message (স্বয়ংক্রিয়ভাবে যুক্ত হবে)
-    await addDoc(collection(firestore, 'notifications'), {
-      targetUserId: user.uid,
-      isSeen: false,
-      text: "You are welcome to the realm of Bookworms! Enjoy your reading and raise your Level by taking exam!",
-      createdAt: serverTimestamp()
-    });
+      // ৩. ১ম নোটিফিকেশন (Welcome) সরাসরি কালেকশনে তৈরি করা
+      const welcomeRef = doc(collection(firestore, 'notifications'));
+      await setDoc(welcomeRef, {
+        title: "Welcome",
+        text: "You are welcome to the realm of Bookworms! Enjoy your reading and raise your Level by raising event.",
+        isSeen: false,
+        targetUserId: user.uid,
+        createdAt: serverTimestamp()
+      });
 
-    // 🚀 নোটিফিকেশন ২: Community Rules Guide (স্বয়ংক্রিয়ভাবে যুক্ত হবে)
-    await addDoc(collection(firestore, 'notifications'), {
-      targetUserId: user.uid,
-      isSeen: false,
-      text: "Before you do anything, please read our 'Community Rules' from navigation menu bar.",
-      createdAt: serverTimestamp()
-    });
+      // ৪. ২য় নোটিফিকেশন (Rules) সরাসরি কালেকশনে তৈরি করা
+      const rulesRef = doc(collection(firestore, 'notifications'));
+      await setDoc(rulesRef, {
+        title: "Rules",
+        text: "Before you do anything, please read our 'Community Rules' from navigation menu bar.",
+        isSeen: false,
+        targetUserId: user.uid,
+        createdAt: serverTimestamp()
+      });
 
-    toast({
-      title: "Account created successfully!",
-      description: "Welcome to Bookworm community. Let's complete your profile.",
-    });
-    
-    router.push("/dashboard/profile/edit"); // সরাসরি প্রোফাইল কমপ্লিট করার পেজে নিয়ে যাওয়া
+      toast({
+        title: "Account created successfully!",
+        description: "Welcome to Bookworm community. Let's complete your profile.",
+      });
+
+      // ডাটাবেজে নোটিফিকেশন সফলভাবে সেভ হওয়ার পর রিডাইরেক্ট হবে
+      router.push("/dashboard/profile/edit");
 
     } catch (error: any) {
+      console.error("Sign up error: ", error);
       toast({
         variant: "destructive",
         title: "Signup Failed",
@@ -104,17 +106,31 @@ export default function SignupPage() {
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline">Sign Up</CardTitle>
-          <CardDescription className="text-base font-bold text-pink-500">Join the network of book lovers.</CardDescription>
+          <CardDescription className="text-base font-bold text-pink-500">
+            Join the network of book lovers.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={handleSignup}>
             <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Your Name" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                placeholder="Your Name" 
+                required 
+                value={name}
+                onChange={(e) => setName(e.target.value)} 
+              />
             </div>
             <div className="grid gap-2">
-                <Label htmlFor="mobile">Mobile Number</Label>
-                <Input id="mobile" type="tel" required value={mobile} onChange={(e) => setMobile(e.target.value)} />
+              <Label htmlFor="mobile">Mobile Number</Label>
+              <Input 
+                id="mobile" 
+                type="tel" 
+                required 
+                value={mobile} 
+                onChange={(e) => setMobile(e.target.value)} 
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
@@ -130,11 +146,11 @@ export default function SignupPage() {
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Input 
-                  id="password" 
-                  type={showPassword ? 'text' : 'password'} 
-                  className="pr-10" 
-                  required 
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="pr-10"
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -152,15 +168,15 @@ export default function SignupPage() {
             <div className="grid gap-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <div className="relative">
-                <Input 
-                  id="confirm-password" 
-                  type={showConfirmPassword ? 'text' : 'password'} 
-                  className="pr-10" 
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="pr-10"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
-                 <Button
+                <Button
                   type="button"
                   variant="ghost"
                   size="icon"
@@ -172,13 +188,13 @@ export default function SignupPage() {
               </div>
             </div>
             <Button type="submit" className="w-full font-headline" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create an account
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create an account
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Link href="/login" className="underline font-bold text-orange-500 text-base">
+            <Link href="/login" className="underline font-bold text-orange-500">
               Sign In
             </Link>
           </div>

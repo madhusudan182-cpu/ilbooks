@@ -13,17 +13,19 @@ export default function LiveDropdownList({ userId }: LiveDropdownListProps) {
   const firestore = useFirestore();
   const [notifQuery, setNotifQuery] = React.useState<any>(null);
 
-  React.useEffect(() => {
+   React.useEffect(() => {
     if (firestore && userId) {
       setNotifQuery(
         query(
-          collection(firestore, 'user_notifications'),
-          where('userId', '==', userId),
+          collection(firestore, 'notifications'), // <--- মেইন কালেকশন ট্র্যাক করবে
+          where('targetUserId', '==', userId),
+          where('isSeen', '==', false),
           orderBy('createdAt', 'desc')
         )
       );
     }
   }, [firestore, userId]);
+
 
   const { data: notifList, loading } = useCollection(notifQuery);
 
