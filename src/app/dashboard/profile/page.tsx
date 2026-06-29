@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Camera, Loader2, Lock, Unlock, Heart, MessageCircle, Share2 } from "lucide-react";
-import { getFirestore, doc, updateDoc, onSnapshot, collection, query, orderBy } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, addDoc, collection, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import { cn } from "@/lib/utils";
 import { getAuth, onAuthStateChanged } from "firebase/auth"; // 🎯 ফায়ারবেস অথেনটিকেশন মডিউল ইমপোর্ট করলাম
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
@@ -38,6 +39,42 @@ export default function ProfilePage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+    const handleLike = async (postId: string) => {
+    if (!auth?.currentUser || !firestore) return;
+    const userId = auth.currentUser.uid;
+    const likeRef = doc(firestore, `posts/${postId}/likes`, userId);
+    const postRef = doc(firestore, 'posts', postId);
+    try {
+      const likeSnap = await getDoc(likeRef);
+      if (likeSnap.exists()) {
+        await deleteDoc(likeRef);
+        await updateDoc(postRef, { likes: increment(-1) });
+      } else {
+        await setDoc(likeRef, { likedAt: serverTimestamp() });
+        await updateDoc(postRef, { likes: increment(1) });
+
+        // নোটিফিকেশন পাঠানোর লজিক
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+          const postData = postSnap.data();
+          if (postData.author && postData.author.id !== userId) {
+            await addDoc(collection(firestore, 'notifications'), {
+              type: 'LIKE',
+              postId: postId,
+              senderId: userId,
+              senderName: profile?.name || 'Someone',
+              targetUserId: postData.author.id,
+              isSeen: false,
+              createdAt: serverTimestamp()
+            });
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Like error: ", error);
+    }
+  };
+
   const [isProfileLocked, setIsProfileLocked] = useState(false);
   const [myPosts, setMyPosts] = useState<PostData[]>([]);
   const [relationship, setRelationship] = useState<'friend' | 'follower' | 'following' | 'none'>('none');
@@ -237,6 +274,22 @@ useEffect(() => {
     };
   }, [firestore, currentUser]);
 
+    // নোটিফিকেশন থেকে ক্লিক করে আসলে নির্দিষ্ট পোস্টে অটোমেটিক স্ক্রোল করার লজিক
+  useEffect(() => {
+    if (!profileLoading && myPosts.length > 0) {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#post-')) {
+        setTimeout(() => {
+          const element = document.getElementById(hash.substring(1));
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
+      }
+    }
+  }, [profileLoading, myPosts]);
+
+
     const isOwnProfile = (auth?.currentUser?.uid === currentUser?.uid) || !currentUser?.uid;
     const showFullProfile = isOwnProfile || relationship === 'friend' || !isProfileLocked;
 
@@ -411,21 +464,73 @@ useEffect(() => {
       {/* 📰 ডাইনামিক নিউজ ফিড বা পোস্ট সেকশন */}
             {/* 📜 নিউজ ফিড এবং পোস্ট সেকশন */}
       <div className="space-y-4 w-full mt-4">
-        <h3 className="font-bold text-lg text-foreground px-1">
-          Your Posts ({displayMyPosts.length})
-        </h3>
+        <h2 className="text-xl font-bold text-purple-900 mb-4">
+          {isOwnProfile ? `Your Posts (${displayMyPosts.length})` : 'Posts'}
+        </h2>
 
         {showFullProfile ? (
           // যদি নিজের প্রোফাইল বা ফ্রেন্ড হয়—তবেই পোস্ট রেন্ডার হবে
           displayMyPosts.length > 0 ? (
-            displayMyPosts.map((post: any) => (
-              <div key={post.id} className="border border-slate-200 rounded-xl bg-white p-4 shadow-sm mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold text-sm">{post.authorName}</span>
+                      displayMyPosts.map((post: any) => {
+            const postDate = post.createdAt?.seconds 
+              ? new Date(post.createdAt.seconds * 1000).toLocaleDateString('en-GB')
+              : 'Recent';
+
+            return (
+              <div 
+                key={post.id} 
+                id={`post-${post.id}`} 
+                className="border border-slate-200 rounded-xl bg-white shadow-sm mb-6 target:ring-2 target:ring-pink-500 target:ring-offset-2 scroll-mt-20 transition-all duration-300 overflow-hidden text-left"
+              >
+                {/* ১ম বক্স: হেডার (ইউজারনেম এবং ডেট) */}
+                <div className="p-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                  <span className="font-bold text-sm text-slate-800">{post.authorName || 'Admin Support'}</span>
+                  <span className="text-xs text-slate-400 font-medium">[{postDate}]</span>
                 </div>
-                <p className="text-sm">{post.text}</p>
+
+                {/* ২য় বক্স: বডি (পোস্টের মূল লেখা) */}
+                <div className="p-4 bg-white min-h-[60px]">
+                <div className="text-sm text-slate-700 leading-relaxed">
+                  <LivePostContent text={post.content || post.text} />
+                </div>
               </div>
-            ))
+
+                {/* ৩য় বক্স: অ্যাকশন বাটন (লাইক, কমেন্ট, শেয়ার) */}
+                <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center gap-6 text-slate-500">
+                  {/* লাইক বাটন */}
+                  <button 
+                    onClick={() => handleLike(post.id)} 
+                    className="flex items-center gap-1.5 hover:text-pink-500 transition-colors active:scale-95 text-xs font-medium"
+                  >
+                    <LiveHeartIcon postId={post.id} userId={auth?.currentUser?.uid} firestore={firestore} />
+                    <LiveLikeCount postId={post.id} firestore={firestore} />
+
+                  </button>
+
+                  {/* কমেন্ট বাটন */}
+                  <button 
+                    className="flex items-center gap-1.5 hover:text-blue-500 transition-colors text-xs font-medium"
+                  >
+                    <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785 4.75 4.75 0 0 0 3.326-1.423c.365-.113.753-.08 1.12.074A9.016 9.016 0 0 0 12 20.25Z" />
+                    </svg>
+                    <LiveCommentCount postId={post.id} firestore={firestore} />
+                  </button>
+
+                  {/* শেয়ার বাটন */}
+                  <button 
+                    className="flex items-center gap-1.5 hover:text-green-500 transition-colors text-xs font-medium ml-auto"
+                  >
+                    <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                    </svg>
+                    <span>Share</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })
+
           ) : (
             <p className="text-muted-foreground text-center py-4">You haven't posted anything yet.</p>
           )
@@ -440,6 +545,96 @@ useEffect(() => {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+// ফায়ারবেস থেকে কারেন্ট ইউজার এই পোস্টে লাইক দিয়েছে কি না তা রিয়েল-টাইম ট্র্যাক করার কম্পোনেন্ট
+function LiveHeartIcon({ postId, userId, firestore }: { postId: string; userId: string | undefined; firestore: any }) {
+  const [isLiked, setIsLiked] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!firestore || !userId || !postId) return;
+
+    const likeRef = doc(firestore, `posts/${postId}/likes`, userId);
+    const unsubscribe = onSnapshot(likeRef, (docSnap) => {
+      setIsLiked(docSnap.exists());
+    });
+
+    return () => unsubscribe();
+  }, [postId, userId, firestore]);
+
+  return (
+    <Heart 
+      className={cn(
+        "h-4 w-4 shrink-0 transition-colors duration-200", 
+        isLiked ? "text-red-500 fill-red-500 scale-110" : "text-slate-500 hover:text-pink-500"
+      )} 
+    />
+  );
+}
+// ফায়ারস্টোর থেকে লাইকের সংখ্যা রিয়েল-টাইমে ট্র্যাক করার কাউন্টার কম্পোনেন্ট
+function LiveLikeCount({ postId, firestore }: { postId: string; firestore: any }) {
+  const [likes, setLikes] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!firestore || !postId) return;
+    const postRef = doc(firestore, 'posts', postId);
+    const unsubscribe = onSnapshot(postRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setLikes(docSnap.data().likes || 0);
+      }
+    });
+    return () => unsubscribe();
+  }, [postId, firestore]);
+
+  return <span className="text-xs font-medium">{likes}</span>;
+}
+
+// ফায়ারস্টোর থেকে কমেন্টের সংখ্যা রিয়েল-টাইমে ট্র্যাক করার কাউন্টার কম্পোনেন্ট
+function LiveCommentCount({ postId, firestore }: { postId: string; firestore: any }) {
+  const [comments, setComments] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!firestore || !postId) return;
+    const postRef = doc(firestore, 'posts', postId);
+    const unsubscribe = onSnapshot(postRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setComments(docSnap.data().comments || 0);
+      }
+    });
+    return () => unsubscribe();
+  }, [postId, firestore]);
+
+  return <span className="text-xs font-medium">{comments}</span>;
+}
+// প্রোফাইল পেজের ৫টি বাক্যের বেশি বড় পোস্টের জন্য 'Show More' এবং 'Show Less' কম্পোনেন্ট
+function LivePostContent({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  if (!text) return null;
+
+  // নতুন লাইন (\n) বা ডট (.) দিয়ে বাক্য আলাদা করা হচ্ছে
+  const sentences = text.split(/(?<=\n)|(?<=\. )/);
+
+  if (sentences.length <= 3) {
+    return <p className="whitespace-pre-wrap font-normal leading-relaxed text-left">{text}</p>;
+  }
+
+  const truncatedText = sentences.slice(0, 3).join("");
+
+  return (
+    <div className="text-left">
+      <p className="whitespace-pre-wrap font-normal leading-relaxed">
+        {isExpanded ? text : truncatedText}
+        {!isExpanded && " ..."}
+      </p>
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-2 transition-colors cursor-pointer block"
+      >
+        {isExpanded ? "Show Less" : "Show More"}
+      </button>
     </div>
   );
 }

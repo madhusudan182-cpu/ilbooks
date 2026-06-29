@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, increment, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 
 import type { User } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
@@ -109,7 +111,7 @@ export default function HomePage() {
   
   const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
 
-  const handleLike = async (postId: string) => {
+    const handleLike = async (postId: string) => {
     if (!user || !firestore) return;
     const likeRef = doc(firestore, `posts/${postId}/likes`, user.uid);
     const postRef = doc(firestore, 'posts', postId);
@@ -123,6 +125,23 @@ export default function HomePage() {
         await setDoc(likeRef, { likedAt: serverTimestamp() });
         await updateDoc(postRef, { likes: increment(1) });
         toast({ title: "Liked post!" });
+
+        // নোটিফিকেশন পাঠানোর লজিক
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+          const postData = postSnap.data();
+          if (postData.author && postData.author.id !== user.uid) {
+            await addDoc(collection(firestore, 'notifications'), {
+              type: 'LIKE',
+              postId: postId,
+              senderId: user.uid,
+              senderName: profile?.name || 'Someone',
+              targetUserId: postData.author.id,
+              isSeen: false,
+              createdAt: serverTimestamp()
+            });
+          }
+        }
       }
     } catch (error: any) {
       console.error("Like error: ", error);
@@ -132,24 +151,43 @@ export default function HomePage() {
   const handleAddComment = async (postId: string) => {
     if (!user || !firestore || !profile || !commentText[postId]?.trim()) return;
     const currentComment = commentText[postId].trim();
+    const postRef = doc(firestore, 'posts', postId);
     try {
       await addDoc(collection(firestore, `posts/${postId}/comments`), {
         text: currentComment,
         author: {
           id: user.uid,
           name: profile.name || 'Anonymous',
-          avatarUrl: profile.avatarUrl || `https://picsum.photos/${user.uid}/100/100`,
+          avatarUrl: profile.avatarUrl || `https://picsum.photos{user.uid}/100/100`,
         },
         createdAt: serverTimestamp()
       });
-      const postRef = doc(firestore, 'posts', postId);
+      
       await updateDoc(postRef, { comments: increment(1) });
       setCommentText(prev => ({ ...prev, [postId]: "" }));
       toast({ title: "Comment added!" });
+
+      // নোটিফিকেশন পাঠানোর লজিক
+      const postSnap = await getDoc(postRef);
+      if (postSnap.exists()) {
+        const postData = postSnap.data();
+        if (postData.author && postData.author.id !== user.uid) {
+          await addDoc(collection(firestore, 'notifications'), {
+            type: 'COMMENT',
+            postId: postId,
+            senderId: user.uid,
+            senderName: profile?.name || 'Someone',
+            targetUserId: postData.author.id,
+            isSeen: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: "Failed to comment", description: error.message });
     }
   };
+
 
   const handleShare = () => {
     toast({ title: "Sharing options coming soon!", duration: 2000 });
@@ -213,11 +251,12 @@ export default function HomePage() {
                   className="hidden" 
                   onChange={(e) => {
                     const file = e.target.files?.[0]; // এখানে অবশ্যই [0] হতে হবে
-                    if (file) {
-                      setPostImage(file);
-                      setImagePreview(URL.createObjectURL(file));
-                      console.log("Image selected:", file.name);
-                    }
+                            if (file) {
+                    setPostImage(file);
+                    setImagePreview(URL.createObjectURL(file));
+                    console.log("Image selected:", file.name);
+                  }
+
                   }}
                 /> 
                 <input type="file" ref={videoInputRef} accept="video/*" className="hidden" />
@@ -265,14 +304,12 @@ export default function HomePage() {
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
             
                         return (
-              <Card key={post.id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-xl">
+              <Card key={post.id} className="mb-6 shadow-sm border border-slate-200/80 overflow-hidden bg-white rounded-xl">
                 {/* 👤 পোস্ট হেডার */}
                 <CardHeader className="flex flex-row items-center gap-3 p-3 pb-2">
                   <Link href={profileUrl} className="active:scale-95 transition-transform shrink-0">
-                    <Avatar className="h-9 w-9 border">
-                      <AvatarImage src={authorAvatar} alt={authorName} />
-                      <AvatarFallback>{authorName ? authorName.charAt(0) : 'U'}</AvatarFallback>
-                    </Avatar>
+                    <LiveAuthorAvatar authorId={post.author.id} fallbackAvatar={authorAvatar} userName={authorName} />
+
                   </Link>
                   <div className="grid gap-0.5 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -289,16 +326,19 @@ export default function HomePage() {
                   </div>
                 </CardHeader>
 
-                {/* 📝 পোস্ট কন্টেন্ট */}
-                <CardContent className="p-3 pt-1 pb-3 text-sm text-slate-700">
-                  <p className="whitespace-pre-wrap">{post.content}</p>
-                </CardContent>
+                  {/* 📄 ২য় বক্স: বডি (পোস্টের মূল লেখা - সাদা ব্যাকগ্রাউন্ড এবং মোটা হালকা নীল বর্ডার ডিজাইন) */}
+                  <CardContent className="p-4 bg-white min-h-[60px] border-t-2 border-b-2 border-sky-200/80 text-sm text-slate-700 text-left my-1.5 transition-all">
+                    <LivePostContent text={post.content || post.text} />
+                  </CardContent>
 
                 {/* 👍 💬 🔗 অ্যাকশন বাটনসমূহ (একেবারে কাছাকাছি ও সুন্দরভাবে সাজানো) */}
                 <CardFooter className="flex items-center gap-6 p-2 px-3 border-t bg-slate-50/50 justify-start">
                   {/* লাইক বাটন */}
-                  <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors active:scale-90 duration-100">
-                    <Heart className={`h-4 w-4 shrink-0 ${post.isLiked ? "text-red-500 fill-red-500" : ""}`} />
+                  <button 
+                    onClick={() => handleLike(post.id)} 
+                    className="flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors active:scale-90 duration-100"
+                  >
+                    <LiveHeartIcon postId={post.id} userId={user?.uid} firestore={firestore} />
                     <span className="text-xs font-medium">{post.likes || 0}</span>
                   </button>
 
@@ -319,7 +359,7 @@ export default function HomePage() {
                 {commentingOn === post.id && (
                   <div className="p-3 bg-slate-50/70 border-t border-slate-100 space-y-3">
                     {/* কমেন্ট ইনপুট বক্স (সিঙ্গেল বক্স ডিজাইন) */}
-                                        {/* 📝 আপডেট করা কমেন্ট ফর্ম (Enter সাপোর্ট এবং অটো-ক্লোজ লজিকসহ) */}
+                    {/* 📝 আপডেট করা কমেন্ট ফর্ম (Enter সাপোর্ট এবং অটো-ক্লোজ লজিকসহ) */}
                     <form 
                       onSubmit={(e) => {
                         e.preventDefault(); // পেজ রিফ্রেশ হওয়া বন্ধ করবে
@@ -343,6 +383,18 @@ export default function HomePage() {
                       >
                         Comment
                       </Button>
+                      {/* নতুন ক্যানসেল বাটন */}
+                      {/* লাইট ইয়েলো ক্যানসেল বাটন */}
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setCommentText(prev => ({ ...prev, [post.id]: "" })); // টেক্সট ক্লিয়ার করবে
+                          setCommentingOn(null); // কমেন্ট বক্স বন্ধ করবে
+                        }}
+                        className="bg-amber-100/70 text-amber-800 hover:bg-amber-200 hover:text-amber-900 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-150 ml-1"
+                      >
+                        Cancel
+                      </button>
                     </form>
 
 
@@ -387,8 +439,61 @@ function LiveAuthorLevel({ authorId, fallbackLevel, firestore }: { authorId: str
   return <>{level}</>;
 }
 
+// ফায়ারস্টোর থেকে লেখকের প্রোফাইল পিকচার রিয়েল-টাইমে তুলে আনার কম্পোনেন্ট
+function LiveAuthorAvatar({ authorId, fallbackAvatar, userName }: { authorId: string; fallbackAvatar: string; userName: string }) {
+  const firestore = useFirestore();
+  const [avatarUrl, setAvatarUrl] = useState(fallbackAvatar);
+
+  useEffect(() => {
+    if (!firestore || !authorId) return;
+    const userRef = doc(firestore, 'users', authorId);
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        if (userData.avatarUrl) setAvatarUrl(userData.avatarUrl);
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, authorId, fallbackAvatar]);
+
+  return (
+    <Avatar className="h-9 w-9 border">
+      <AvatarImage src={avatarUrl} alt={userName} />
+      <AvatarFallback>{userName ? userName.charAt(0) : 'U'}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+
+// ফায়ারবেস থেকে কারেন্ট ইউজার এই পোস্টে লাইক দিয়েছে কি না তা রিয়েল-টাইম ট্র্যাক করার কম্পোনেন্ট
+function LiveHeartIcon({ postId, userId, firestore }: { postId: string; userId: string | undefined; firestore: any }) {
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    if (!firestore || !userId || !postId) return;
+
+    const likeRef = doc(firestore, `posts/${postId}/likes`, userId);
+    const unsubscribe = onSnapshot(likeRef, (docSnap) => {
+      setIsLiked(docSnap.exists());
+    });
+
+    return () => unsubscribe();
+  }, [postId, userId, firestore]);
+
+  return (
+    <Heart 
+      className={cn(
+        "h-4 w-4 shrink-0 transition-colors duration-200", 
+        isLiked ? "text-red-500 fill-red-500 scale-110" : "text-slate-500 hover:text-pink-500"
+      )} 
+    />
+  );
+}
+
+
 // 💬 ফায়ারবেস থেকে লাইভ কমেন্ট Descending অর্ডার-এ তুলে আনার কম্পোনেন্ট
 function LiveCommentsList({ postId, firestore }: { postId: string; firestore: any }) {
+  const { user } = useUser();
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -430,7 +535,12 @@ function LiveCommentsList({ postId, firestore }: { postId: string; firestore: an
             </Avatar>
             <div className="grid gap-0.5 min-w-0">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xs font-bold text-slate-800 truncate max-w-[120px]">{comment.author?.name}</span>
+                  <Link 
+                  href={comment.author?.id === user?.uid ? "/dashboard/profile" : `/dashboard/user/${comment.author?.id}`}
+                  className="text-xs font-bold text-slate-800 hover:text-pink-500 hover:underline truncate max-w-[120px] block"
+                >
+                  {comment.author?.name}
+                </Link>
                 <span className="text-[9px] text-slate-400 shrink-0">{commentTime}</span>
               </div>
               <p className="text-xs text-slate-600 break-words">{comment.text}</p>
@@ -438,6 +548,39 @@ function LiveCommentsList({ postId, firestore }: { postId: string; firestore: an
           </div>
         );
       })}
+    </div>
+  );
+}
+// ৫টি বাক্যের বেশি হলে 'Show More' এবং 'Show Less' মেকানিজম হ্যান্ডেল করার কম্পোনেন্ট
+function LivePostContent({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!text) return null;
+
+  // নতুন লাইন (\n) অথবা ডট (.) দিয়ে বাক্যগুলোকে আলাদা করা হচ্ছে
+  const sentences = text.split(/(?<=\n)|(?<=\. )/);
+
+  // যদি ৫ বা তার কম বাক্য থাকে, তবে পুরো টেক্সট সরাসরি দেখিয়ে দেবে
+  if (sentences.length <= 3) {
+    return <p className="whitespace-pre-wrap font-normal leading-relaxed text-left">{text}</p>;
+  }
+
+  // প্রথম ৫টি বাক্য এবং বাকি বাক্যগুলো আলাদা করা হলো
+  const truncatedText = sentences.slice(0, 3).join("");
+
+  return (
+    <div className="text-left">
+      <p className="whitespace-pre-wrap font-normal leading-relaxed">
+        {isExpanded ? text : truncatedText}
+        {!isExpanded && " ..."}
+      </p>
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-2 transition-colors cursor-pointer block"
+      >
+        {isExpanded ? "Show Less" : "Show More"}
+      </button>
     </div>
   );
 }

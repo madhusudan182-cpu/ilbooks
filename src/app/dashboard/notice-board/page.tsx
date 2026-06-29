@@ -8,6 +8,8 @@ import { collection, query, where, doc, updateDoc, onSnapshot } from 'firebase/f
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
 
 interface NotificationItem {
   id: string;
@@ -23,6 +25,7 @@ interface NotificationItem {
   type?: string;        // নোটিফিকেশনের অ্যাকশন টাইপ চেনার জন্য
   senderName?: string;
   senderId?: string;
+  postId?: string;
 }
 
 export default function NoticeBoardPage() {
@@ -136,112 +139,78 @@ export default function NoticeBoardPage() {
     return <div className="p-10 text-center text-slate-500">Loading notifications...</div>;
   }
 
+    const handleUserClick = (e: React.MouseEvent, senderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = `/dashboard/profile/${senderId}`;
+  };
+
+  const handlePostClick = (e: React.MouseEvent, postId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = `/dashboard/profile#post-${postId}`;
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500">Loading notifications...</div>;
+  }
+
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto space-y-4">
-      <div className="mb-2">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-xs border border-gray-200 rounded px-2 py-1 text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back
-        </Link>
-      </div>
+    <div className="max-w-2xl mx-auto p-4 space-y-4">
+      <h1 className="text-xl font-bold text-slate-800">Notifications</h1>
+      
+      {!allNotifications || allNotifications.length === 0 ? (
+        <div className="p-8 text-center text-slate-400 bg-white rounded-lg border">
+          No notifications yet.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {allNotifications.map((notification: any) => {
+            const isSeen = notification.sourceCollection === 'user_notifications' 
+              ? notification.isRead 
+              : notification.isSeen;
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-1 text-xl font-headline">
-            <Bell className="w-6 h-6 text-primary" />
-            All Notifications
-          </CardTitle>
-          <CardDescription>
-            Here is a list of your recent activity and admin notices.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          {allNotifications && allNotifications.length > 0 ? (
-            <div className="space-y-4">
-              {allNotifications.map((notification, index) => {
-                const isReadStatus = notification.sourceCollection === 'user_notifications' 
-                  ? notification.isRead 
-                  : notification.isSeen;
-
-                return (
-                  <div 
-                    key={notification.id || index} 
-                    className={`flex items-start gap-4 p-4 border-b last:border-b-0 rounded-lg transition-colors ${
-                      isReadStatus ? 'bg-transparent opacity-75' : 'bg-purple-50/40 border-l-4 border-l-purple-600'
-                    }`}
-                  >
-                    <div className="bg-muted p-2 rounded-full">
-                      <Bell className={`w-5 h-5 ${isReadStatus ? 'text-muted-foreground' : 'text-purple-600'}`} />
-                    </div>
-                    <div className="flex-grow text-left">
-                      <p className={`font-semibold ${isReadStatus ? 'text-gray-600' : 'text-purple-900'}`}>
-                        {notification.title} 
-                        {notification.sourceCollection === 'user_notifications' && (
-                          <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-mono">Admin</span>
-                        )}
-                      </p>
-                      <div className="text-sm text-gray-700 mt-0.5 break-words">
-                      {(() => {
-                        const type = notification.type;
-                        const senderName = notification.senderName || 'Someone';
-                        const senderId = notification.senderId; // আপনার ফায়ারবেস অবজেক্টের সেন্ডার আইডি
-
-                        // নামের জন্য ক্লিকেবল লিংক কম্পোনেন্ট তৈরি করা
-                        const NameLink = () => (
-                          senderId ? (
-                            <Link 
-                              href={`/dashboard/profile/${senderId}`} 
-                              className="font-bold text-orange-500 hover:underline cursor-pointer mr-1"
-                            >
-                              {senderName}
-                            </Link>
-                          ) : (
-                            <span className="font-bold mr-1">{senderName}</span>
-                          )
-                        );
-
-                        if (type === 'FOLLOW') {
-                          return <span><NameLink />is following you.</span>;
-                        }
-                        if (type === 'UNFOLLOW') {
-                          return <span><NameLink />has unfollowed you.</span>;
-                        }
-                        if (type === 'FOLLOW_BACK') {
-                          return <span><NameLink />has followed you back.</span>;
-                        }
-                        if (type === 'LIKE') {
-                          return <span><NameLink />liked your post.</span>;
-                        }
-                        if (type === 'COMMENT') {
-                          return <span><NameLink />commented on your post.</span>;
-                        }
-
-                        // সাইন-আপ এবং অ্যাডমিন নোটিফিকেশনের জন্য সাধারণ টেক্সট
-                        return <span>{notification.text || notification.message || ''}</span>;
-                      })()}
-                    </div>
-
-                    </div>
-                    <div className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatNotificationDate(notification.createdAt)}
+            return (
+              <div 
+                key={notification.id} 
+                className={`flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors ${
+                  !isSeen ? "bg-orange-50/40 border-l-4 border-l-orange-500" : "bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border">
+                    <AvatarImage src={notification.senderAvatar} alt={notification.senderName} />
+                    <AvatarFallback>{notification.senderName ? notification.senderName.charAt(0) : 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="text-sm text-slate-700">
+                      <span 
+                        onClick={(e) => handleUserClick(e, notification.senderId)}
+                        className="font-bold text-orange-500 hover:text-orange-600 hover:underline cursor-pointer mr-1"
+                      >
+                        {notification.senderName || 'Someone'}
+                      </span>
+                      
+                      {notification.type === 'LIKE' ? ' liked your ' : ' commented on your '}
+                      
+                      <span 
+                        onClick={(e) => handlePostClick(e, notification.postId)}
+                        className="font-bold text-pink-500 hover:text-pink-600 hover:underline cursor-pointer"
+                      >
+                        post
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              You have no new notifications.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                </div>
+                
+                {!isSeen && (
+                  <span className="h-2 w-2 rounded-full bg-orange-500 shrink-0 ml-2" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
