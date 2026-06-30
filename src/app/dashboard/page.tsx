@@ -49,13 +49,29 @@ export default function HomePage() {
     setIsPosting(false);
   };
 
-  const handleImageClick = () => {
+  /*const handleImageClick = () => {
     imageInputRef.current?.click();
   };
 
   const handleVideoClick = () => {
     videoInputRef.current?.click();
+  };*/
+//When the VIP users will be introduce the above 4 lines will be freed and the two function below. 
+  const handleImageClick = () => {
+    toast({
+      title: "Coming soon!",
+      description: "Image upload feature is currently under development.",
+    });
   };
+
+  const handleVideoClick = () => {
+    toast({
+      title: "Coming soon!",
+      description: "Video upload feature is currently under development.",
+    });
+  };
+  //When the VIP users will be introduce the above 2 const will be deleted.
+
 
     const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,44 +375,49 @@ export default function HomePage() {
                 {commentingOn === post.id && (
                   <div className="p-3 bg-slate-50/70 border-t border-slate-100 space-y-3">
                     {/* কমেন্ট ইনপুট বক্স (সিঙ্গেল বক্স ডিজাইন) */}
-                    {/* 📝 আপডেট করা কমেন্ট ফর্ম (Enter সাপোর্ট এবং অটো-ক্লোজ লজিকসহ) */}
-                    <form 
+                    <form
                       onSubmit={(e) => {
-                        e.preventDefault(); // পেজ রিফ্রেশ হওয়া বন্ধ করবে
+                        e.preventDefault();
                         handleAddComment(post.id);
-                        setCommentingOn(null); // কমেন্ট সাবমিট হলে বক্স অটো বন্ধ হয়ে যাবে
+                        setCommentingOn(null);
                       }}
-                      className="flex gap-2"
+                      // এখানে 'flex-col' যোগ করা হয়েছে যা ইনপুট এবং বাটনগুলোকে ওপরে-নিচে সাজাবে
+                      className="flex flex-col gap-3 w-full"
                     >
+                      {/* টেক্সট ইনপুট বক্স */}
                       <input
                         type="text"
                         placeholder="Write a comment..."
                         value={commentText[post.id] || ""}
                         onChange={(e) => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
-                        className="flex-1 bg-white border border-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-purple-600 shadow-sm text-slate-800"
+                        // 'flex-1' বাদ দিয়ে 'w-full' ব্যবহার করা হয়েছে যাতে বক্সটি পুরো চওড়া হয়
+                        className="w-full bg-white border border-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-purple-600 shadow-sm text-slate-800"
                       />
-                      <Button 
-                        type="submit" // টাইপ সাবমিট করায় Enter বাটন কাজ করবে
-                        size="sm" 
-                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 rounded-xl h-[34px]"
-                        disabled={!commentText[post.id]?.trim()}
-                      >
-                        Comment
-                      </Button>
-                      {/* নতুন ক্যানসেল বাটন */}
-                      {/* লাইট ইয়েলো ক্যানসেল বাটন */}
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setCommentText(prev => ({ ...prev, [post.id]: "" })); // টেক্সট ক্লিয়ার করবে
-                          setCommentingOn(null); // কমেন্ট বক্স বন্ধ করবে
-                        }}
-                        className="bg-amber-100/70 text-amber-800 hover:bg-amber-200 hover:text-amber-900 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-150 ml-1"
-                      >
-                        Cancel
-                      </button>
-                    </form>
 
+                      {/* বাটনগুলোর জন্য একটি নতুন ডিভ (Div) যা বাটন দুটিকে নিচে ডানপাশে রাখবে */}
+                      <div className="flex justify-end gap-2">
+                        {/* Cancel বাটনটি আগে দেওয়া হলো যাতে এটি বামে থাকে */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCommentText(prev => ({ ...prev, [post.id]: "" }));
+                            setCommentingOn(null);
+                          }}
+                          className="bg-amber-100/70 text-amber-800 hover:bg-amber-200 hover:text-amber-900 px-4 py-1.5 rounded-xl text-xs font-medium transition-colors duration-150 h-[34px]"
+                        >
+                          Cancel
+                        </button>
+
+                        {/* Comment বাটন */}
+                        <button
+                          type="submit"
+                          disabled={!commentText[post.id]?.trim()}
+                          className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-4 py-1.5 rounded-xl h-[34px] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Comment
+                        </button>
+                      </div>
+                    </form>
 
                     {/* 👇 ৩. লাইভ কমেন্ট লিস্ট (Descending Order-এ দেখানোর কাস্টম কম্পোনেন্ট) */}
                     <LiveCommentsList postId={post.id} firestore={firestore} />
