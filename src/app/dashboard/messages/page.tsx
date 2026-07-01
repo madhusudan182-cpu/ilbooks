@@ -62,15 +62,37 @@ export default function MessagesPage() {
 
   const { data: rawConversations, loading: convosLoading } = useCollection<any>(convosQuery);
 
+  // 🎯 লাইভ ফলো ডাটা লোড করার নতুন লজিক
+  const followsRef = useMemo(() => (firestore ? collection(firestore, "follows") : null), [firestore]);
+  const { data: allFollows = [] } = useCollection<any>(followsRef);
+
   // Sort conversations locally for the prototype UI
-  const conversations = useMemo(() => {
-    if (!rawConversations) return [];
-    return [...rawConversations].sort((a, b) => {
-      const timeA = a.updatedAt?.seconds || 0;
-      const timeB = b.updatedAt?.seconds || 0;
-      return timeB - timeA;
-    });
-  }, [rawConversations]);
+  // 🎯 শুধুমাত্র যারা এখনও ফ্রেন্ড আছে, তাদের চ্যাট রুমগুলোই দেখানোর ফিল্টার লজিক
+const conversations = useMemo(() => {
+  if (!rawConversations || !user?.uid || !allFollows) return [];
+
+  // ১. প্রথমে পুরনো কোডের মতো সময় অনুযায়ী সর্ট করে নেওয়া
+  const sortedConvos = [...rawConversations].sort((a, b) => {
+    const timeA = a.updatedAt?.seconds || 0;
+    const timeB = b.updatedAt?.seconds || 0;
+    return timeB - timeA;
+  });
+
+  // ২. শুধুমাত্র ACTIVE ফ্রেন্ডদের চ্যাটগুলো ফিল্টার করা
+  return sortedConvos.filter((convo) => {
+    // চ্যাট পার্টনারের আইডি খুঁজে বের করা
+    const partnerId = convo.participants?.find((p: string) => p !== user.uid);
+    if (!partnerId) return false;
+
+    // চেক করা কারেন্ট ইউজার এবং পার্টনার দুজনেই ACTIVE ফলোয়ার কি না
+    const iFollowThem = allFollows.some(f => f.followerId === user.uid && f.followingId === partnerId && f.status === "ACTIVE");
+    const theyFollowMe = allFollows.some(f => f.followerId === partnerId && f.followingId === user.uid && f.status === "ACTIVE");
+
+    // দুজনেই ফলো করলেই চ্যাটটি লিস্টে দেখাবে, অন্যথায় ভ্যানিশ হয়ে যাবে
+    return iFollowThem && theyFollowMe;
+  });
+}, [rawConversations, allFollows, user?.uid]);
+
 
     useEffect(() => {
     if (!firestore || !activeConversationId) {
@@ -150,6 +172,19 @@ export default function MessagesPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
       e.preventDefault();
+        // 🎯 START: ফ্রেন্ডশিপ ভ্যালিডেশন চেক (মেসেজ ব্লক করার জন্য)
+        const chatWithIdToCheck = searchParams.get('chatWith');
+        if (chatWithIdToCheck && allFollows && user?.uid) {
+          const iFollowThem = allFollows.some(f => f.followerId === user.uid && f.followingId === chatWithIdToCheck && f.status === "ACTIVE");
+          const theyFollowMe = allFollows.some(f => f.followerId === chatWithIdToCheck && f.followingId === user.uid && f.status === "ACTIVE");
+          
+          if (!iFollowThem || !theyFollowMe) {
+            alert("You can no longer chat. You are not friends anymore!");
+            return;
+          }
+        }
+        // 🎯 END
+
       if (!newMessage.trim() || !user || !firestore) return;
 
       const chatWithId = searchParams.get('chatWith');

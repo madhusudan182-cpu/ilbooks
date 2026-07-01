@@ -317,9 +317,16 @@ export default function CompetitionPage() {
                         <p className="text-red-600 font-bold text-lg mb-4">{scheduleMessage}</p>
                     )}
                      {(!isRegistered || majorLevel < 1) && (
-                        <Button size="lg" className="font-headline px-4 md:px-8" onClick={handleStartExamClick}>
-                           {buttonText} <ArrowRight className="ml-2 w-5 h-5"/>
+                        <Button 
+                            size="lg" 
+                            style={{ fontFamily: 'Times New Roman' }}
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-medium tracking-wide px-4 md:px-8 shadow-sm transition-all" 
+                            onClick={handleStartExamClick}
+                        >
+                            {buttonText} <ArrowRight className="ml-2 w-5 h-5"/>
                         </Button>
+
+
                      )}
                      <p className="text-xs text-muted-foreground mt-2">
                         {isRegistered && majorLevel >= 1

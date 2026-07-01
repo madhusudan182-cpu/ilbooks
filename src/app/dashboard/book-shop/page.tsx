@@ -36,24 +36,10 @@ export default function BookShopPage() {
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
 
-  const [cart, setCart] = useState<CartItem[]>(() => {
-  if (typeof window !== 'undefined') {
-    const savedCart = localStorage.getItem('book_cart');
-    return savedCart ? JSON.parse(savedCart) : [];
-  }
-  return [];
-});
-
-const [showPayment, setShowPayment] = useState(false);
-const { toast } = useToast();
-
-// 💡 ঠিক এই জায়গায় কোডটি পেস্ট করুন
-useEffect(() => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('book_cart', JSON.stringify(cart));
-  }
-}, [cart]);
-
+    // 🎯 ১. কার্ট এবং পেমেন্ট শো করার সিম্পল স্টেট (পেজ রিফ্রেশ করলে অটোমেটিক খালি হয়ে যাবে)
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const { toast } = useToast();
 
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [name, setName] = useState('');
@@ -407,25 +393,51 @@ useEffect(() => {
                       </div>
                     </div>
                     <Separator className="my-2" />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>Tk {total}</span>
-                    </div>
-                    <Button
-                      className="w-full mt-6 font-headline"
-                      size="lg"
-                      onClick={() => setShowPayment(true)}
-                      disabled={cart.length === 0}
-                    >
-                      <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
-                    </Button>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Your cart is empty. Add books to get started!
-                  </p>
-                )}
-              </CardContent>
+                      {/* 🎯 সিঙ্গেল টোটাল লাইন */}
+                      <div className="flex justify-between font-bold text-lg mb-4 text-slate-800">
+                        <span>Total</span>
+                        <span>Tk {total}</span>
+                      </div>
+
+                      {/* 🎯 মোবাইল স্ক্রিন ফ্রেন্ডলি রেসপন্সিভ বাটন লেআউট */}
+                      <div className="flex flex-row items-center justify-between gap-2.5 mt-5 w-full">
+                        
+                        {/* ১. ছোট Cancel বাটন (১ ভাগ জায়গা নেবে) */}
+                        <Button 
+                          type="button"
+                          onClick={() => {
+                            setCart([]); 
+                            toast({
+                              title: "Cart Cleared",
+                              description: "Your order has been canceled successfully.",
+                            });
+                          }}
+                          variant="outline" 
+                          style={{ fontFamily: 'Times New Roman' }}
+                          className="flex-[1] min-w-0 border-red-400 text-red-500 hover:bg-red-50 font-medium text-xs sm:text-sm h-10 px-2 rounded-xl transition-all truncate text-center"
+                        >
+                          Cancel
+                        </Button>
+
+                        {/* ২. বড় Proceed to Payment বাটন (২ ভাগ জায়গা নেবে) */}
+                        <Button
+                          type="button"
+                          onClick={() => setShowPayment(true)}
+                          style={{ fontFamily: 'Times New Roman' }}
+                          className="flex-[2] min-w-0 bg-blue-500 hover:bg-blue-600 text-white font-medium text-xs sm:text-sm h-10 px-3 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1 truncate"
+                        >
+                          <CreditCard className="h-3.5 w-3.5 shrink-0 inline-block" />
+                          <span className="truncate">Proceed to Payment</span>
+                        </Button>
+
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8 text-sm">
+                      Your cart is empty. Add books to get started!
+                    </p>
+                  )}
+                  </CardContent>
             </Card>
           </div>
         </div>

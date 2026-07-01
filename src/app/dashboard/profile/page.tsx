@@ -14,7 +14,10 @@ import { formatDistanceToNow } from "date-fns";
 // কাস্টম হুক এবং ফায়ারস্টোর কোর মেথডস
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, setDoc, deleteDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { Camera } from "lucide-react";
+
 export default function ProfilePage() {
+  
   const { user, loading: authLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -27,6 +30,96 @@ export default function ProfilePage() {
   // ফায়ারস্টোর ভ্যালিডেশন সহ ইউজার রেফারেন্স
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: profile, loading: profileLoading } = useDoc<any>(userRef);
+
+ const isOwnProfile = useMemo(() => {
+    if (!user || !profile) return false;
+    return true; 
+  }, [user, profile]);
+const followsRef = useMemo(() => (firestore ? collection(firestore, "follows") : null), [firestore]);
+const { data: allFollows = [] } = useCollection<any>(followsRef);
+
+const counts = useMemo(() => {
+  if (!user?.uid || !allFollows) return { friends: 0, following: 0, followers: 0, blocked: 0 };
+
+  // ১. মেইন ডেটা ফিল্টার (ACTIVE স্ট্যাটাস অনুযায়ী)
+  const allFollowing = allFollows.filter((f) => f.followerId === user.uid && f.status === "ACTIVE");
+  const allFollowers = allFollows.filter((f) => f.followingId === user.uid && f.status === "ACTIVE");
+
+  // ২. Friends: যারা একে অপরকে ফলো করে (Mutual Followers)
+  const friendsList = allFollowing.filter((ing) => 
+    allFollowers.some((ers) => ers.followerId === ing.followingId)
+  );
+  const friends = friendsList.length;
+
+  // ৩. Following: আমি ফলো করছি কিন্তু তারা ব্যাক করেনি (Friends সম্পূর্ণ বাদ)
+  const following = allFollowing.filter((ing) => 
+    !allFollowers.some((ers) => ers.followerId === ing.followingId)
+  ).length;
+
+  // ৪. Followers: তারা আমাকে ফলো করছে কিন্তু আমি ব্যাক করিনি (Friends সম্পূর্ণ বাদ)
+  const followers = allFollowers.filter((ers) => 
+    !allFollowing.some((ing) => ing.followingId === ers.followerId)
+  ).length;
+
+  // ৫. Blocked: আপাতত ০ (পরবর্তীতে ব্লক কালেকশন কানেক্ট করলে এটি আপডেট হবে)
+  const blocked = 0; 
+
+  return { friends, following, followers, blocked };
+}, [allFollows, user?.uid]);
+
+
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    
+    // ১০ এমবি সাইজ ভ্যালিডেশন
+    if (file.size > 10485760) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please select an image smaller than 10MB.",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (loadEvent) => {
+      const newAvatarUrl = loadEvent.target?.result as string;
+      if (userRef) {
+        await updateDoc(userRef, { avatarUrl: newAvatarUrl });
+        toast({ title: "Profile picture updated successfully!" });
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+
+const toggleProfileLock = async () => {
+  if (!userRef || !profile) return;
+  const currentLockState = profile.isLocked || false;
+  
+  try {
+    await updateDoc(userRef, { isLocked: !currentLockState });
+    toast({
+      title: !currentLockState ? "Profile Locked 🔒" : "Profile Unlocked 🔓",
+      description: !currentLockState 
+        ? "Only your friends can see your posts now." 
+        : "Anyone can see your posts now.",
+    });
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: error.message,
+    });
+  }
+};
+
+
 
   // মূল পোস্ট কুয়েরি সেফটি গার্ড
   const postsQuery = useMemo(() => {
@@ -155,15 +248,109 @@ export default function ProfilePage() {
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center">
             <div className="relative group mb-4">
-              <Avatar className="w-24 h-24 border-4 border-purple-100 shadow-sm">
+              {/* ইনপুট ফাইল ট্যাগ (লুকানো থাকবে) */}
+              {isOwnProfile && (
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  ref={avatarInputRef} 
+                  onChange={handleProfilePictureChange} 
+                />
+              )}
+
+              <Avatar className="w-24 h-24 border-4 border-purple-100 shadow-sm relative">
                 <AvatarImage src={profile?.avatarUrl} />
-                <AvatarFallback className="text-xl font-bold bg-purple-50 text-purple-700">{userName.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-xl font-bold bg-purple-50 text-purple-700">
+                  {userName.charAt(0)}
+                </AvatarFallback>
               </Avatar>
+
+              {/* ক্যামেরা বাটন - শুধুমাত্র নিজের প্রোফাইল হলে দেখাবে */}
+              {isOwnProfile && (
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-purple-600 hover:bg-purple-700 text-white border-white shadow-md z-10"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="sr-only">Upload Picture</span>
+                </Button>
+              )}
             </div>
+
             <h2 className="text-2xl font-bold text-slate-800">{userName}</h2>
             <Badge className="bg-purple-600 hover:bg-purple-700 my-1 text-xs font-semibold">
               Level: {(Number(profile?.level) || 0.0).toFixed(1)}
             </Badge>
+{/* 🎯 এক লাইনে নোট, লক এবং এডিট প্রোফাইল বাটন */}
+{isOwnProfile && (
+  <div className="flex flex-row items-center justify-center gap-3 mt-4 flex-wrap text-sm text-slate-600 font-medium w-full">
+    {/* 🎯 বর্ডার ও সুন্দর ব্যাকগ্রাউন্ড সহ সিম্পল নোট */}
+      <span className="text-xs font-semibold px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-full shadow-sm">
+        {profile?.isLocked ? "Your profile is locked" : "Your profile is unlocked"}
+      </span>
+
+    <Button 
+      onClick={toggleProfileLock}
+      variant={profile?.isLocked ? "destructive" : "outline"}
+      className="text-xs gap-1.5 h-8 px-3 rounded-full transition-all border-slate-300"
+    >
+      {profile?.isLocked ? (
+        <>
+          <span>Unlock Profile</span>
+          <span>🔓</span>
+        </>
+      ) : (
+        <>
+          <span>Lock Profile</span>
+          <span>🔒</span>
+        </>
+      )}
+    </Button>
+
+    <Button 
+      asChild 
+      variant="outline" 
+      className="text-xs h-8 px-4 rounded-full border-purple-500 text-purple-600 hover:bg-purple-50 transition-all font-medium"
+    >
+      <Link href="/dashboard/profile/edit">
+        Edit Profile
+      </Link>
+    </Button>
+  </div>
+)}
+
+           
+
+{/* 🎯 ২. এক লাইনে থাকা লাইভ কাউন্টার সহ ৪টি সোশ্যাল বাটন */}
+{isOwnProfile && (
+
+  <div className="w-full mt-5 bg-slate-100/90 p-2 rounded-2xl border border-slate-200/60">
+    <div className="flex flex-row flex-nowrap justify-between gap-1.5 overflow-x-auto no-scrollbar">
+      
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
+        <Link href="/dashboard/social?tab=friends">Friends({counts.friends})</Link>
+      </Button>
+      
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
+        <Link href="/dashboard/social?tab=following">Following({counts.following})</Link>
+      </Button>
+      
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
+        <Link href="/dashboard/social?tab=followers">Followers({counts.followers})</Link>
+      </Button>
+      
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
+        <Link href="/dashboard/profile/blocked">Blocked({counts.blocked})</Link>
+      </Button>
+
+    </div>
+  </div>
+)}
+
+
           </div>
         </CardContent>
       </Card>
