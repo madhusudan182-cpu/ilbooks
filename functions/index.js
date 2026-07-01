@@ -2,11 +2,11 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-// messages কালেকশনে নতুন মেসেজ আসামাত্র এই ব্যাকএন্ড কোডটি স্বয়ংক্রিয়ভাবে ট্রিগার হবে
 exports.sendChatNotification = functions.firestore
   .document("messages/{messageId}")
   .onCreate(async (snapshot, context) => {
     const messageData = snapshot.data();
+    if (!messageData) return null;
     
     const receiverId = messageData.receiverId;
     const messageText = messageData.text;
@@ -15,7 +15,6 @@ exports.sendChatNotification = functions.firestore
     if (!receiverId) return null;
 
     try {
-      // রিসিভারের ডিভাইস টোকেন এবং প্রেরকের নাম ডেটাবেজ থেকে খুঁজে বের করা
       const userDoc = await admin.firestore().collection("users").doc(receiverId).get();
       const senderDoc = await admin.firestore().collection("users").doc(senderId).get();
       
@@ -26,13 +25,11 @@ exports.sendChatNotification = functions.firestore
       
       const targetToken = receiverData.fcmToken;
 
-      // টোকেন না থাকলে নোটিফিকেশন পাঠানো যাবে না
       if (!targetToken) {
         console.log("ইউজারের fcmToken ডেটাবেজে পাওয়া যায়নি।");
         return null;
       }
 
-      // পুশ নোটিফিকেশনের মূল মেসেজ বডি ও ডাটা লিঙ্ক
       const payload = {
         notification: {
           title: senderData.name || "নতুন মেসেজ এসেছে!",
@@ -44,7 +41,6 @@ exports.sendChatNotification = functions.firestore
         token: targetToken
       };
 
-      // ফায়ারবেসের মাধ্যমে নোটিফিকেশনটি ডিভাইসে পুশ করা
       const response = await admin.messaging().send(payload);
       console.log("ব্যাকগ্রাউন্ড পুশ নোটিফিকেশন সফলভাবে পাঠানো হয়েছে:", response);
       return response;
