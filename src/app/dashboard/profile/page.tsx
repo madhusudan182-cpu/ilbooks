@@ -57,7 +57,7 @@ export default function ProfilePage() {
       setTimeout(() => {
         const element = document.getElementById(`post-${id}`);
         if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.scrollIntoView({ behavior: "auto", block: "center" });
         }
       }, 400); // ৪০০ মিলিসেকেন্ডের একটি ডিলে, যাতে ফায়ারবেস ডাটা রেন্ডার হতে সুবিধা হয়
     }

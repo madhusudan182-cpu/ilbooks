@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, limitToLast } from 'firebase/firestore';
 import { X, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
@@ -66,8 +66,7 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
 
     const messagesQuery = query(
       collection(firestore, 'messages'),
-      where('chatRoomId', '==', chatRoomId),
-      orderBy('createdAt', 'asc')
+      where('chatRoomId', '==', chatRoomId)
     );
 
     const unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {

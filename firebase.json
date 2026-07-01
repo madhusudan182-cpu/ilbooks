@@ -3,9 +3,35 @@
     "public": "out",
     "rewrites": [
       {
+        "source": "/firebase-messaging-sw.js",
+        "destination": "/firebase-messaging-sw.js"
+      },
+      {
+        "source": "/notification.mp3",
+        "destination": "/notification.mp3"
+      },
+      {
+        "source": "/logo.png",
+        "destination": "/logo.png"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
 }
