@@ -335,8 +335,9 @@ export default function HomePage() {
                         </span>
                       </Link>
                       <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-600 border border-purple-100 rounded font-bold">
-                        Level: {typeof post?.user?.level === 'number' ? post.user.level.toFixed(1) : (Number(post?.user?.level) || 0).toFixed(1)}
+                        Level: {Number(authorLevel).toFixed(1)}
                       </Badge>
+
                     </div>
                     <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
                   </div>

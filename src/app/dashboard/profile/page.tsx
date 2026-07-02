@@ -330,22 +330,33 @@ const toggleProfileLock = async () => {
   <div className="w-full mt-5 bg-slate-100/90 p-2 rounded-2xl border border-slate-200/60">
     <div className="flex flex-row flex-nowrap justify-between gap-1.5 overflow-x-auto no-scrollbar">
       
-      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
-        <Link href="/dashboard/social?tab=friends">Friends({counts.friends})</Link>
-      </Button>
-      
-      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
-        <Link href="/dashboard/social?tab=following">Following({counts.following})</Link>
-      </Button>
-      
-      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
-        <Link href="/dashboard/social?tab=followers">Followers({counts.followers})</Link>
-      </Button>
-      
-      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white font-semibold text-[11px] px-1 py-2 h-9 rounded-xl shadow-sm transition-all active:scale-95 text-center truncate">
-        <Link href="/dashboard/profile/blocked">Blocked({counts.blocked})</Link>
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-[12px] p-1 h-12 rounded-xl shadow-sm transition-all active:scale-95 text-center">
+        <Link href="/dashboard/social?tab=friends" className="flex flex-col items-center justify-center w-full h-full gap-0.5">
+          <span>Friends</span>
+          <span className="text-[12px] font-bold leading-none">{counts.friends}</span>
+        </Link>
       </Button>
 
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold text-[12px] p-1 h-12 rounded-xl shadow-sm transition-all active:scale-95 text-center">
+        <Link href="/dashboard/social?tab=following" className="flex flex-col items-center justify-center w-full h-full gap-0.5">
+          <span>Following</span>
+          <span className="text-[12px] font-bold leading-none">{counts.following}</span>
+        </Link>
+      </Button>
+
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-[12px] p-1 h-12 rounded-xl shadow-sm transition-all active:scale-95 text-center">
+        <Link href="/dashboard/social?tab=followers" className="flex flex-col items-center justify-center w-full h-full gap-0.5">
+          <span>Followers</span>
+          <span className="text-[12px] font-bold leading-none">{counts.followers}</span>
+        </Link>
+      </Button>
+
+      <Button asChild className="flex-1 min-w-0 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white font-semibold text-[12px] p-1 h-12 rounded-xl shadow-sm transition-all active:scale-95 text-center">
+        <Link href="/dashboard/profile/blocked" className="flex flex-col items-center justify-center w-full h-full gap-0.5">
+          <span>Blocked</span>
+          <span className="text-[12px] font-bold leading-none">{counts.blocked}</span>
+        </Link>
+      </Button>
     </div>
   </div>
 )}
