@@ -101,6 +101,7 @@ export default function HomePage() {
           id: user.uid,
           name: profile.name || 'Anonymous',
           avatarUrl: profile.avatarUrl || `https://picsum.photos/${user.uid}/100/100`,
+          level: profile.level ?? 0.0
         },
         createdAt: firebaseFirestore.serverTimestamp(),
         likes: 0,
@@ -335,8 +336,9 @@ export default function HomePage() {
                         </span>
                       </Link>
                       <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-600 border border-purple-100 rounded font-bold">
-                        Level: {Number(authorLevel).toFixed(1)}
+                        Level: <LiveAuthorLevel authorId={post.author.id} fallbackLevel={authorLevel} firestore={firestore} />
                       </Badge>
+
 
                     </div>
                     <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
@@ -458,7 +460,8 @@ function LiveAuthorLevel({ authorId, fallbackLevel, firestore }: { authorId: str
     return () => unsubscribe();
   }, [authorId, firestore, fallbackLevel]);
 
-  return <>{level}</>;
+  return <>{Number(level).toFixed(1)}</>;
+
 }
 
 // ফায়ারস্টোর থেকে লেখকের প্রোফাইল পিকচার রিয়েল-টাইমে তুলে আনার কম্পোনেন্ট
