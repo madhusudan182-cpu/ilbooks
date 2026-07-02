@@ -9,6 +9,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { or } from 'firebase/firestore';
 
 
 interface NotificationItem {
@@ -53,7 +54,13 @@ export default function NoticeBoardPage() {
 
     // কুয়েরি B: আপনার নতুন সাইন-আপ ও সোশ্যাল নোটিফিকেশন (সরাসরি notifications কালেকশন)
     const socialNotifRef = collection(firestore, 'notifications');
-    const qSocial = query(socialNotifRef, where('targetUserId', '==', userId)); // 👈 আপনার স্ক্রিনশট অনুযায়ী targetUserId দিয়ে ফিল্টার করা
+    const qSocial = query(
+      socialNotifRef, 
+      or(
+        where('targetUserId', '==', userId),
+        where('userId', '==', userId) // যদি ফলো ফাংশন targetUserId না পাঠিয়ে userId পাঠায়
+      )
+    );// 👈 আপনার স্ক্রিনশট অনুযায়ী targetUserId দিয়ে ফিল্টার করা
 
     let adminList: NotificationItem[] = [];
     let socialList: NotificationItem[] = [];
@@ -182,27 +189,94 @@ export default function NoticeBoardPage() {
                     <AvatarImage src={notification.senderAvatar} alt={notification.senderName} />
                     <AvatarFallback>{notification.senderName ? notification.senderName.charAt(0) : 'U'}</AvatarFallback>
                   </Avatar>
+                  
                   <div>
                     <div className="text-sm text-slate-700">
-                      <span 
-                        onClick={(e) => handleUserClick(e, notification.senderId)}
-                        className="font-bold text-orange-500 hover:text-orange-600 hover:underline cursor-pointer mr-1"
-                      >
-                        {notification.senderName || 'Someone'}
-                      </span>
-                      
-                      {notification.type === 'LIKE' ? ' liked your ' : ' commented on your '}
-                      
-                      <span 
-                        onClick={(e) => handlePostClick(e, notification.postId)}
-                        className="font-bold text-pink-500 hover:text-pink-600 hover:underline cursor-pointer"
-                      >
-                        post
-                      </span>
+                      {notification.title ? (
+                        // সিস্টেম/স্বাগতম/কমপ্লেন নোটিফিকেশনের জন্য
+                        <div>
+                          <span className="font-bold text-blue-600 block text-sm font-headline mb-0.5">
+                            {notification.title}
+                          </span>
+                          <p className="text-slate-600 text-xs leading-relaxed">
+                            {notification.text || notification.message}
+                          </p>
+                        </div>
+                      ) : (
+                        // সাধারণ সোশ্যাল ও ফলো/ব্লক নোটিফিকেশনের জন্য (১০০% ফিক্সড)
+                        <>
+                          {/* ১. ইউজারের নাম যা ক্লিকেবল এবং অরেঞ্জ কালার */}
+                          <span
+                            onClick={(e) => handleUserClick(e, notification.senderId || '')}
+                            className="font-bold text-orange-500 hover:text-orange-600 hover:underline cursor-pointer mr-1"
+                          >
+                            {notification.senderName || 'Someone'}
+                          </span>
+
+                          {/* ২. সব কন্ডিশন চেক করে মেসেজ ইংরেজিতে কনভার্ট করা */}
+                          {(() => {
+                            const type = notification.type;
+                            const textVal = notification.text || '';
+                            
+                            // লাইক (LIKE) নোটিফিকেশন
+                            if (type === 'LIKE') {
+                              return (
+                                <>
+                                  liked your{' '}
+                                  <span
+                                    onClick={(e) => handlePostClick(e, notification.postId || '')}
+                                    className="font-bold text-pink-500 hover:text-pink-600 hover:underline cursor-pointer"
+                                  >
+                                    post
+                                  </span>
+                                </>
+                              );
+                            }
+                            
+                            // কমেন্ট (COMMENT) নোটিফিকেশন
+                            if (type === 'COMMENT') {
+                              return (
+                                <>
+                                  commented on your{' '}
+                                  <span
+                                    onClick={(e) => handlePostClick(e, notification.postId || '')}
+                                    className="font-bold text-pink-500 hover:text-pink-600 hover:underline cursor-pointer"
+                                  >
+                                    post
+                                  </span>
+                                </>
+                              );
+                            }
+                            
+                            // ফলো (FOLLOW) নোটিফিকেশন
+                            if (type === 'FOLLOW' || textVal.includes('ফলো করেছেন')) {
+                              return 'is following you.';
+                            }
+                            
+                            // ফলো ব্যাক (FOLLOW_BACK) নোটিফিকেশন
+                            if (type === 'FOLLOW_BACK' || textVal.includes('ফলো ব্যাক')) {
+                              return 'is following you back.';
+                            }
+                            
+                            // আনফলো (UNFOLLOW) নোটিফিকেশন
+                            if (type === 'UNFOLLOW' || textVal.includes('আনফলো')) {
+                              return 'has unfollowed you.';
+                            }
+                            
+                            // ব্লক (BLOCK) নোটিফিকেশন
+                            if (type === 'BLOCK' || textVal.includes('ব্লক')) {
+                              return 'has blocked you.';
+                            }
+
+                            // কোনো কন্ডিশন না মিললে ব্যাকআপ হিসেবে ডেটাবেজের লেখা দেখাবে
+                            return textVal || notification.message || 'interacted with your profile.';
+                          })()}
+                        </>
+                      )}
+
                     </div>
                   </div>
-                </div>
-                
+                </div>                
                 {!isSeen && (
                   <span className="h-2 w-2 rounded-full bg-orange-500 shrink-0 ml-2" />
                 )}

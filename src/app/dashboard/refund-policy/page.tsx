@@ -40,7 +40,7 @@ export default function RefundPolicy() {
       href="/dashboard/complain" 
       className="text-blue-500 font-medium hover:underline break-all"
     >
-      https://ilbooks.vercel.app/dashboard/complain
+      https://ilbooksapp.com/dashboard/complain
     </Link>{' '}
     with your transaction details. Verified valid refunds will be credited back via the original payment channel (EPS Gateway) within 7–10 working days.
   </p>

@@ -18,9 +18,11 @@ export default function AdminComplainPage() {
   const firestore = useFirestore();
   const [complainQuery, setComplainQuery] = useState<any>(null);
   
-  const [year, setYear] = useState('2026');
-  const [month, setMonth] = useState('6');
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear().toString());
+  const [month, setMonth] = useState((today.getMonth() + 1).toString());
+  const [selectedDay, setSelectedDay] = useState(today.getDate());
+
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeDayRef = useRef<HTMLButtonElement>(null);

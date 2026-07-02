@@ -23,7 +23,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 // বাকি ইম্পোর্টগুলোর সাথে এগুলো যুক্ত করুন
-import { doc, collection, query, where, onSnapshot, orderBy, collectionGroup } from 'firebase/firestore'; 
+import { doc, collection, query, where, onSnapshot, orderBy, collectionGroup, updateDoc } from 'firebase/firestore'; 
 import { signOut } from 'firebase/auth';
 
 import { 
@@ -122,53 +122,81 @@ export default function DashboardLayout({
   const [liveUnreadCount, setLiveUnreadCount] = React.useState(0);
   const [unreadChats, setUnreadChats] = React.useState(0);
   const [unreadNotifications, setUnreadNotifications] = React.useState(0);
+  const [dropdownNotifs, setDropdownNotifs] = React.useState<any[]>([]);
+
 
     // ১. নোটিফিকেশন কাউন্টের জন্য একটি গ্লোবাল স্টেট
   const [globalNotifCount, setGlobalNotifCount] = React.useState(0);
 
     // ২. লুপের বাইরে সম্পূর্ণ স্বাধীন রিয়েল-টাইম নোটিফিকেশন লিসেনার
-  React.useEffect(() => {
-    if (!user?.uid || !firestore) return;
+  // ২. লুপের বাইরে সম্পূর্ণ স্বাধীন রিয়েল-টাইম নোটিফিকেশন লিসেনার
+React.useEffect(() => {
+  if (!user?.uid || !firestore) return;
 
-    // অ্যাডমিন নোটিফিকেশনের লিসেনার
-    const adminNotifQuery = query(
-      collection(firestore, 'user_notifications'),
-      where('userId', '==', user.uid),
-      where('isRead', '==', false)
-    );
+  // অ্যাডমিন নোটিফিকেশনের লিসেনার
+  const adminNotifQuery = query(
+    collection(firestore, 'user_notifications'),
+    where('userId', '==', user.uid),
+    where('isRead', '==', false)
+  );
 
-    // সাইন-আপ ও সোশ্যাল নোটিফিকেশনের লিসেনার
-    const socialNotifQuery = query(
-      collection(firestore, 'notifications'),
-      where('targetUserId', '==', user.uid),
-      where('isSeen', '==', false)
-    );
+  // সাইন-আপ ও সোশ্যাল নোটিফিকেশনের লিসেনার
+  const socialNotifQuery = query(
+    collection(firestore, 'notifications'),
+    where('targetUserId', '==', user.uid),
+    where('isSeen', '==', false)
+  );
 
-    let currentAdminCount = 0;
-    let currentSocialCount = 0;
+  let adminList: any[] = [];
+  let socialList: any[] = [];
+  let currentAdminCount = 0;
+  let currentSocialCount = 0;
 
-    // অ্যাডমিন নোটিফিকেশন রিয়েল-টাইম ট্র্যাক করা
-    const unsubscribeAdmin = onSnapshot(adminNotifQuery, (snapshot) => {
-      currentAdminCount = snapshot.size;
-      setGlobalNotifCount(currentAdminCount + currentSocialCount);
-    }, (error) => {
-      console.error("Admin notif fetch error: ", error);
-    });
-
-    // সাইন-আপ ও সোশ্যাল নোটিফিকেশন রিয়েল-টাইম ট্র্যাক করা
-    const unsubscribeSocial = onSnapshot(socialNotifQuery, (snapshot) => {
-      currentSocialCount = snapshot.size;
-      setLiveUnreadCount(currentSocialCount); // মোবাইল ভিউর জন্য স্টেট আপডেট
-      setGlobalNotifCount(currentAdminCount + currentSocialCount);
-    }, (error) => {
-      console.error("Social notif fetch error: ", error);
-    });
-
-    return () => {
-      unsubscribeAdmin();
-      unsubscribeSocial();
+  const combineAndSortDropdown = () => {
+    const combined = [...adminList, ...socialList];
+    const getMs = (dateObj: any) => {
+      if (!dateObj) return 0;
+      if (typeof dateObj.toDate === 'function') return dateObj.toDate().getTime();
+      return new Date(dateObj).getTime() || 0;
     };
-  }, [user?.uid, firestore]);
+    combined.sort((a, b) => getMs(b.createdAt) - getMs(a.createdAt));
+    setDropdownNotifs(combined);
+  };
+
+  // অ্যাডমিন নোটিফিকেশন রিয়েল-টাইম ট্র্যাক করা
+  const unsubscribeAdmin = onSnapshot(adminNotifQuery, (snapshot) => {
+    adminList = snapshot.docs.map(docSnap => ({
+      id: docSnap.id,
+      sourceCollection: 'user_notifications',
+      ...docSnap.data()
+    }));
+    currentAdminCount = snapshot.size;
+    setGlobalNotifCount(currentAdminCount + currentSocialCount);
+    combineAndSortDropdown();
+  }, (error) => {
+    console.error("Admin notif fetch error: ", error);
+  });
+
+  // সাইন-আপ ও সোশ্যাল নোটিফিকেশন রিয়েল-টাইম ট্র্যাক করা
+  const unsubscribeSocial = onSnapshot(socialNotifQuery, (snapshot) => {
+    socialList = snapshot.docs.map(docSnap => ({
+      id: docSnap.id,
+      sourceCollection: 'notifications',
+      ...docSnap.data()
+    }));
+    currentSocialCount = snapshot.size;
+    setLiveUnreadCount(currentSocialCount); // মোবাইল ভিউর জন্য স্টেট আপডেট
+    setGlobalNotifCount(currentAdminCount + currentSocialCount);
+    combineAndSortDropdown();
+  }, (error) => {
+    console.error("Social notif fetch error: ", error);
+  });
+
+  return () => {
+    unsubscribeAdmin();
+    unsubscribeSocial();
+  };
+}, [user?.uid, firestore]);
 
 
     
@@ -196,6 +224,29 @@ export default function DashboardLayout({
     await signOut(auth);
     router.push('/login');
   };
+
+  const handleNotifClick = async (notif: any) => {
+  if (!firestore) return;
+  try {
+    const docRef = doc(firestore, notif.sourceCollection, notif.id);
+    if (notif.sourceCollection === 'user_notifications') {
+      await updateDoc(docRef, { isRead: true });
+    } else {
+      await updateDoc(docRef, { isSeen: true });
+    }
+    
+    if (notif.postId) {
+      router.push(`/dashboard/profile#post-${notif.postId}`);
+    } else if (notif.senderId) {
+      router.push(`/dashboard/profile/${notif.senderId}`);
+    } else {
+      router.push('/dashboard/notice-board');
+    }
+  } catch (err) {
+    console.error("Error updating notification status:", err);
+  }
+};
+
 
   if (!isClient || authLoading) {
     return (
@@ -415,7 +466,12 @@ export default function DashboardLayout({
                         <DropdownMenuContent align="end" className="w-80 bg-white border border-gray-100 p-2 shadow-lg rounded-md z-50">
                           <DropdownMenuLabel className="font-bold text-gray-800 px-2 py-1 text-sm">Notifications</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                            <LiveDropdownList userId={user?.uid} />
+                            <LiveDropdownList 
+                              userId={user?.uid} 
+                              notifList={dropdownNotifs} 
+                              handleNotifClick={handleNotifClick} 
+                            />
+
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
                             <Link href="/dashboard/notice-board" className="w-full text-center text-xs text-blue-600 justify-center font-medium">

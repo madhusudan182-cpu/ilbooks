@@ -47,7 +47,7 @@ export default function PrivacyPolicy() {
       href="/dashboard/complain" 
       className="text-blue-500 font-medium hover:underline break-all"
     >
-      https://ilbooks.vercel.app/dashboard/complain
+      https://ilbooksapp.com/dashboard/complain
     </Link>
   </p>
 </section>
