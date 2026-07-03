@@ -429,7 +429,13 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
           <AvatarImage src={memberProfile?.avatarUrl || ""} />
           <AvatarFallback>{nameToDisplay.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
+        {/* 🟢/🔴 ইনবক্সের তালিকায় ছবির কোণায় ডট */}
+        <span className={cn(
+          "absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-900",
+          memberProfile?.isOnline ? "bg-green-500" : "bg-red-500"
+        )} />
       </div>
+
       
       <div className="flex-1 text-left min-w-0">
         <div className="flex items-baseline justify-between">

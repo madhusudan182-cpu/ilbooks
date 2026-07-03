@@ -87,6 +87,24 @@ export default function DashboardLayout({
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
+   React.useEffect(() => {
+    if (!firestore || !user?.uid) return;
+    const userStatusRef = doc(firestore, 'users', user.uid);
+    const setOnlineStatus = async (isOnline: boolean) => {
+      try { await updateDoc(userStatusRef, { isOnline }); } catch (err) { console.error(err); }
+    };
+    setOnlineStatus(true);
+    const handleVisibilityChange = () => {
+      setOnlineStatus(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      setOnlineStatus(false);
+    };
+  }, [user?.uid, firestore]);
+
+
      React.useEffect(() => {
     if (!firestore || !user?.uid) return;
 

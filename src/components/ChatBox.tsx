@@ -27,11 +27,25 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [targetUserData, setTargetUserData] = useState<any>(null);
 
   // 🆔 চ্যাট রুমের ইউনিক আইডি তৈরি (A_B অথবা B_A যাতে সবসময় একই আইডি থাকে)
   const chatRoomId = currentUserId < targetUserId 
     ? `${currentUserId}_${targetUserId}` 
     : `${targetUserId}_${currentUserId}`;
+
+
+    useEffect(() => {
+    if (!firestore || !targetUserId) return;
+    const { doc, onSnapshot } = require('firebase/firestore');
+    const userRef = doc(firestore, 'users', targetUserId);
+    const unsubscribe = onSnapshot(userRef, (docSnap: any) => {
+      if (docSnap.exists()) {
+        setTargetUserData(docSnap.data());
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, targetUserId]);
 
    // 💬 রিয়েল-টাইমে মেসেজ লোড করার লজিক (৩৬ নাম্বার লাইন থেকে পরিবর্তন শুরু)
   useEffect(() => {
@@ -138,10 +152,18 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
       <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Link href={`/dashboard/user/${targetUserId}`}>
-            <div className="w-10 h-10 bg-purple-900/50 rounded-full flex items-center justify-center font-bold text-purple-400 border border-purple-800 cursor-pointer active:scale-95 transition-transform">
+            {/* ডটটিকে ছবির সাথে লক করার জন্য মেইন কন্টেইনারে relative ক্লাস দেওয়া হয়েছে */}
+            <div className="relative w-10 h-10 bg-purple-900/50 rounded-full flex items-center justify-center font-bold text-purple-400 border border-purple-800 cursor-pointer active:scale-95 transition-transform">
               {targetUserName ? targetUserName.charAt(0) : 'U'}
+              
+              {/* 🟢/🔴 অনলাইন-অফলাইন ডট ইন্ডিকেটর */}
+              <span className={cn(
+                "absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-slate-900 ring-0",
+                targetUserData?.isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"
+              )} />
             </div>
           </Link>
+
           <div>
             <Link href={`/dashboard/user/${targetUserId}`}>
               <h3 className="font-bold text-slate-200 hover:text-purple-400 hover:underline cursor-pointer transition-colors text-sm sm:text-base">
@@ -175,12 +197,18 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
                 
                 {/* 📸 অন্য ইউজারের চ্যাট বাবল ছবি (ক্লিকেবল করা হয়েছে) */}
                 {!isMe && (
-                  <Link href={`/dashboard/user/${targetUserId}`} className="shrink-0 active:scale-95 transition-transform mb-1">
+                  <Link href={`/dashboard/user/${targetUserId}`} className="relative shrink-0 active:scale-95 transition-transform mb-1">
                     <div className="w-7 h-7 bg-purple-950 rounded-full flex items-center justify-center text-xs font-bold text-purple-400 border border-purple-900 cursor-pointer">
                       {targetUserName ? targetUserName.charAt(0) : 'U'}
                     </div>
+                    {/* 🟢/🔴 ছোট ডট বাবল ছবির কোণায় */}
+                    <span className={cn(
+                      "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full border border-slate-950",
+                      targetUserData?.isOnline ? "bg-green-500" : "bg-red-500"
+                    )} />
                   </Link>
                 )}
+
 
                 {/* 💬 মেসেজ টেক্সট */}
                 <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-xs sm:text-sm shadow-md break-words ${isMe ? "bg-purple-600 text-white rounded-br-none" : "bg-slate-900 text-slate-200 rounded-bl-none border border-slate-800"}`}>
