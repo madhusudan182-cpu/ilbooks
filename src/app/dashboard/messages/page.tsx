@@ -333,15 +333,25 @@ const conversations = useMemo(() => {
                     <Button type="button" variant="ghost" size="icon" className="hidden sm:inline-flex">
                         <Paperclip className="h-5 w-5 text-muted-foreground" />
                     </Button>
-                    <div className="relative flex-1">
-                      <Input 
-                          ref={inputRef}
-                          placeholder="Type a message..." 
-                          className="h-10 rounded-full bg-muted border-none focus-visible:ring-1 focus-visible:ring-primary" 
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
+                    <div className="relative flex-1 flex items-center">
+                      <textarea
+                        placeholder="Type a message..."
+                        className="w-full bg-muted border-none focus:outline-none focus:ring-1 focus:ring-primary text-sm p-2.5 rounded-xl resize-none min-h-[40px] max-h-[100px] overflow-y-auto text-black dark:text-white"
+                        rows={1}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          // পিসিতে Enter চাপলে মেসেজ যাবে, কিন্তু Shift+Enter অথবা মোবাইলে শুধু Enter চাপলে নতুন লাইন হবে
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            if (window.innerWidth > 768) {
+                              e.preventDefault();
+                              handleSendMessage({ preventDefault: () => {} } as any);
+                            }
+                          }
+                        }}
                       />
                     </div>
+
                     <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim()}>
                         <Send className="h-5 w-5"/>
                     </Button>

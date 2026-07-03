@@ -132,7 +132,8 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
   };
 
     return (
-    <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-[100dvh] md:h-full bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl min-h-0">
+
       {/* 👤 চ্যাট বক্স হেডার (নাম ও ছবি ক্লিকেবল করা হয়েছে) */}
       <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -195,13 +196,22 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
 
       {/* 📥 ইনপুট ফর্ম সেকশন */}
       <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900/30 flex items-center gap-2">
-        <input
-          type="text"
+        <textarea
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-600 transition-colors"
+          rows={1}
+          className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[38px] max-h-[96px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-colors"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              if (window.innerWidth > 768) {
+                e.preventDefault();
+                handleSendMessage({ preventDefault: () => {} } as any);
+              }
+            }
+          }}
         />
+
         <button 
           type="submit" 
           disabled={!newMessage.trim()} 
