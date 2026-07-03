@@ -13,8 +13,10 @@ export async function POST(req) {
 
 
     const currentOrderId = orderId || "ILB-" + Date.now();
-    const host = req.headers.get("host") || "localhost:9002";
-    const protocol = req.headers.get("x-forwarded-proto") || "http";
+    // প্রথমে কাস্টম ডোমেন (x-forwarded-host) খুঁজবে, না পাইলে সাধারণ host নিবে
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:9002";
+    const protocol = req.headers.get("x-forwarded-proto") || "https"; // লাইভ অ্যাপের জন্য এটি ডিফল্ট https রাখাই নিরাপদ
+
     const currentBaseUrl = `${protocol}://${host}`;
 
     let successRedirectUrl = `${currentBaseUrl}/dashboard`;
