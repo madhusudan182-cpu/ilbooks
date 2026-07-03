@@ -18,6 +18,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +48,30 @@ export default function LoginPage() {
     }
   };
 
+   const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address first to reset password.",
+      });
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Email Sent!",
+        description: "A password reset link has been sent to your email.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <main className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-sm mx-auto">
@@ -72,12 +97,14 @@ export default function LoginPage() {
             <div className="grid gap-2">
               <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  href="#"
-                  className="ml-auto inline-block text-sm underline"
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="ml-auto inline-block text-sm underline text-blue-600 hover:text-blue-800"
                 >
                   Forgot your password?
-                </Link>
+                </button>
+
               </div>
               <div className="relative">
                 <Input 

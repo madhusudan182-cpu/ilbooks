@@ -71,6 +71,28 @@ export default function AdminOrdersPage() {
     }
   };
 
+  // এই ফাংশনে এখন আমরা শুধু booksData না দিয়ে পুরো order অবজেক্টটি পাঠাবো
+const getBooksList = (order: any): any[] => {
+  if (!order) return [];
+
+  // ১. যদি ডাটাবেজে সঠিক নিয়মে 'books' ফিল্ড থাকে
+  if (order.books) {
+    if (Array.isArray(order.books)) return order.books;
+    if (order.books.title || order.books.id) return [order.books];
+    return Object.values(order.books).filter(
+      (item: any) => typeof item === 'object' && item !== null
+    );
+  }
+  
+  // ২. আপনার ডাটাবেজের স্ক্রিনশট অনুযায়ী, বইয়ের ডাটা সরাসরি অর্ডারের মূল (Root) ফিল্ডে আছে
+  if (order.title || order.id) {
+    return [order]; // পুরো অর্ডারটিকেই একটি একক বইয়ের অবজেক্ট হিসেবে ধরে নেবে
+  }
+  
+  return [];
+};
+
+
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - 2 + i).toString());
 
@@ -158,25 +180,40 @@ export default function AdminOrdersPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
                   {/* অর্ডার করা বইয়ের তালিকা */}
+                 {/* অর্ডার করা বইয়ের তালিকা */}
                   <div className="mt-4 p-4 bg-gray-50 border border-dashed rounded-lg border-gray-300">
                     <p className="font-bold mb-3 text-left text-black text-sm">Order</p>
-                    {order.books && (Array.isArray(order.books) ? order.books : Object.values(order.books)).length > 0 ? (
-                      (Array.isArray(order.books) ? order.books : Object.values(order.books)).map((book: any, idx: number) => (
-                        <div key={book.id || idx} className="mb-3 last:mb-0 text-left pl-2">
-                          <p className="text-sm text-black">
-                            <strong>{idx + 1}. Book:</strong> <span className="font-medium text-gray-800">{book.title || 'Unknown Book'}</span>
-                          </p>
-                          <p className="text-sm text-gray-600 mt-0.5 pl-5">
-                            <strong>Quantity:</strong> <span className="font-medium text-gray-800">{book.quantity || 1}</span>
-                          </p>
+                    
+                    {(() => {
+                     const books = getBooksList(order);
+                      
+                      if (books.length > 0) {
+                        return books.map((book: any, idx: number) => (
+                          <div key={book.id || idx} className="mb-3 last:mb-0 text-left pl-2">
+                            <p className="text-sm text-black">
+                              <strong>{idx + 1}. Book:</strong>{' '}
+                              <span className="font-medium text-gray-800">
+                                {book.title || 'Unknown Book'}
+                              </span>
+                            </p>
+                            <p className="text-sm text-gray-600 mt-0.5 pl-5">
+                              <strong>Quantity:</strong>{' '}
+                              <span className="font-medium text-gray-800">
+                                {book.quantity || 1}
+                              </span>
+                            </p>
+                          </div>
+                        ));
+                      }
+                      
+                      return (
+                        <div className="text-sm text-gray-500 italic text-left">
+                          No items in this order.
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-gray-500 italic text-left">
-                        No items in this order.
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
+
 
                   {/* delivery voucher */}
                   <div className="mt-4 bg-gray-50 p-4 rounded border border-dashed border-gray-300 text-left">

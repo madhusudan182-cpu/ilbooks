@@ -36,16 +36,27 @@ export default function BookShopPage() {
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: profile, loading: profileLoading } = useDoc<User>(userRef);
 
-    // 🎯 ১. কার্ট এবং পেমেন্ট শো করার সিম্পল স্টেট (পেজ রিফ্রেশ করলে অটোমেটিক খালি হয়ে যাবে)
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [showPayment, setShowPayment] = useState(false);
-  const { toast } = useToast();
+    // // ১. কার্ট এবং পেমেন্ট শো করার সিম্পল স্টেট (পেজ রিফ্রেশ করলে অটোমেটিক খালি হয়ে যাবে)
+    const [cart, setCart] = useState<CartItem[]>(() => {
+      if (typeof window !== 'undefined') {
+        const savedCart = localStorage.getItem('book_shop_cart');
+        return savedCart ? JSON.parse(savedCart) : [];
+      }
+      return [];
+    });
+    const [showPayment, setShowPayment] = useState(false);
+    const { toast } = useToast();
+
 
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [mobile, setMobile] = useState('');
   const [activeCategory, setActiveCategory] = useState<'level' | 'vocab' | 'popular'>('level');
+
+  useEffect(() => {
+    localStorage.setItem('book_shop_cart', JSON.stringify(cart));
+  }, [cart]);
 
     // 💡 পেমেন্ট সফল হওয়ার পর স্বয়ংক্রিয়ভাবে কাস্টমারের টিকিট/অ্যাড্রেস ডায়ালগ বক্স ওপেন করার ম্যাজিক কোড
   useEffect(() => {
@@ -174,6 +185,7 @@ export default function BookShopPage() {
         });
         
         setCart([]); // শপিং কার্ট খালি করা
+        localStorage.removeItem('book_shop_cart');
       })
 
 

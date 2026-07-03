@@ -9,6 +9,8 @@ import { Eye, EyeOff, KeyRound, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/firebase'; // 🟩 নতুন ইমপোর্ট
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -16,6 +18,31 @@ export default function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const auth = useAuth();
+
+  const handleForgotPassword = async () => {
+      if (!auth?.currentUser?.email) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "User email not found. Please log in again.",
+        });
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, auth.currentUser.email);
+        toast({
+          title: "Reset Email Sent!",
+          description: `A password reset link has been sent to ${auth.currentUser.email}`,
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
+        });
+      }
+    };
 
   const handleSaveChanges = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +76,22 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveChanges} className="space-y-6">
+            <div className="text-left text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <span className="text-gray-700">Forgot your password? </span>
+              <button 
+                type="button" 
+                onClick={handleForgotPassword} 
+                className="font-semibold text-blue-600 underline hover:text-blue-800 ml-1"
+              >
+                Click Here!
+              </button>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
+              <div className="relative"></div>
+
+            
               <div className="relative">
                 <Input id="current-password" type={showCurrentPassword ? 'text' : 'password'} required />
                 <Button
