@@ -31,7 +31,7 @@ export function AnimatedLogo() {
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
         <text
           x="7"
-          y="15"
+          y="12"
           textAnchor="middle"
           fontSize="2.5"
           fontWeight="normal"
@@ -42,7 +42,7 @@ export function AnimatedLogo() {
         </text>
         <text
           x="17"
-          y="15"
+          y="12"
           textAnchor="middle"
           fontSize="2.5"
           fontWeight="normal"

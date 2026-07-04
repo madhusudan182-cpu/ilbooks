@@ -234,7 +234,7 @@ const conversations = useMemo(() => {
   if (!isClient) return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="flex bg-background h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)] overflow-hidden w-full relative">
+    <div className="fixed inset-x-0 bottom-0 top-[4rem] md:static md:h-[calc(100vh-5.5rem)] flex bg-background overflow-hidden w-full">
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex flex-col",
         activeConversationId || otherUser ? "hidden md:flex" : "flex"
