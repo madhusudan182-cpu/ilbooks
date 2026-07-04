@@ -14,9 +14,10 @@ interface UserRowProps {
   isFriend?: boolean;
   isFollower?: boolean; // 👈 সে আপনাকে ফলো করেছে কি না তা জানার জন্য নতুন প্রপস
   onAction: (actionType: 'chat' | 'unfollow' | 'block' | 'follow' | 'unblock', userId: string) => void;
+  isOnline?: boolean;
 }
 
-export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowing, isFriend, isFollower, onAction }: UserRowProps) {
+export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowing, isFriend, isFollower, onAction, isOnline }: UserRowProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
   // 🎯 বুকওয়ার্মস ট্যাবে দেখানোর জন্য ডাইনামিক বাটন টেক্সট ও কালার নির্ধারণ
@@ -45,6 +46,10 @@ export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowi
           <div className="w-11 h-11 bg-purple-100 rounded-full overflow-hidden flex items-center justify-center text-purple-600 font-bold border border-purple-200">
             {avatarUrl ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" /> : name.charAt(0)}
           </div>
+          {/* ঠিক এইখানে নিচের ইন্ডিকেটর কোডটুকু পেস্ট করুন */}
+          <span className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ring-0 ${
+            isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"
+          }`} />
         </Link>
         
         <div className="min-w-0">

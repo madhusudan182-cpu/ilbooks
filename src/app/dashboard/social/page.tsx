@@ -12,6 +12,7 @@ interface UserData {
   name: string;
   level: string;
   avatarUrl?: string;
+  isOnline?: boolean;
 }
 
 export default function SocialCirclePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -69,6 +70,7 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
             name: data.name || 'Anonymous User',
             level: data.level || '0.0',
             avatarUrl: data.avatarUrl,
+             isOnline: data.isOnline,
           });
         }
       });
@@ -210,6 +212,7 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
               level={user.level}
               avatarUrl={user.avatarUrl}
               tabType={activeTab as any}
+               isOnline={user.isOnline}
               isFollowing={relations[user.id] === 'following' || relations[user.id] === 'friends'}
               isFriend={relations[user.id] === 'friends'}
               isFollower={relations[user.id] === 'follower'}

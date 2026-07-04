@@ -234,7 +234,7 @@ const conversations = useMemo(() => {
   if (!isClient) return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="flex bg-background h-[calc(100vh-8rem)] md:h-[calc(100vh-5.5rem)] overflow-hidden">
+    <div className="flex bg-background h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)] overflow-hidden w-full relative">
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex flex-col",
         activeConversationId || otherUser ? "hidden md:flex" : "flex"
@@ -335,21 +335,24 @@ const conversations = useMemo(() => {
                     </Button>
                     <div className="relative flex-1 flex items-center">
                       <textarea
-                        placeholder="Type a message..."
-                        className="w-full bg-muted border-none focus:outline-none focus:ring-1 focus:ring-primary text-sm p-2.5 rounded-xl resize-none min-h-[40px] max-h-[100px] overflow-y-auto text-black dark:text-white"
-                        rows={1}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        // rows={1} থেকে পরিবর্তন করে ডাইনামিক লাইনের ব্যবস্থা (৩-৪ লাইন পর্যন্ত অটো বড় হবে)
+                        rows={Math.min(4, newMessage.split('\n').length || 1)} 
+                        className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[38px] max-h-[120px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all"
                         onKeyDown={(e) => {
-                          // পিসিতে Enter চাপলে মেসেজ যাবে, কিন্তু Shift+Enter অথবা মোবাইলে শুধু Enter চাপলে নতুন লাইন হবে
+                          // পিসিতে বা বড় স্ক্রিনে শুধু Enter চাপলে মেসেজ যাবে
                           if (e.key === 'Enter' && !e.shiftKey) {
                             if (window.innerWidth > 768) {
                               e.preventDefault();
                               handleSendMessage({ preventDefault: () => {} } as any);
                             }
+                            // মোবাইলে শুধু Enter চাপলে নরমাল নতুন লাইন তৈরি হবে, মেসেজ যাবে না।
                           }
                         }}
                       />
+
                     </div>
 
                     <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim()}>

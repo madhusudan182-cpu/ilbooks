@@ -180,7 +180,7 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
       </div>
 
       {/* 💬 মেসেজ বডি এরিয়া */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+      <div className="flex-grow overflow-y-auto p-4 space-y-3 min-h-0 h-0 w-full">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
@@ -213,7 +213,9 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
                 {/* 💬 মেসেজ টেক্সট */}
                 <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-xs sm:text-sm shadow-md break-words ${isMe ? "bg-purple-600 text-white rounded-br-none" : "bg-slate-900 text-slate-200 rounded-bl-none border border-slate-800"}`}>
 
-                  <p>{msg.text}</p>
+                  {/* whitespace-pre-wrap যুক্ত করার ফলে এন্টার বা নতুন লাইনগুলো চ্যাটে হুবহু দেখা যাবে */}
+                  <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+
                 </div>
               </div>
             );
@@ -228,17 +230,21 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
-          rows={1}
-          className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[38px] max-h-[96px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-colors"
+          // rows={1} থেকে পরিবর্তন করে ডাইনামিক লাইনের ব্যবস্থা (৩-৪ লাইন পর্যন্ত অটো বড় হবে)
+          rows={Math.min(4, newMessage.split('\n').length || 1)} 
+          className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[38px] max-h-[120px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all"
           onKeyDown={(e) => {
+            // পিসিতে বা বড় স্ক্রিনে শুধু Enter চাপলে মেসেজ যাবে
             if (e.key === 'Enter' && !e.shiftKey) {
               if (window.innerWidth > 768) {
                 e.preventDefault();
                 handleSendMessage({ preventDefault: () => {} } as any);
               }
+              // মোবাইলে শুধু Enter চাপলে নরমাল নতুন লাইন তৈরি হবে, মেসেজ যাবে না।
             }
           }}
         />
+
 
         <button 
           type="submit" 
