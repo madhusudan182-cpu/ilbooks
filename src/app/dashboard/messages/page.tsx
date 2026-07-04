@@ -231,10 +231,27 @@ const conversations = useMemo(() => {
           });
   };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  // ডিভাইসটি মোবাইল কি না তা নিখুঁতভাবে পরীক্ষা করার লজিক
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+  
+  if (!isMobileDevice) {
+    // পিসির (PC) ক্ষেত্রে: শুধু Enter চাপলে মেসেজ চলে যাবে
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage({ preventDefault: () => {} } as any);
+    }
+    // পিসিতে Shift + Enter চাপলে নতুন লাইন (Next line) তৈরি হবে
+  }
+  // মোবাইলের ক্ষেত্রে: এখানে কোনো বাধা দেওয়া হবে না, Enter চাপলে নিচে নতুন লাইনে চলে যাবে
+};
+
+
+
   if (!isClient) return <div className="h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-[4rem] md:static md:h-[calc(100vh-5.5rem)] flex bg-background overflow-hidden w-full">
+    <div className="flex bg-background h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)] overflow-hidden w-full relative">
       <aside className={cn(
         "w-full md:w-80 lg:w-96 border-r flex flex-col",
         activeConversationId || otherUser ? "hidden md:flex" : "flex"
@@ -338,20 +355,11 @@ const conversations = useMemo(() => {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        // rows={1} থেকে পরিবর্তন করে ডাইনামিক লাইনের ব্যবস্থা (৩-৪ লাইন পর্যন্ত অটো বড় হবে)
                         rows={Math.min(4, newMessage.split('\n').length || 1)} 
-                        className="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[38px] max-h-[120px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all"
-                        onKeyDown={(e) => {
-                          // পিসিতে বা বড় স্ক্রিনে শুধু Enter চাপলে মেসেজ যাবে
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            if (window.innerWidth > 768) {
-                              e.preventDefault();
-                              handleSendMessage({ preventDefault: () => {} } as any);
-                            }
-                            // মোবাইলে শুধু Enter চাপলে নরমাল নতুন লাইন তৈরি হবে, মেসেজ যাবে না।
-                          }
-                        }}
+                        className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
+                        onKeyDown={handleKeyDown} // ওপরের হ্যান্ডলারটি এখানে কল করা হলো
                       />
+
 
                     </div>
 
