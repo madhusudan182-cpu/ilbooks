@@ -148,9 +148,8 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
     return (
     <div className="flex flex-col h-full w-full bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl min-h-0 relative">
 
-
-      {/* 👤 চ্যাট বক্স হেডার (নাম ও ছবি ক্লিকেবল করা হয়েছে) */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
+    {/* চ্যাট বক্স হেডার (নাম ও ছবি ক্লিকেবল করা হয়েছে) */}
+    <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
 
         <div className="flex items-center gap-3">
           <Link href={`/dashboard/user/${targetUserId}`}>
@@ -221,7 +220,10 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
 
 
                   {/* whitespace-pre-wrap যুক্ত করার ফলে এন্টার বা নতুন লাইনগুলো চ্যাটে হুবহু দেখা যাবে */}
-                  <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                  <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} className="break-words">
+                    {msg.text}
+                  </p>
+
 
                 </div>
               </div>
@@ -232,23 +234,27 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
       </div>
 
       {/* 📥 ইনপুট ফর্ম সেকশন */}
-      <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900/30 flex items-center gap-2">
+      <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900/30 flex items-center gap-2 shrink-0">
         <textarea
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
-          rows={Math.min(4, newMessage.split('\n').length || 1)} 
-          /* bg-white এবং text-black যুক্ত করে সাদা ব্যাকগ্রাউন্ড ও কালো টেক্সট করা হলো */
-          className="flex-1 bg-white border border-slate-300 text-black text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[38px] max-h-[120px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
+          rows={Math.min(4, newMessage.split('\n').length || 1)}
+          className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              if (window.innerWidth > 768) {
+            const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+            
+            if (!isMobileDevice) {
+              // পিসির ক্ষেত্রে: শুধু Enter চাপলে মেসেজ যাবে
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage({ preventDefault: () => {} } as any);
               }
             }
+            // মোবাইলের ক্ষেত্রে: Enter চাপলে ডিফল্ট নতুন লাইনে চলে যাবে
           }}
         />
+
 
 
 
