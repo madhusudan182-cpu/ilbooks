@@ -4,19 +4,24 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// === কোড শুরু ===
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck, Loader2 } from "lucide-react";
+import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck, Loader2, Check, X } from "lucide-react";
 import { format, formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 
-import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot, updateDoc, getDocs, getDoc, orderBy, limitToLast } from 'firebase/firestore';
+import { collection, query, where, addDoc, serverTimestamp, doc, setDoc, onSnapshot,
+updateDoc, getDocs, getDoc, orderBy, limitToLast } from 'firebase/firestore';
 
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+// === কোড শেষ ===
+
+
 
 export default function MessagesPage() {
   const { user } = useUser();
@@ -314,14 +319,19 @@ return (
         </ScrollArea>
       </aside>
 
-      <main className={cn(
-        "flex-1 flex flex-col relative",
-        activeConversationId || otherUser ? "flex" : "hidden md:flex"
+      // === কোড শুরু ===
+      // === কোড শুরু ===
+        <main className={cn(
+          "flex-1 flex flex-col relative",
+          activeConversationId || otherUser ? "flex" : "hidden md:flex"
         )}>
-        {otherUser ? (
-          <>
-            <div className="p-2 border-b flex items-center gap-3 bg-background/95 backdrop-blur-sm z-10">
+          {otherUser ? (
+            <>
+              {/* নিচে sticky top-0 shrink-0 w-full যুক্ত করা হয়েছে */}
+              <div className="p-2 border-b flex items-center gap-3 bg-background/95 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.push('/dashboard/messages')}>
+        // === কোড শেষ ===
+
                   <ArrowLeft className="h-5 w-5"/>
                 </Button>
                 <Avatar className="h-10 w-10 border">
@@ -337,24 +347,40 @@ return (
 
             <ScrollArea className="flex-1 p-4 bg-slate-50/50">
                 <div className="space-y-4">
+                // === কোড শুরু ===
                 {messages.map(msg => (
                   <div key={msg.id} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
-                      <div className={cn(
-                        "max-w-[80%] p-3 rounded-2x1 shadow-sm",
-                        msg.senderId === user?.uid ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card rounded-tl-none"
-                      )}>
-                        {/* নিচে whitespace-pre-wrap ক্লাসটি যুক্ত করা হয়েছে */}
-                        <p className="text-sm break-words whitespace-pre-wrap">{msg.text}</p>
-                        <div className={cn(
-                          "text-[10px] mt-1 opacity-70 flex items-center gap-1",
-                          msg.senderId === user?.uid ? "justify-end" : "justify-start"
-                        )}>
-                            {/* এখানে থাকা format(new Date(...)) সময় প্রদর্শনের লজিকটি সম্পূর্ণ ফেলে দেওয়া হয়েছে */}
-                            {msg.senderId === user?.uid && <CheckCheck className="h-3 w-3" />}
-                          </div>
-                      </div>
+                    {/* নিচে p-3 পরিবর্তন করে py-1.5 px-3 করা হয়েছে (উপর-নিচের স্পেস কমানোর জন্য) */}
+                    <div className={cn(
+                      "max-w-[80%] py-1.5 px-3 rounded-2xl shadow-sm",
+                      msg.senderId === user?.uid ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card rounded-tl-none"
+                    )}>
+                      {/* নিচে প্যারাগ্রাফ ট্যাগের ভেতরেই আপনার দেওয়া শর্ত অনুযায়ী টিক ও ক্রস চিহ্নের লজিক সেট করা হয়েছে */}
+                      <p className="text-sm break-words whitespace-pre-wrap flex items-center inline-flex flex-wrap gap-1">
+                        <span>{msg.text}</span>
+                        
+                        {msg.senderId === user?.uid ? (
+                          /* কন্ডিশন A, B এবং C: মেসেজ আমার থেকে পাঠানো হলে */
+                          msg.status === 'seen' ? (
+                            /* C: অপর পক্ষ দেখলে - ২ টিক সবুজ কালার */
+                            <CheckCheck className="h-3 w-3 text-green-400 shrink-0 ml-1 inline-block align-middle" />
+                          ) : msg.status === 'sent' ? (
+                            /* B: চ্যাটবক্সে পৌঁছালে - ২ টিক সাদা কালার */
+                            <CheckCheck className="h-3 w-3 text-white opacity-90 shrink-0 ml-1 inline-block align-middle" />
+                          ) : (
+                            /* A: শুধু সেন্ড হলে - ১ টিক সাদা কালার */
+                            <Check className="h-3 w-3 text-white opacity-70 shrink-0 ml-1 inline-block align-middle" />
+                          )
+                        ) : (
+                          /* কন্ডিশন D: মেসেজ আমার থেকে পাঠানো না হলে - লাল ক্রস চিহ্ন */
+                          <X className="h-3 w-3 text-red-500 shrink-0 ml-1 inline-block align-middle" />
+                        )}
+                      </p>
+                    </div>
                   </div>
                 ))}
+                // === কোড শেষ ===
+
                 <div ref={messagesEndRef} />
                 </div>
             </ScrollArea>
