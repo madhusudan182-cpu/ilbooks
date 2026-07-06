@@ -253,22 +253,19 @@ const conversations = useMemo(() => {
     // === ফিক্স কোড: ঠিক return এর ওপরে এই লাইনটি বসিয়ে দিন ===
     const isChatOpen = !!(activeConversationId || otherUser);
 
-    return (
-    <div 
-      className={cn(
-        "flex bg-background overflow-hidden w-full relative transition-all duration-200",
-        isChatOpen 
-          ? "fixed inset-0 h-screen z-50 md:relative md:h-[calc(100vh-5.5rem)]" 
-          : "h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)]"
-      )}
-    >
+return (
+  <div
+    className={cn(
+      "flex bg-background overflow-hidden w-full relative transition-all duration-200",
+      isChatOpen
+        ? "fixed inset-0 h-[100dvh] z-50 md:relative md:h-[calc(100vh-5.5rem)]"
+        : "h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)]"
+    )}
+  >
     <aside className={cn(
-    "w-full md:w-80 lg:w-96 border-r flex flex-col",
+      "w-full md:w-80 lg:w-96 border-r flex flex-col",
     isChatOpen ? "hidden md:flex": "flex"
     )}>
-    // ====================================================
-
-
         <div className="p-3 border-b flex items-center gap-2">
           <h1 className="text-lg font-bold font-headline">Chat</h1>
           <div className="relative flex-1">
@@ -343,14 +340,15 @@ const conversations = useMemo(() => {
                 {messages.map(msg => (
                   <div key={msg.id} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
                       <div className={cn(
-                        "max-w-[80%] p-3 rounded-2xl shadow-sm",
+                        "max-w-[80%] p-3 rounded-2x1 shadow-sm",
                         msg.senderId === user?.uid ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card rounded-tl-none"
                       )}>
-                          <p className="text-sm break-words">{msg.text}</p>
-                          <div className={cn(
-                            "text-[10px] mt-1 opacity-70 flex items-center gap-1", 
-                            msg.senderId === user?.uid ? "justify-end" : "justify-start"
-                          )}>
+                        {/* নিচে whitespace-pre-wrap ক্লাসটি যুক্ত করা হয়েছে */}
+                        <p className="text-sm break-words whitespace-pre-wrap">{msg.text}</p>
+                        <div className={cn(
+                          "text-[10px] mt-1 opacity-70 flex items-center gap-1",
+                          msg.senderId === user?.uid ? "justify-end" : "justify-start"
+                        )}>
                             {/* এখানে থাকা format(new Date(...)) সময় প্রদর্শনের লজিকটি সম্পূর্ণ ফেলে দেওয়া হয়েছে */}
                             {msg.senderId === user?.uid && <CheckCheck className="h-3 w-3" />}
                           </div>
