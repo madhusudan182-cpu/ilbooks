@@ -318,14 +318,15 @@ return (
       </aside>
 
           <main className={cn(
-          "flex-1 flex flex-col relative",
-          activeConversationId || otherUser ? "flex" : "hidden md:flex"
-        )}>
-          {otherUser ? (
-            <>
-              {/* নিচে sticky top-0 shrink-0 w-full যুক্ত করা হয়েছে */}
-              <div className="p-2 border-b flex items-center gap-3 bg-background/95 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
-                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.push('/dashboard/messages')}>
+            "flex-1 flex flex-col relative",
+            activeConversationId || otherUser ? "flex" : "hidden md:flex"
+          )}>
+            {otherUser ? (
+              <>
+                {/* হেডারটি যেন মোবাইলে কিবোর্ড খুললে ওপরে স্ক্রিনের বাইরে না চলে যায় তার ফিক্স */}
+                <div className="p-2 border-b flex items-center gap-3 bg-background/95 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
+                  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.push('/dashboard/messages')}>
+
         
                   <ArrowLeft className="h-5 w-5"/>
                 </Button>
@@ -345,30 +346,26 @@ return (
                 
                 {messages.map(msg => (
                   <div key={msg.id} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
-                    {/* নিচে p-3 পরিবর্তন করে py-1.5 px-3 করা হয়েছে (উপর-নিচের স্পেস কমানোর জন্য) */}
                     <div className={cn(
                       "max-w-[80%] py-1.5 px-3 rounded-2xl shadow-sm",
-                      msg.senderId === user?.uid ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card rounded-tl-none"
+                      /* নিজের পাঠানো মেসেজের ব্যাকগ্রাউন্ড হালকা নীল (bg-blue-100) এবং টেক্সট ডার্ক (text-blue-950) করা হয়েছে */
+                      msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none"
                     )}>
-                      {/* নিচে প্যারাগ্রাফ ট্যাগের ভেতরেই আপনার দেওয়া শর্ত অনুযায়ী টিক ও ক্রস চিহ্নের লজিক সেট করা হয়েছে */}
                       <p className="text-sm break-words whitespace-pre-wrap flex items-center inline-flex flex-wrap gap-1">
                         <span>{msg.text}</span>
                         
-                        {msg.senderId === user?.uid ? (
-                          /* কন্ডিশন A, B এবং C: মেসেজ আমার থেকে পাঠানো হলে */
+                        {/* শুধুমাত্র আমার পাঠানো মেসেজ হলেই টিক চিহ্নের নিখুঁত লজিক */}
+                        {msg.senderId === user?.uid && (
                           msg.status === 'seen' ? (
-                            /* C: অপর পক্ষ দেখলে - ২ টিক সবুজ কালার */
-                            <CheckCheck className="h-3 w-3 text-green-400 shrink-0 ml-1 inline-block align-middle" />
+                            /* C: অপর পক্ষ দেখলে - ২ টিক উজ্জ্বল সবুজ কালার */
+                            <CheckCheck className="h-3 w-3 text-green-600 shrink-0 ml-1 inline-block align-middle" />
                           ) : msg.status === 'sent' ? (
-                            /* B: চ্যাটবক্সে পৌঁছালে - ২ টিক সাদা কালার */
-                            <CheckCheck className="h-3 w-3 text-white opacity-90 shrink-0 ml-1 inline-block align-middle" />
+                            /* B: চ্যাটবক্সে পৌঁছালে - ২ টিক স্লিক গ্রে কালার */
+                            <CheckCheck className="h-3 w-3 text-slate-500 opacity-80 shrink-0 ml-1 inline-block align-middle" />
                           ) : (
-                            /* A: শুধু সেন্ড হলে - ১ টিক সাদা কালার */
-                            <Check className="h-3 w-3 text-white opacity-70 shrink-0 ml-1 inline-block align-middle" />
+                            /* A: শুধু সেন্ড হলে - ১ টিক হালকা গ্রে কালার */
+                            <Check className="h-3 w-3 text-slate-400 opacity-70 shrink-0 ml-1 inline-block align-middle" />
                           )
-                        ) : (
-                          /* কন্ডিশন D: মেসেজ আমার থেকে পাঠানো না হলে - লাল ক্রস চিহ্ন */
-                          <X className="h-3 w-3 text-red-500 shrink-0 ml-1 inline-block align-middle" />
                         )}
                       </p>
                     </div>

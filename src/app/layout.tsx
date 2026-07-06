@@ -3,7 +3,7 @@ import './globals.css';
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseAppProvider } from '@/firebase/client-provider';
-// নতুন তৈরি করা ইনশিয়ালাইজারটি এখানে ইমপোর্ট করা হলো
+// নতুন তৈরি করা ইনশিয়ালাইজারটি এখানে ইমপোর্ট করা হলো
 import NotificationInitializer from '@/components/NotificationInitializer';
 
 const siteUrl = 'https://web.app';
@@ -38,6 +38,13 @@ export const metadata: Metadata = {
   },
 };
 
+// মোবাইল কিবোর্ড ওপেন হলে স্ক্রিন ওপরে চলে যাওয়া আটকানোর ফিক্স
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content", 
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,7 +56,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://googleapis.com" />
         <link rel="preconnect" href="https://gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://googleapis.com/css2?family=Literata:opsz@6..72&family=Space+Grotesk:wght@500;700&display=swap"
+          href="https://googleapis.com"
           rel="stylesheet"
         />
       </head>
