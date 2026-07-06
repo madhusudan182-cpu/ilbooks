@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// === কোড শুরু ===
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,7 +18,6 @@ updateDoc, getDocs, getDoc, orderBy, limitToLast } from 'firebase/firestore';
 
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
-// === কোড শেষ ===
 
 
 
@@ -319,9 +317,7 @@ return (
         </ScrollArea>
       </aside>
 
-      // === কোড শুরু ===
-      // === কোড শুরু ===
-        <main className={cn(
+          <main className={cn(
           "flex-1 flex flex-col relative",
           activeConversationId || otherUser ? "flex" : "hidden md:flex"
         )}>
@@ -330,8 +326,7 @@ return (
               {/* নিচে sticky top-0 shrink-0 w-full যুক্ত করা হয়েছে */}
               <div className="p-2 border-b flex items-center gap-3 bg-background/95 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.push('/dashboard/messages')}>
-        // === কোড শেষ ===
-
+        
                   <ArrowLeft className="h-5 w-5"/>
                 </Button>
                 <Avatar className="h-10 w-10 border">
@@ -347,7 +342,7 @@ return (
 
             <ScrollArea className="flex-1 p-4 bg-slate-50/50">
                 <div className="space-y-4">
-                // === কোড শুরু ===
+                
                 {messages.map(msg => (
                   <div key={msg.id} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
                     {/* নিচে p-3 পরিবর্তন করে py-1.5 px-3 করা হয়েছে (উপর-নিচের স্পেস কমানোর জন্য) */}
@@ -379,8 +374,7 @@ return (
                     </div>
                   </div>
                 ))}
-                // === কোড শেষ ===
-
+                
                 <div ref={messagesEndRef} />
                 </div>
             </ScrollArea>
