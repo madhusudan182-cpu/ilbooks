@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 
-// --- CODE START ---
+
 const nextConfig: NextConfig = {
   /* config options here */
   // ১. প্রোডাকশনে কনসোল লগ রিমুভ করার রুলস যোগ করা হলো
@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     } : false,
   },
   output: 'standalone',
-// --- CODE END ---
+
 
   typescript: {
     ignoreBuildErrors: true,
