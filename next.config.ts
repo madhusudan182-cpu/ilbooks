@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'standalone', // 👈 ৫ নম্বর লাইনে 'export' কেটে এটি বসানো হয়েছে
+  output: 'standalone', 
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -31,6 +31,15 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: 'https://hosted.app*',
+      },
+    ];
   },
 };
 
