@@ -1,8 +1,17 @@
 import type { NextConfig } from 'next';
 
+// --- CODE START ---
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'standalone', 
+  // ১. প্রোডাকশনে কনসোল লগ রিমুভ করার রুলস যোগ করা হলো
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'], // error এবং warn বাদে সব সাধারণ .log() মুছে যাবে
+    } : false,
+  },
+  output: 'standalone',
+// --- CODE END ---
+
   typescript: {
     ignoreBuildErrors: true,
   },
