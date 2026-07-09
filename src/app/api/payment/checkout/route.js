@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, updateDoc, setDoc } from "firebase/firestore";
@@ -11,17 +12,16 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     let { amount, orderId, level, paymentType, userId } = body;
 
-
     const currentOrderId = orderId || "ILB-" + Date.now();
+
     // প্রথমে কাস্টম ডোমেন (x-forwarded-host) খুঁজবে, না পাইলে সাধারণ host নিবে
     const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:9002";
     const protocol = req.headers.get("x-forwarded-proto") || "https"; // লাইভ অ্যাপের জন্য এটি ডিফল্ট https রাখাই নিরাপদ
-
+    
     const currentBaseUrl = `${protocol}://${host}`;
-
     let successRedirectUrl = `${currentBaseUrl}/dashboard`;
 
-    // 💡 পেমেন্ট টাইপ অনুযায়ী ডায়নামিক রিডাইরেকশন লজিক
+    // পেমেন্ট টাইপ অনুযায়ী ডায়নামিক রিডাইরেকশন লজিক
     if (paymentType === "book_shop") {
       // বই কেনার পর কাস্টমার বুকশপ বা অর্ডারের সাকসেস পেজে যাবে
       successRedirectUrl = `${currentBaseUrl}/dashboard/book-shop?payment=success&orderId=${currentOrderId}`;
@@ -33,12 +33,11 @@ export async function POST(req) {
       successRedirectUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
     }
 
-
-    // 🔥 ফায়ারবেস ফায়ারস্টোর ডাটাবেজ আপডেট লজিক
+    // ফায়ারবেস ফায়ারস্টোর ডাটাবেজ আপডেট লজিক
     if (userId) {
       try {
         const userRef = doc(db, "users", userId);
-        
+
         // পেমেন্ট টাইপ অনুযায়ী ইউজারের প্রোফাইলে আলাদা ফিল্ড আপডেট
         if (paymentType === "patron") {
           await updateDoc(userRef, {
@@ -52,12 +51,10 @@ export async function POST(req) {
           });
         } else {
           // কম্পিটিশন বা ডিফল্ট এক্সামের ক্ষেত্রে লেভেল আপডেট
-          // আগের কোডটি পরিবর্তন করে এটি লিখুন
-        await updateDoc(userRef, {
-          level: level || "0.1", // এখানে unlockedLevel এর জায়গায়   level হবে
-          isPremium: true,
-        });
-
+          await updateDoc(userRef, {
+            level: level || "0.1", // এখানে unlockedLevel এর জায়গায় level হবে
+            isPremium: true,
+          });
         }
 
         // পেমেন্টের ট্র্যাকিং হিস্ট্রি আলাদা কালেকশনে জমা রাখা
@@ -68,11 +65,11 @@ export async function POST(req) {
           orderId: currentOrderId,
           paymentType: paymentType || "competition",
           status: "COMPLETED",
-          gateway: "EPS_Sandbox",
+          gateway: "EPS_Live", // ◄ স্যান্ডবক্স থেকে লাইভ করা হলো
           createdAt: new Date(),
         });
 
-        console.log("✅ Firestore updated successfully for order:", currentOrderId);
+        console.log("🚀 Firestore updated successfully for Live order:", currentOrderId);
       } catch (dbError) {
         console.error("❌ Firestore update failed:", dbError);
         // ডাটাবেজ আপডেট ফেইল করলেও যেন গেটওয়ে ক্র্যাশ না করে, তাই মেইন ক্যাচে পাঠানো হলো না
@@ -81,20 +78,24 @@ export async function POST(req) {
       console.warn("⚠️ No userId found in request body. Firestore tracking skipped.");
     }
 
-    console.log(`🔌 Sandbox Payment [Type: ${paymentType || 'exam'}] -> Redirecting to: ${successRedirectUrl}`);
+    console.log(`💳 EPS Live Payment [Type: ${paymentType || 'exam'}] -> Redirecting to: ${successRedirectUrl}`);
 
     return NextResponse.json({
       success: true,
-      url: successRedirectUrl
+      url: successRedirectUrl,
     });
 
   } catch (error) {
     console.error("💥 Critical Backend Crash:", error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message 
-    }, { 
-      status: 500 
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.message,
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
+
