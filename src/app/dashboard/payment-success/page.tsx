@@ -35,7 +35,12 @@ export default function PaymentSuccessPage() {
         <div className="mt-6 rounded-xl bg-muted/50 p-4 text-left border border-border/30 text-sm">
           <div className="flex justify-between py-1.5">
             <span className="text-muted-foreground">Gateway:</span>
-            <span className="font-medium text-foreground">EPS_Sandbox</span>
+            {/* আগের কোড পরিবর্তন করে লিখুন */}
+            <div className="flex justify-between py-1.5">
+              <span className="text-muted-foreground">Gateway:</span>
+              <span className="font-medium text-foreground">EPS_Live</span> {/* ◄ Sandbox পরিবর্তন করে Live করা হলো */}
+            </div>
+
           </div>
           {orderId && (
             <div className="flex justify-between py-1.5 border-t border-border/30">

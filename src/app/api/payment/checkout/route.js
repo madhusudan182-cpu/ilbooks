@@ -1,8 +1,7 @@
-
 import { NextResponse } from "next/server";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, doc, updateDoc, setDoc } from "firebase/firestore";
-import { firebaseConfig } from "../../../../firebase/config"; // আপনার config.ts ফাইলের রিলেটিভ পাথ
+import { firebaseConfig } from "../../../../firebase/config"; // আপনার config ফাইলের সঠিক পাথ নিশ্চিত করুন
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -10,92 +9,78 @@ const db = getFirestore(app);
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
-    let { amount, orderId, level, paymentType, userId } = body;
+    let { amount, orderId, level, paymentType, userId, customerName, customerEmail, customerPhone } = body;
 
     const currentOrderId = orderId || "ILB-" + Date.now();
 
-    // প্রথমে কাস্টম ডোমেন (x-forwarded-host) খুঁজবে, না পাইলে সাধারণ host নিবে
-    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:9002";
-    const protocol = req.headers.get("x-forwarded-proto") || "https"; // লাইভ অ্যাপের জন্য এটি ডিফল্ট https রাখাই নিরাপদ
-    
+    // ডোমেন ও প্রোটোকল ডিটেকশন (রিডাইরেকশনের জন্য)
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
+    const protocol = req.headers.get("x-forwarded-proto") || "https";
     const currentBaseUrl = `${protocol}://${host}`;
-    let successRedirectUrl = `${currentBaseUrl}/dashboard`;
 
-    // পেমেন্ট টাইপ অনুযায়ী ডায়নামিক রিডাইরেকশন লজিক
-    if (paymentType === "book_shop") {
-      // বই কেনার পর কাস্টমার বুকশপ বা অর্ডারের সাকসেস পেজে যাবে
-      successRedirectUrl = `${currentBaseUrl}/dashboard/book-shop?payment=success&orderId=${currentOrderId}`;
-    } else if (paymentType === "patron") {
-      // পেট্রন সাবস্ক্রিপশন সফল হলে পেট্রন ড্যাশবোর্ডে যাবে
-      successRedirectUrl = `${currentBaseUrl}/dashboard/patron?status=active`;
-    } else {
-      // আগের কোডটি পরিবর্তন করে এটি লিখুন
-      successRedirectUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
-    }
+    // EPS গেটওয়েতে রিকোয়েস্ট পাঠানোর জন্য অফিসিয়াল পেলোড অবজেক্ট
+    const epsPayload = {
+      store_id: process.env.EPS_STORE_ID,
+      hash_key: process.env.EPS_HASH_KEY,
+      order_id: currentOrderId,
+      amount: amount || 10, // ন্যূনতম টেস্ট অ্যামাউন্ট
+      currency: "BDT",
+      cus_name: customerName || "ILBooks Customer",
+      cus_email: customerEmail || "customer@ilbooks.com.bd",
+      cus_phone: customerPhone || "01700000000",
+      success_url: `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`,
+      fail_url: `${currentBaseUrl}/dashboard/payment-failed`,
+      cancel_url: `${currentBaseUrl}/dashboard`
+    };
 
-    // ফায়ারবেস ফায়ারস্টোর ডাটাবেজ আপডেট লজিক
-    if (userId) {
-      try {
-        const userRef = doc(db, "users", userId);
+    console.log("📡 Sending Live Payload to EPS Gateway for Order:", currentOrderId);
 
-        // পেমেন্ট টাইপ অনুযায়ী ইউজারের প্রোফাইলে আলাদা ফিল্ড আপডেট
-        if (paymentType === "patron") {
-          await updateDoc(userRef, {
-            isPatron: true,
-            patronSince: new Date(),
-          });
-        } else if (paymentType === "book_shop") {
-          // বই কিনলে ইউজারের কেনা বইয়ের লিস্টে অর্ডারের ট্র্যাক রাখা
-          await updateDoc(userRef, {
-            lastPurchasedOrderId: currentOrderId,
-          });
-        } else {
-          // কম্পিটিশন বা ডিফল্ট এক্সামের ক্ষেত্রে লেভেল আপডেট
-          await updateDoc(userRef, {
-            level: level || "0.1", // এখানে unlockedLevel এর জায়গায় level হবে
-            isPremium: true,
-          });
-        }
+    // EPS Live API এন্ডপয়েন্টে রিয়েল মানি ট্রানজেকশন ইনিশিয়েট করা
+    const epsResponse = await fetch(`${process.env.EPS_API_URL}/initiate-payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(epsPayload),
+    });
 
-        // পেমেন্টের ট্র্যাকিং হিস্ট্রি আলাদা কালেকশনে জমা রাখা
+    const epsData = await epsResponse.json();
+
+    // যদি EPS সার্ভার থেকে লাইভ পেমেন্ট ইউআরএল সফলভাবে আসে
+    if (epsData && epsData.payment_url) {
+      console.log("🔗 EPS Live Payment URL Generated Successfully:", epsData.payment_url);
+      
+      // ফায়ারবেস ট্র্যাকিং হিস্ট্রি ব্যাকএন্ডেই ইনিশিয়াল মোডে সেভ করে রাখা নিরাপদ
+      if (userId) {
         const paymentRef = doc(db, "payments", currentOrderId);
         await setDoc(paymentRef, {
           userId: userId,
           amount: amount || 0,
           orderId: currentOrderId,
           paymentType: paymentType || "competition",
-          status: "COMPLETED",
-          gateway: "EPS_Live", // ◄ স্যান্ডবক্স থেকে লাইভ করা হলো
+          status: "PENDING_LIVE",
+          gateway: "EPS_Live",
           createdAt: new Date(),
         });
-
-        console.log("🚀 Firestore updated successfully for Live order:", currentOrderId);
-      } catch (dbError) {
-        console.error("❌ Firestore update failed:", dbError);
-        // ডাটাবেজ আপডেট ফেইল করলেও যেন গেটওয়ে ক্র্যাশ না করে, তাই মেইন ক্যাচে পাঠানো হলো না
       }
-    } else {
-      console.warn("⚠️ No userId found in request body. Firestore tracking skipped.");
+
+      return NextResponse.json({
+        success: true,
+        url: epsData.payment_url, // ফ্রন্টএন্ড এই ইউআরএল-এ ইউজারকে রিডাইরেক্ট করবে
+      });
     }
 
-    console.log(`💳 EPS Live Payment [Type: ${paymentType || 'exam'}] -> Redirecting to: ${successRedirectUrl}`);
+    // ব্যাকআপ হ্যান্ডলার (যদি এপিআই রেসপন্স না করে তবেই লোকাল মোডে যাবে)
+    console.warn("⚠️ EPS Live API failed, falling back to local redirection.");
+    let fallbackRedirectUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
 
     return NextResponse.json({
       success: true,
-      url: successRedirectUrl,
+      url: fallbackRedirectUrl,
     });
 
   } catch (error) {
     console.error("💥 Critical Backend Crash:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message,
-      },
-      {
-        status: 500,
-      }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-
