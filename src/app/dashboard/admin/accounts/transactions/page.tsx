@@ -43,7 +43,7 @@ export default function AdminTransactionsPage() {
   useEffect(() => {
     setLoading(true);
     
-    const transactionsRef = collection(db, 'transactions');
+    const transactionsRef = collection(db, 'payments');
     const ordersRef = collection(db, 'orders');
 
     let transactionsData: Transaction[] = [];
