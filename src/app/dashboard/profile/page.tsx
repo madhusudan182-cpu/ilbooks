@@ -6,15 +6,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { MessageCircle, Heart, Share2, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { MessageCircle, Heart, Share2, Loader2, MoreVertical } from "lucide-react";
+import { cn} from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
-
-// কাস্টম হুক এবং ফায়ারস্টোর কোর মেথডস
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
-import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, setDoc, deleteDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment,
+setDoc, deleteDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { Camera } from "lucide-react";
+
 
 export default function ProfilePage() {
   
@@ -27,6 +27,52 @@ export default function ProfilePage() {
 
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
+  const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editText, setEditText] = useState<string>("");
+
+  const handlePostAction = async (actionType: string, postId: string, currentContent?: string) => {
+    if (!firestore) return;
+    const postRef = doc(firestore, 'posts', postId);
+    setActiveMenuPostId(null);
+
+    try {
+      if (actionType === 'delete') {
+        const confirmDelete = window.confirm("Are you sure you want to delete this post?");
+        if (confirmDelete) {
+          await deleteDoc(postRef);
+          toast({ title: "Post deleted successfully!" });
+        }
+      } else if (actionType === 'edit') {
+        // অ্যালার্ট ওপেন না করে ইনলাইন এডিট মোড অন হবে
+        setEditingPostId(postId);
+        setEditText(currentContent || "");
+      } else {
+        await updateDoc(postRef, { privacy: actionType });
+        toast({ title: `Privacy updated to ${actionType}!` });
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Action failed", description: error.message });
+    }
+  };
+
+  // ইনলাইন এডিট সেভ করার ফাংশন
+  const handleSaveEdit = async (postId: string) => {
+    if (!firestore || !editText.trim()) return;
+    try {
+      const postRef = doc(firestore, 'posts', postId);
+      await updateDoc(postRef, { content: editText });
+      setEditingPostId(null);
+      toast({ title: "Post updated successfully!" });
+    } catch (error: any) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Update failed", description: error.message });
+    }
+  };
+
+
+
   // ফায়ারস্টোর ভ্যালিডেশন সহ ইউজার রেফারেন্স
   const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: profile, loading: profileLoading } = useDoc<any>(userRef);
@@ -38,34 +84,57 @@ export default function ProfilePage() {
 const followsRef = useMemo(() => (firestore ? collection(firestore, "follows") : null), [firestore]);
 const { data: allFollows = [] } = useCollection<any>(followsRef);
 
-const counts = useMemo(() => {
-  if (!user?.uid || !allFollows) return { friends: 0, following: 0, followers: 0, blocked: 0 };
+  // START OF CODE TO REPLACE
+  const counts = useMemo(() => {
+    if (!user?.uid || !allFollows) return { friends: 0, following: 0, followers: 0, blocked: 0 };
 
-  // ১. মেইন ডেটা ফিল্টার (ACTIVE স্ট্যাটাস অনুযায়ী)
-  const allFollowing = allFollows.filter((f) => f.followerId === user.uid && f.status === "ACTIVE");
-  const allFollowers = allFollows.filter((f) => f.followingId === user.uid && f.status === "ACTIVE");
+    const myFollowings = new Set<string>();
+    const myFollowers = new Set<string>();
 
-  // ২. Friends: যারা একে অপরকে ফলো করে (Mutual Followers)
-  const friendsList = allFollowing.filter((ing) => 
-    allFollowers.some((ers) => ers.followerId === ing.followingId)
-  );
-  const friends = friendsList.length;
+    // ১. সোশ্যাল পেজের মতো হুবহু স্ন্যাপশট ফিল্টারিং ইঞ্জিন
+    allFollows.forEach((f: any) => {
+      if (f.status === "ACTIVE") {
+        if (f.followerId === user.uid) {
+          myFollowings.add(f.followingId); // আমি যাদের ফলো করি (Following)
+        }
+        if (f.followingId === user.uid) {
+          myFollowers.add(f.followerId); // যারা আমাকে ফলো করে (Followers)
+        }
+      }
+    });
 
-  // ৩. Following: আমি ফলো করছি কিন্তু তারা ব্যাক করেনি (Friends সম্পূর্ণ বাদ)
-  const following = allFollowing.filter((ing) => 
-    !allFollowers.some((ers) => ers.followerId === ing.followingId)
-  ).length;
+    let friendsCount = 0;
+    let followingCount = 0;
+    let followersCount = 0;
 
-  // ৪. Followers: তারা আমাকে ফলো করছে কিন্তু আমি ব্যাক করিনি (Friends সম্পূর্ণ বাদ)
-  const followers = allFollowers.filter((ers) => 
-    !allFollowing.some((ing) => ing.followingId === ers.followerId)
-  ).length;
+    // ২. রিলেশনশিপ ম্যাপিং অ্যানালাইসিস (সোশ্যাল পেজের স্ট্রাকচার অনুযায়ী)
+    // আমি যাদের ফলো করেছি, তাদের মধ্যে মিউচুয়াল চেক
+    myFollowings.forEach((targetId) => {
+      if (myFollowers.has(targetId)) {
+        friendsCount++; // দুজন দুজনকে ফলো করলে তবেই ফ্রেন্ড
+      } else {
+        followingCount++; // শুধু আমি ফলো করেছি, সে ব্যাক করেনি
+      }
+    });
 
-  // ৫. Blocked: আপাতত ০ (পরবর্তীতে ব্লক কালেকশন কানেক্ট করলে এটি আপডেট হবে)
-  const blocked = 0; 
+    // যারা আমাকে ফলো করেছে কিন্তু আমি ব্যাক করিনি
+    myFollowers.forEach((targetId) => {
+      if (!myFollowings.has(targetId)) {
+        followersCount++;
+      }
+    });
 
-  return { friends, following, followers, blocked };
-}, [allFollows, user?.uid]);
+    const blocked = 0;
+
+    return { 
+      friends: friendsCount, 
+      following: followingCount, 
+      followers: followersCount, 
+      blocked 
+    };
+  }, [allFollows, user?.uid]);
+// END OF CODE TO REPLACE
+
 
 
 
@@ -128,6 +197,20 @@ const toggleProfileLock = async () => {
   }, [firestore]);
 
   const { data: posts, loading: postsLoading } = useCollection<any>(postsQuery);
+
+useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (activeMenuPostId) {
+        // যদি ক্লিকটি ৩-ডট বাটনের ভেতরে না হয়, তবে মেনু বন্ধ হবে
+        const target = e.target as HTMLElement;
+        if (!target.closest('.relative.overflow-visible')) {
+          setActiveMenuPostId(null);
+        }
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [activeMenuPostId]);
 
   // নিজস্ব পোস্ট ফিল্টারিং লজিক
   const displayMyPosts = useMemo(() => {
@@ -379,31 +462,103 @@ const toggleProfileLock = async () => {
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
 
             return (
-              <Card 
-                key={post.id} 
-                id={`post-${post.id}`}
-                className={cn(
-                  "mb-6 shadow-sm border overflow-hidden bg-white rounded-xl text-left transition-all duration-300 w-full",
-                  highlightedPostId === post.id 
-                    ? "border-pink-500 border-[3px] shadow-md ring-4 ring-pink-100/50" 
-                    : "border-slate-200/80"
-                )}
-              >
-                <CardHeader className="flex flex-row items-center gap-3 p-3 pb-2">
-                  <Avatar className="h-9 w-9 border shrink-0">
-                    <AvatarImage src={post.author?.avatarUrl || profile?.avatarUrl} />
-                    <AvatarFallback>{(post.author?.name || userName).charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="grid gap-0.5 min-w-0">
-                    <span className="font-bold text-sm text-slate-800">{post.author?.name || userName}</span>
-                    <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
-                  </div>
-                </CardHeader>
+                <Card
+                  key={post.id}
+                  id={`post-${post.id}`}
+                  className={cn(
+                    "mb-6 shadow-sm border bg-white rounded-xl text-left transition-all duration-300 w-full overflow-visible", // overflow-hidden থেকে overflow-visible করা হলো
+                    highlightedPostId === post.id
+                      ? "border-pink-500 border-[3px] shadow-md ring-4 ring-pink-100/50"
+                      : "border-slate-200/80"
+                  )}
+                >
+                  <CardHeader className="flex flex-row items-center gap-3 p-3 pb-2 relative overflow-visible"> {/* এখানেও overflow-visible করা হলো */}
+                    <Avatar className="h-9 w-9 border shrink-0">
+                      {/* ইউজার তার নিজের প্রোফাইল দেখুক বা অন্য কারও, এই পেজের মেইন profile স্টেট থেকে লাইভ ছবি রেন্ডার হবে */}
+                      <AvatarImage src={profile?.avatarUrl || post.author?.avatarUrl} />
+                      <AvatarFallback>{(post.author?.name || userName).charAt(0)}</AvatarFallback>
+                    </Avatar>
 
-                <CardContent className="p-4 bg-white min-h-[60px] border-t-2 border-b-2 border-sky-200/80 text-sm text-slate-700 my-1.5 transition-all">
-                  <LivePostContent text={post.content || post.text} />
-                </CardContent>
+                    <div className="grid gap-0.5 min-w-0 flex-1">
+                      <span className="font-bold text-sm text-slate-800">{post.author?.name || userName}</span>
+                      <p className="text-[10px] text-muted-foreground">{timeAgo}</p>
+                    </div>
 
+                    {/* ৩-ডট মেনু বাটন এবং ড্রপডাউন */}
+                    <div className="relative overflow-visible">
+                      <button 
+                        onClick={() => setActiveMenuPostId(activeMenuPostId === post.id ? null : post.id)}
+                        className="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-500"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+
+                      {activeMenuPostId === post.id && (
+                        <div className="absolute right-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1 text-xs"> {/* z-index বাড়িয়ে z-50 করা হলো */}
+                          <button 
+                            onClick={() => handlePostAction('edit', post.id, post.content || post.text)} 
+                            className="w-full text-left px-3 py-1.5 hover:bg-purple-50 text-slate-700 transition-colors font-medium"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handlePostAction('delete', post.id)} 
+                            className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 transition-colors font-medium"
+                          >
+                            Delete
+                          </button>
+                          <div className="border-t border-slate-100 my-1"></div>
+                          <button 
+                            onClick={() => handlePostAction('only me', post.id)} 
+                            className={`w-full text-left px-3 py-1.5 hover:bg-slate-50 transition-colors ${post.privacy === 'only me' ? 'text-purple-600 font-bold' : 'text-slate-600'}`}
+                          >
+                            Only me
+                          </button>
+                          <button 
+                            onClick={() => handlePostAction('friends', post.id)} 
+                            className={`w-full text-left px-3 py-1.5 hover:bg-slate-50 transition-colors ${post.privacy === 'friends' ? 'text-purple-600 font-bold' : 'text-slate-600'}`}
+                          >
+                            Friends
+                          </button>
+                          <button 
+                            onClick={() => handlePostAction('public', post.id)} 
+                            className={`w-full text-left px-3 py-1.5 hover:bg-slate-50 transition-colors ${post.privacy === 'public' ? 'text-purple-600 font-bold' : 'text-slate-600'}`}
+                          >
+                            Public
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 bg-white min-h-[60px] border-t-2 border-b-2 border-sky-200/80 text-sm text-slate-700 my-1.5 transition-all">
+                    {editingPostId === post.id ? (
+                      <div className="flex flex-col gap-2 w-full">
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="w-full p-2 border border-purple-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none font-normal"
+                          rows={2}
+                          autoFocus // এর ফলে এডিটে ক্লিক করলেই কার্সার ব্লিংক করা শুরু করবে
+                        />
+                        <div className="flex justify-end gap-2 text-xs">
+                          <button 
+                            onClick={() => setEditingPostId(null)} 
+                            className="px-3 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 font-medium"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            onClick={() => handleSaveEdit(post.id)} 
+                            className="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 font-medium"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <LivePostContent text={post.content || post.text} />
+                    )}
+                  </CardContent>
                 <CardFooter className="flex items-center gap-6 p-2 px-3 border-t bg-slate-50/50 justify-start">
                   <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors active:scale-90 duration-100">
                     <LiveHeartIcon postId={post.id} userId={user.uid} firestore={firestore} />
