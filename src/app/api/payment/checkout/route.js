@@ -4,7 +4,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 
 import crypto from "crypto";
 import { getFirestore, doc, updateDoc, setDoc } from "firebase/firestore";
-import Agent from 'https';
+import https from "https";
 
 // লাইভ এনভায়রনমেন্ট ভ্যারিয়েবল থেকে ডাইনামিক কনফিগ অবজেক্ট তৈরি
 const firebaseConfig = {
@@ -79,7 +79,7 @@ export async function POST(req) {
           rejectUnauthorized: false 
         };
 
-        const reqHttps = require('https').request(httpsOptions, (resHttps) => {
+        const reqHttps = https.request(httpsOptions, (resHttps) => {
           let data = '';
           resHttps.on('data', (chunk) => { data += chunk; });
           resHttps.on('end', () => {
