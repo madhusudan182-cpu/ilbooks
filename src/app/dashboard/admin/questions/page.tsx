@@ -41,24 +41,7 @@ import { newBengaliLevel9Questions } from "@/lib/level-0-9-bengali-questions";
 import { newEnglishLevel9Questions } from "@/lib/level-0-9-english-questions";
 
 
-// ১. lib ফোল্ডারের ভেতরের সব .ts ফাইল ডাইনামিকালি রিড করার কনটেক্সট তৈরি
-const questionsContext = (require as any).context(
-  '../../../lib', // আপনার ফাইল স্ট্রাকচার অনুযায়ী lib ফোল্ডারের রিলেটিভ পাথ
-  false,         // সাব-ফোল্ডার খুঁজবে না
-  /level-.*-questions\.ts$/ // শুধুমাত্র লেভেলের ফাইলগুলো ফিল্টার করবে
-);
 
-// ২. সব ফাইলের ডেটা লুপ চালিয়ে একটি মাস্টার অ্যারেতে জমা করা
-const allQuestionsMasterList: any[] = [];
-
-questionsContext.keys().forEach((key: string) => {
-  const fileModule = questionsContext(key);
-  // মডিউলের ভেতরের আসল এক্সপোর্ট করা কী (Key) খুঁজে বের করা (যেমন: newBengaliLevel0Questions)
-  const validKey = Object.keys(fileModule).find(k => k !== '__esModule');
-  if (validKey && Array.isArray(fileModule[validKey])) {
-    allQuestionsMasterList.push(...fileModule[validKey]);
-  }
-});
 
 export default function AllQuestionsPage() {
   const firestore = useFirestore();
