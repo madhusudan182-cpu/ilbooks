@@ -66,20 +66,21 @@ const baseApiUrl = process.env.EPS_API_URL || "https://pgapi.eps.com.bd";
       .update(apiUserName)
       .digest("base64");
 
-    // ১. টোকেন নিয়ে আসার রিকোয়েস্ট
-    const tokenResponse = await fetch(`${baseApiUrl}/v1/Auth/GetToken`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-hash": generatedHash // সঠিকভাবে তৈরি করা নতুন হ্যাশ পাঠানো হলো
-      },
+    // ১. টোকেন নিয়ে আসার রিকোয়েস্ট (SSL বাইপাস ফ্ল্যাগ সহ)
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-  body: JSON.stringify({
-    userName: process.env.EPS_USERNAME,
-    password: process.env.EPS_PASSWORD
-  }),
-  agent: agent // SSL Error বাইপাস করার জন্য
-});
+        const tokenResponse = await fetch(`${baseApiUrl}/v1/Auth/GetToken`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-hash": generatedHash
+          },
+          body: JSON.stringify({
+            userName: process.env.EPS_USERNAME,
+            password: process.env.EPS_PASSWORD
+          })
+        });
+
 
 
     if (!tokenResponse.ok) {
@@ -121,18 +122,19 @@ const baseApiUrl = process.env.EPS_API_URL || "https://pgapi.eps.com.bd";
       .update(merchantTxnId)
       .digest("base64");
 
-    // ৪. সরাসরি পেমেন্ট এপিআই এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো
+    // ৪. সরাসরি পেমেন্ট এপিআই এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো (SSL বাইপাস ফ্ল্যাগ সহ)
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
     const epsResponse = await fetch(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-hash": checkoutHash, // ২য় এপিআই এর জন্য সঠিক ডায়নামিক হ্যাশ
+        "x-hash": checkoutHash,
         "Authorization": `Bearer ${bearerToken}`
       },
+      body: JSON.stringify(epsPayload)
+    });
 
-  body: JSON.stringify(epsPayload),
-  agent: agent // SSL Error বাইপাস করার জন্য
-});
 
 
     if (!epsResponse.ok) {
