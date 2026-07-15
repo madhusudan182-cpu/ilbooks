@@ -20,8 +20,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0] || getApps();
 const db = getFirestore(app);
+
 
 async function seedDatabase() {
   console.log("🚀 ফায়ারস্টোর স্ক্যানিং ও আপলোড প্রসেস শুরু হচ্ছে...\n");
