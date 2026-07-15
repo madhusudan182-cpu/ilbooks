@@ -115,11 +115,13 @@ export async function POST(req) {
 
     // ২. পেলোড অবজেক্ট তৈরি (অফিসিয়াল মার্চেন্ট গাইড v0.5 অনুযায়ী)
     const epsPayload = {
-      merchantId: process.env.EPS_MERCHANT_ID || "094980ee-xxx-xxx-xxx", // কনসোল থেকে মার্চেন্ট আইডি রিড করবে
-      storeId: process.env.EPS_STORE_ID,
+      merchantId: process.env.EPS_MERCHANT_ID || "3a747cfc-a8d1-4ee2-85fa-e24c8e7cl",
+      storeId: process.env.EPS_STORE_ID, // ফায়ারবেস কনসোলের Key-র সাথে মিল রেখে
       CustomerOrderId: currentOrderId,
-      merchantTransactionId: merchantTxnId,
-      transactionTypeId: 1, 
+      merchantTransactonId: merchantTxnId,
+      transactionTypeId: 10, 
+      financialEntityId: 0,
+      transitionStatusId: 0,
       totalAmount: Number(amount) || 10,
       successUrl: finalSuccessUrl,
       failUrl: `${currentBaseUrl}/dashboard/payment-failed`,
@@ -137,9 +139,9 @@ export async function POST(req) {
     };
 
     const checkoutHash = crypto
-      .createHmac("sha512", hashKey)
-      .update(merchantTxnId)
-      .digest("base64");
+    .createHmac("sha512", hashkey)
+    .update(merchantTxnId) // আপনার জেনারেট করা ইউনিক আইডি স্ট্রিং ভ্যালুটিই পাস হবে
+    .digest("base64");
 
     // ৩. সরাসরি পেমেন্ট ইনিশিয়ালাইজ এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো
     const epsResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
