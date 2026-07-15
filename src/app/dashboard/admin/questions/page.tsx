@@ -42,121 +42,74 @@ import { newEnglishLevel9Questions } from "@/lib/level-0-9-english-questions";
 
 export default function AllQuestionsPage() {
   const firestore = useFirestore();
+  
+  // ক্লাউড ডাটাবেজ থেকে সরাসরি প্রশ্ন কুয়েরি করা
   const questionsQuery = useMemo(() => (firestore ? collection(firestore, 'questions') : null), [firestore]);
   const { data: questions, loading: questionsLoading } = useCollection<Question>(questionsQuery);
+  
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>([]);
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => { setIsClient(true); }, []);
+  useEffect(() => { 
+    setIsClient(true); 
+  }, []);
 
-  const allLevels: string[] = [];
-  for (let i = 0; i <= 19; i++) {
-    for (let j = 0; j <= 9; j++) { allLevels.push(`${i}.${j}`); }
-  }
+  // ২০০টি লেভেলের তালিকা তৈরি (০.০ থেকে ১৯.৯)
+  const allLevels = useMemo(() => {
+    const levels: string[] = [];
+    for (let i = 0; i <= 19; i++) {
+      for (let j = 0; j <= 9; j++) {
+        levels.push(`${i}.${j}`);
+      }
+    }
+    return levels;
+  }, []);
 
+  // ডাটাবেজের সব প্রশ্নকে কোনো ওলট-পালট ছাড়া এবং নিখুঁত সংখ্যাসহ লেভেল অনুযায়ী গ্রুপ করা
+  const questionsByLevel = useMemo(() => {
+    if (!questions) return {};
+    
+    const groups: Record<string, Question[]> = {};
+    
+    questions.forEach((q) => {
+      if (!q) return;
+      // লেভেল ফরম্যাটটি সবসময় '০.০' বা '১.৫' নিশ্চিত করা
+      const safeLevel = q.level ? parseFloat(String(q.level)).toFixed(1) : "0.0";
+      
+      if (!groups[safeLevel]) {
+        groups[safeLevel] = [];
+      }
+      
+      // ডুপ্লিকেট আইডি এড়াতে চেকিং
+      if (!groups[safeLevel].some(existingQ => existingQ.id === q.id)) {
+        groups[safeLevel].push(q);
+      }
+    });
+    
+    return groups;
+  }, [questions]);
 
-    const questionsByLevel = useMemo(() => questions?.reduce((acc: Record<string, Question[]>, q: Question) => {
-    const safeLevel = q.level ? parseFloat(String(q.level)).toFixed(1) : "0.0";
-    if (!acc[safeLevel]) { acc[safeLevel] = []; }
-    acc[safeLevel].push(q);
-    return acc;
-  }, {} as Record<string, Question[]>) || {}, [questions]);
-
+  // এডিট বাটনে ক্লিক করলে ঐ লেভেলের সব প্রশ্নের ফ্রেশ ডেটা লোড করার ডাইনামিক ফাংশন
   const handleEditClick = (level: string) => {
     const targetLevelStr = parseFloat(level).toFixed(1);
+    
+    // ডাটাবেজের বর্তমান প্রশ্নগুলোর একটি ফ্রেশ মেমোরি কপি নেওয়া
     let questionsToEdit = JSON.parse(JSON.stringify(questionsByLevel[targetLevelStr] || []));
 
-    if (level === '0.0') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel0Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel0Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    // লেভেল ০.১ থেকে ০.৯ পর্যন্ত সিঙ্কিং কন্ডিশন
-    else if (level === '0.1') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel1Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-1-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel1Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-1-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.2') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel2Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-2-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel2Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-2-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.3') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel3Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-3-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel3Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-3-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.4') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel4Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-4-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel4Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-4-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.5') {
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel5Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-5-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel5Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-5-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-    }
-    else if (level === '0.6') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel6Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-6-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel6Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-6-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.7') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel7Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-7-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel7Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-7-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.8') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel8Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-8-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel8Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-8-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-    else if (level === '0.9') {
-      const existingBengaliTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'Bengali').map((q: Question) => q.questionText));
-      const bengaliQuestionsToAdd = newBengaliLevel9Questions.filter(newQ => !existingBengaliTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-bengali-question-0-9-${Date.now()}-${index}` }));
-      questionsToEdit.push(...bengaliQuestionsToAdd);
-      const existingEnglishTexts = new Set(questionsToEdit.filter((q: Question) => q.subject === 'English').map((q: Question) => q.questionText));
-      const englishQuestionsToAdd = newEnglishLevel9Questions.filter(newQ => !existingEnglishTexts.has(newQ.questionText)).map((q, index) => ({ ...q, level: targetLevelStr, id: `new-english-question-0-9-${Date.now()}-${index}` }));
-      questionsToEdit.push(...englishQuestionsToAdd);
-    }
-
+    // নিশ্চিত করা হচ্ছে যেন প্রতিটি প্রশ্নের ৪টি অপশন ফর্মের ভেতর সুন্দরভাবে খোলে
     questionsToEdit.forEach((q: Question) => {
-      while (q.answers.length < 4) { q.answers.push({ text: 'New Answer', isCorrect: false }); }
+      if (!q.answers) q.answers = [];
+      while (q.answers.length < 4) {
+        q.answers.push({ text: 'New Answer', isCorrect: false });
+      }
     });
+
     setEditingLevel(level);
     setEditedQuestions(questionsToEdit);
   };
+
 
 
     const handleCancelClick = () => { setEditingLevel(null); setEditedQuestions([]); };

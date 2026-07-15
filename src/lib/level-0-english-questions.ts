@@ -15,7 +15,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ɒ/ ”?',
+    questionText: '“/ɒ/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ এ /', isCorrect: false },
       { text: '/ অ্যা/ ', isCorrect: false },
