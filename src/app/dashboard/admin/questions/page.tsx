@@ -19,8 +19,8 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
-import { newBengaliLevel0Questions } from "@/lib/level-0-bengali-questions";
-import { newEnglishLevel0Questions } from "@/lib/level-0-english-questions";
+import { newBengaliLevel0Questions } from "@/lib/level-0-0-bengali-questions";
+import { newEnglishLevel0Questions } from "@/lib/level-0-0-english-questions";
 import { newBengaliLevel1Questions } from "@/lib/level-0-1-bengali-questions";
 import { newEnglishLevel1Questions } from "@/lib/level-0-1-english-questions";
 import { newBengaliLevel2Questions } from "@/lib/level-0-2-bengali-questions";
@@ -67,29 +67,58 @@ export default function AllQuestionsPage() {
     return levels;
   }, []);
 
-  // ডাটাবেজের সব প্রশ্নকে কোনো ওলট-পালট ছাড়া এবং নিখুঁত সংখ্যাসহ লেভেল অনুযায়ী গ্রুপ করা
+    // === এই কোডটুকু দিয়ে পুরনো questionsByLevel ব্লকটি পরিবর্তন করুন ===
   const questionsByLevel = useMemo(() => {
     if (!questions) return {};
-    
+
     const groups: Record<string, Question[]> = {};
-    
-    questions.forEach((q) => {
+
+    questions.forEach((q: any) => {
       if (!q) return;
+      
       // লেভেল ফরম্যাটটি সবসময় '০.০' বা '১.৫' নিশ্চিত করা
       const safeLevel = q.level ? parseFloat(String(q.level)).toFixed(1) : "0.0";
-      
+
       if (!groups[safeLevel]) {
         groups[safeLevel] = [];
       }
+
+      // ডাটাবেজের ০, ১, ২, ৩ অবজেক্ট ফরম্যাটকে answers অ্যারেতে রূপান্তর করার লজিক
+      let formattedAnswers = Array.isArray(q.answers) ? [...q.answers] : [];
       
+      if (formattedAnswers.length === 0) {
+        const optionKeys = ['0', '1', '2', '3'];
+        optionKeys.forEach((key) => {
+          if (q[key]) {
+            formattedAnswers.push({
+              text: q[key].text || q[key].test || "",
+              isCorrect: q[key].isCorrect === true || q[key].isCorrect === 'true' || false
+            });
+          }
+        });
+      }
+
+      // একটি স্ট্যান্ডার্ড অবজেক্ট তৈরি করা যা ফ্রন্টএন্ড রিড করতে পারে
+      const standardizedQuestion = {
+        ...q,
+        id: q.id || `q-missing-${Date.now()}-${Math.random()}`,
+        level: safeLevel,
+        subject: q.subject || "English",
+        questionText: q.questionText || "",
+        answers: formattedAnswers
+      };
+
       // ডুপ্লিকেট আইডি এড়াতে চেকিং
-      if (!groups[safeLevel].some(existingQ => existingQ.id === q.id)) {
-        groups[safeLevel].push(q);
+      if (!groups[safeLevel].some(existingQ => existingQ.id === standardizedQuestion.id)) {
+        groups[safeLevel].push(standardizedQuestion);
       }
     });
-    
+
     return groups;
   }, [questions]);
+  // === এখানে নতুন questionsByLevel ব্লকটি শেষ হলো ===
+
+ 
 
   // এডিট বাটনে ক্লিক করলে ঐ লেভেলের সব প্রশ্নের ফ্রেশ ডেটা লোড করার ডাইনামিক ফাংশন
   const handleEditClick = (level: string) => {

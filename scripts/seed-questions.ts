@@ -19,7 +19,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// টেক্সট থেকে একটি ইউনিক আইডি তৈরি করার জন্য ছোট ফাংশন (যাতে ফাইল চেঞ্জ হলে আইডি না বদলায়)
 function generateUniqueId(text: string, fallback: string): string {
   if (!text) return fallback;
   let hash = 0;
@@ -42,15 +41,23 @@ async function seedDatabase() {
 
   for (const file of files) {
     if (file.startsWith('level-') && file.endsWith('.ts')) {
-      const parts = file.split('-');
-      let mainLevel = parts[1];
-      let subLevel = parts[2];
-      let subject = parts[3];
+      const parts = file.replace('.ts', '').split('-');
+      
+      let mainLevel = "0";
+      let subLevel = "0";
+      let subject = "english";
 
+      // যদি ফাইলের নাম level-0-english-questions ফরম্যাটে হয় (৪টি অংশ)
       if (parts.length === 4) {
+        mainLevel = parts[1]; // "0"
+        subLevel = "0";       // "0"
+        subject = parts[2];   // "english" বা "bengali"
+      } 
+      // যদি ফাইলের নাম level-0-1-english-questions ফরম্যাটে হয় (৫টি অংশ)
+      else if (parts.length === 5) {
         mainLevel = parts[1];
-        subLevel = "0";
-        subject = parts[2];
+        subLevel = parts[2];
+        subject = parts[3];
       }
 
       const levelStr = `${mainLevel}.${subLevel}`;
@@ -58,16 +65,16 @@ async function seedDatabase() {
 
       const filePath = path.join(libDir, file);
       
-      // নোড জেএস ক্যাশ ক্লিয়ার করা (যাতে প্রতিবার এডিটেড ফ্রেশ ফাইল রিড হয়)
+      // ক্যাশ ক্লিয়ার করে ফ্রেশ ইম্পোর্ট করা
       delete require.cache[require.resolve(filePath)];
       const fileModule = require(filePath);
       
-      const exportKey = Object.keys(fileModule)[0];
-      const questionsArray = fileModule[exportKey];
+      // মডিউলের ভেতরের আসল ডাটা কি (Key) খুঁজে বের করা
+      const validKey = Object.keys(fileModule).find(key => key !== '__esModule');
+      const questionsArray = validKey ? fileModule[validKey] : null;
 
       if (Array.isArray(questionsArray) && questionsArray.length > 0) {
         questionsArray.forEach((question, i) => {
-          // প্রশ্ন ডিলিট বা এডিট করলেও যেন নির্দিষ্ট ডক আইডি চেনা যায় তার ব্যবস্থা
           const uniqueId = generateUniqueId(question.questionText, `${subject}-${levelStr}-${i}`);
           const docRef = doc(questionsRef, uniqueId);
           
@@ -88,7 +95,7 @@ async function seedDatabase() {
     await batch.commit();
     console.log(`✅ সফলভাবে মোট ${totalUploaded}টি প্রশ্ন ফায়ারস্টোরে সিঙ্ক হয়েছে!`);
   } else {
-    console.log("ℹ️ কোনো প্রশ্ন খুঁজে পাওয়া যায়নি।");
+    console.log("ℹ️ কোনো প্রশ্ন খুঁজে পাওয়া যায়নি। ফাইলের ভেতরের অ্যারে চেক করুন।");
   }
   
   process.exit(0);

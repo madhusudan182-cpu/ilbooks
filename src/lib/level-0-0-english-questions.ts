@@ -4,7 +4,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/e/ ”?',
+    questionText: '“/e/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ ই /', isCorrect: false },
       { text: '/ এ /', isCorrect: true },
@@ -26,7 +26,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/æ/ ”?',
+    questionText: '“/æ/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ অ্যা/ ', isCorrect: true },
       { text: '/ আ /', isCorrect: false },
@@ -37,29 +37,29 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ɜː/ ”?',
+    questionText: '“/ɜː/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
-      { text: '/ ঈ /', isCorrect: false },
-      { text: '/ আ /', isCorrect: true },
-      { text: '/ উ /', isCorrect: false },
-      { text: '/ অ /', isCorrect: false },
+      { text: '/ ঈː /', isCorrect: false },
+      { text: '/ আː /', isCorrect: true },
+      { text: '/ উː /', isCorrect: false },
+      { text: '/ অː /', isCorrect: false },
     ],
   },
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ɔː/ ”?',
+    questionText: '“/ɔː/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
-      { text: '/ আ /', isCorrect: false },
-      { text: '/ অ /', isCorrect: true },
-      { text: '/ উ /', isCorrect: false },
-      { text: '/ ঈ /', isCorrect: false },
+      { text: '/ আː /', isCorrect: false },
+      { text: '/ অː /', isCorrect: true },
+      { text: '/ উː /', isCorrect: false },
+      { text: '/ ঈː /', isCorrect: false },
     ],
   },
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/eɪ/”?',
+    questionText: '“/eɪ/”-এর বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ আই /', isCorrect: false },
       { text: '/ অই /', isCorrect: false },
@@ -70,7 +70,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ɔɪ/ ”?',
+    questionText: '“/ɔɪ/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ এই /', isCorrect: false },
       { text: '/ আই /', isCorrect: false },
@@ -81,7 +81,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ʊə/ ”?',
+    questionText: '“/ʊə/”-এর বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ এআ /', isCorrect: false },
       { text: '/ উআ /', isCorrect: true },
@@ -92,7 +92,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ʤ/ ”?',
+    questionText: '“/ʤ/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ জ্ /', isCorrect: true },
       { text: '/ থ্ /', isCorrect: false },
@@ -103,7 +103,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the Bengali equivalent sound of “/ð/ ”?',
+    questionText: '“/ð/” ধ্বনিটির বাংলা সমতুল্য ধ্বনি কী?',
     answers: [
       { text: '/ জ্ /', isCorrect: false },
       { text: '/ থ্ /', isCorrect: false },
@@ -114,7 +114,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ ইং / ”?',
+    questionText: '“/ ইং /” এই ধ্বনিটির IPA কী?',
     answers: [
       { text: '/ʧ/', isCorrect: false },
       { text: '/j/', isCorrect: false },
@@ -125,7 +125,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ চ্ /”?',
+    questionText: '“/ চ্ /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/ʧ/', isCorrect: true },
       { text: '/j/', isCorrect: false },
@@ -136,7 +136,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ ইয়া /”?',
+    questionText: '“/ ইয়া /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/ʧ/', isCorrect: false },
       { text: '/j/', isCorrect: true },
@@ -147,7 +147,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ ঈ / ”?',
+    questionText: '“/ ঈ /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/iː/', isCorrect: true },
       { text: '/ɑː/', isCorrect: false },
@@ -158,7 +158,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ ই /”?',
+    questionText: '“/ ই /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/e/', isCorrect: false },
       { text: '/æ/', isCorrect: false },
@@ -169,7 +169,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ ওয়া /”?',
+    questionText: '“/ ওয়া /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/ʊə/', isCorrect: false },
       { text: '/əʊ/', isCorrect: false },
@@ -180,7 +180,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ স্ /”?',
+    questionText: '“/ স্ /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/s/', isCorrect: true },
       { text: '/z/', isCorrect: false },
@@ -191,7 +191,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: "What is the IPA for the 'sh' sound?",
+    questionText: "'শ্' ধ্বনিটির জন্য IPA কী?",
     answers: [
       { text: '/s/', isCorrect: false },
       { text: '/z/', isCorrect: false },
@@ -202,7 +202,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ এআ /”?',
+    questionText: '“/ এআ /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/eɪ/', isCorrect: false },
       { text: '/aɪ/', isCorrect: false },
@@ -213,7 +213,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA of this sound “/ এই /”?',
+    questionText: '“/ এই /” ধ্বনিটির আইপিএ (IPA) কী?',
     answers: [
       { text: '/eɪ/', isCorrect: true },
       { text: '/aɪ/', isCorrect: false },
@@ -224,7 +224,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “History”?',
+    questionText: '"History" শব্দটির IPA কী?',
     answers: [
       { text: '/ˈhos tri/', isCorrect: false },
       { text: '/ˈhɪs tori/', isCorrect: false },
@@ -235,7 +235,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “Food”?',
+    questionText: '"Food" শব্দটির IPA কী?',
     answers: [
       { text: '/f oː d/', isCorrect: false },
       { text: '/f aː d/', isCorrect: false },
@@ -246,7 +246,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “Nature”?',
+    questionText: '"Nature" শব্দটির IPA কী?',
     answers: [
       { text: '/ˈne tʃə(r)/', isCorrect: false },
       { text: '/ˈneɪ tʃə(r)/', isCorrect: true },
@@ -257,7 +257,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “Cup”?',
+    questionText: '"Cup" শব্দটির IPA কী?',
     answers: [
       { text: '/k a: p/', isCorrect: false },
       { text: '/k u p/', isCorrect: false },
@@ -268,7 +268,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “Doctor”?',
+    questionText: '"Doctor" শব্দটির IPA কী?',
     answers: [
       { text: '/ˈdɒk tə(r)/', isCorrect: true },
       { text: '/ˈdək tə(r)/', isCorrect: false },
@@ -279,7 +279,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “Book”?',
+    questionText: '"Book" শব্দটির IPA কী?',
     answers: [
       { text: '/b u: k/', isCorrect: false },
       { text: '/b ʊ k/', isCorrect: true },
@@ -290,7 +290,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the IPA for the word “Father”?',
+    questionText: '"Father" শব্দটির IPA কী?',
     answers: [
       { text: '/ˈfɑː ðə(r)/', isCorrect: true },
       { text: '/ˈfʌ ðə(r)/', isCorrect: false },
@@ -301,7 +301,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the English word for this IPA “/ɑː s k/”?',
+    questionText: 'এই IPA “/ɑː s k/”-এর ইংরেজি শব্দটি কী?',
     answers: [
       { text: 'Ask', isCorrect: true },
       { text: 'Go', isCorrect: false },
@@ -312,7 +312,7 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the English word for this IPA “/ˈpiː pl/”?',
+    questionText: 'এই IPA “/ˈpiː pl/”-এর ইংরেজি শব্দটি কী?',
     answers: [
       { text: 'Peiple', isCorrect: false },
       { text: 'Piple', isCorrect: false },
@@ -323,12 +323,100 @@ export const newEnglishLevel0Questions: Omit<Question, 'id'>[] = [
   {
     level: '0.0',
     subject: 'English',
-    questionText: 'What is the English word for this IPA “/æ d/ ”?',
+    questionText: 'এই IPA “/æ d/”-এর জন্য ইংরেজি শব্দটি কী?',
     answers: [
       { text: 'Add', isCorrect: true },
       { text: 'Bad', isCorrect: false },
       { text: 'Mad', isCorrect: false },
       { text: 'Cat', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA-এর পূর্ণ রূপ কী?',
+    answers: [
+      { text: 'International Phonetic Association', isCorrect: false },
+      { text: 'International Phonetic Alphabet', isCorrect: true },
+      { text: 'Indian Phonetic Alphabet', isCorrect: false },
+      { text: 'Internal Phonetic Alphabet', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA তে Short Vowel Sound কয়টি?',
+    answers: [
+      { text: '5', isCorrect: false },
+      { text: '6', isCorrect: false },
+      { text: '7', isCorrect: true },
+      { text: '8', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA তে Long Vowel Sound কয়টি?',
+    answers: [
+      { text: '5', isCorrect: true },
+      { text: '6', isCorrect: false },
+      { text: '7', isCorrect: false },
+      { text: '8', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA-তে Diphthongs কয়টি??',
+    answers: [
+      { text: '6', isCorrect: false },
+      { text: '7', isCorrect: false },
+      { text: '8', isCorrect: true },
+      { text: '9', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA-তে Vowel Sounds কয়টি?',
+    answers: [
+      { text: '12', isCorrect: false },
+      { text: '20', isCorrect: true },
+      { text: '24', isCorrect: false },
+      { text: '44', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA-তে Consonant Sounds কয়টি?',
+    answers: [
+      { text: '12', isCorrect: false },
+      { text: '20', isCorrect: false },
+      { text: '24', isCorrect: true },
+      { text: '44', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'IPA-তে মোট Symbol বা Sounds কয়টি?',
+    answers: [
+      { text: '20', isCorrect: false },
+      { text: '24', isCorrect: false },
+      { text: '44', isCorrect: true },
+      { text: '50', isCorrect: false },
+    ],
+  },
+  {
+    level: '0.0',
+    subject: 'English',
+    questionText: 'ইংরেজি শিখতে IPA কেন কাজে লাগে?',
+    answers: [
+      { text: 'ব্যাকরণগত নির্ভুলতা উন্নত করতে', isCorrect: false },
+      { text: 'ভোকাবুলারি বা শব্দভাণ্ডার বাড়াতে', isCorrect: false },
+      { text: 'সঠিক উচ্চারণ শিখতে', isCorrect: true },
+      { text: 'বাক্য অনুবাদ করতে', isCorrect: false },
     ],
   },
 ];
