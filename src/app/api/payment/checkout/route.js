@@ -30,7 +30,7 @@ export async function POST(req) {
     const currentOrderId = orderId || "ILB-" + Date.now();
     const merchantTxnId = "TXN-" + Date.now(); // EPS এর জন্য ইউনিক ট্রানজেকশন আইডি
 
-          // লোকালহোস্ট ও লাইভ ওয়েবসাইট উভয়ের জন্য অটোমেটিক ইউআরএল হ্যান্ডলিং লজিক
+    // লোকালহোস্ট ও লাইভ ওয়েবসাইট উভয়ের জন্য অটোমেটিক ইউআরএল হ্যান্ডলিং লজিক
     const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
     let currentBaseUrl = "";
 
@@ -46,40 +46,71 @@ export async function POST(req) {
     // ১. পেমেন্ট টাইপ অনুযায়ী আলাদা সাকসেস ইউআরএল সেট করার লজিক
     let finalSuccessUrl = "";
 
-    if (paymentType === "book_shop") {
-      finalSuccessUrl = `${currentBaseUrl}/dashboard/book-shop?payment=success&orderId=${currentOrderId}`;
-    } else if (paymentType === "patron") {
-      finalSuccessUrl = `${currentBaseUrl}/dashboard/patron?status=active`;
-    } else {
-      finalSuccessUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
-    }
+        if (paymentType === "book_shop") {
+          finalSuccessUrl = `${currentBaseUrl}/dashboard/book-shop?payment=success&orderId=${currentOrderId}`;
+        } else if (paymentType === "patron") {
+          finalSuccessUrl = `${currentBaseUrl}/dashboard/patron?status=active`;
+        } else {
+          finalSuccessUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
+        }
 
-    // এনভায়রনমেন্ট ভেরিয়েবল না পেলে সরাসরি লাইভ ইউআরএল ফলব্যাক হিসেবে দেওয়া হলো
-const baseApiUrl = process.env.EPS_API_URL || "https://pgapi.eps.com.bd"; 
+        // এনভায়রনমেন্ট ভেরিয়েবল না পেলে সরাসরি লাইভ ইউআরএল ফলব্যাক হিসেবে দেওয়া হলো
+    const baseApiUrl = process.env.EPS_API_URL || "https://eps.com.bd"; 
 
-    // ডকুমেন্টেশন পৃষ্ঠা ২ অনুযায়ী HMAC-SHA512 এবং Base64 ব্যবহার করে হ্যাশ তৈরি
-    const hashKey = process.env.EPS_HASH_KEY || "";
-    const apiUserName = process.env.EPS_USERNAME || "";
-    
-    const generatedHash = crypto
-      .createHmac("sha512", hashKey)
-      .update(apiUserName)
-      .digest("base64");
+        // ডকুমেন্টেশন পৃষ্ঠা ২ অনুযায়ী HMAC-SHA512 এবং Base64 ব্যবহার করে হ্যাশ তৈরি
+        const hashKey = process.env.EPS_HASH_KEY || "";
+        const apiUserName = process.env.EPS_USERNAME || "";
+        
+        const generatedHash = crypto
+          .createHmac("sha512", hashKey)
+          .update(apiUserName)
+          .digest("base64");
 
-    // ১. টোকেন নিয়ে আসার রিকোয়েস্ট (SSL বাইপাস ফ্ল্যাগ সহ)
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+        // SSL এরর বাইপাস করে ডাটা নিয়ে আসার জন্য নিরাপদ নেটওয়ার্ক রিকোয়েস্ট লজিক
+    const fetchWithSSLBypass = (url, options) => {
+      return new Promise((resolve, reject) => {
+        const urlObj = new URL(url);
+        const httpsOptions = {
+          method: options.method,
+          hostname: urlObj.hostname,
+          path: urlObj.pathname,
+          headers: options.headers,
+          // এই লাইনটি লাইভ সার্ভারেও SSL সার্টিফিকেটের মেয়াদ অগ্রাহ্য করবে
+          rejectUnauthorized: false 
+        };
 
-        const tokenResponse = await fetch(`${baseApiUrl}/v1/Auth/GetToken`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-hash": generatedHash
-          },
-          body: JSON.stringify({
-            userName: process.env.EPS_USERNAME,
-            password: process.env.EPS_PASSWORD
-          })
+        const reqHttps = require('https').request(httpsOptions, (resHttps) => {
+          let data = '';
+          resHttps.on('data', (chunk) => { data += chunk; });
+          resHttps.on('end', () => {
+            resolve({
+              ok: resHttps.statusCode >= 200 && resHttps.statusCode < 300,
+              status: resHttps.statusCode,
+              json: async () => JSON.parse(data),
+              text: async () => data
+            });
+          });
         });
+
+        reqHttps.on('error', (e) => reject(e));
+        if (options.body) reqHttps.write(options.body);
+        reqHttps.end();
+      });
+    };
+
+    // ১. টোকেন নিয়ে আসার রিকোয়েস্ট (কাস্টম বাইপাসার দিয়ে)
+    const tokenResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/Auth/GetToken`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-hash": generatedHash
+      },
+      body: JSON.stringify({
+        userName: process.env.EPS_USERNAME,
+        password: process.env.EPS_PASSWORD
+      })
+    });
+
 
 
 
@@ -122,10 +153,8 @@ const baseApiUrl = process.env.EPS_API_URL || "https://pgapi.eps.com.bd";
       .update(merchantTxnId)
       .digest("base64");
 
-    // ৪. সরাসরি পেমেন্ট এপিআই এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো (SSL বাইপাস ফ্ল্যাগ সহ)
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-    const epsResponse = await fetch(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
+    // ৪. সরাসরি পেমেন্ট এপিআই এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো (কাস্টম বাইপাসার দিয়ে)
+    const epsResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -134,6 +163,7 @@ const baseApiUrl = process.env.EPS_API_URL || "https://pgapi.eps.com.bd";
       },
       body: JSON.stringify(epsPayload)
     });
+
 
 
 
