@@ -55,7 +55,7 @@ export async function POST(req) {
     }
 
     // এনভায়রনমেন্ট ভেরিয়েবল না পেলে সরাসরি লাইভ ইউআরএল ফলব্যাক হিসেবে দেওয়া হলো
-const baseApiUrl = process.env.EPS_API_URL || "https://eps.com.bd"; 
+const baseApiUrl = process.env.EPS_API_URL || "https://pgapi.eps.com.bd"; 
 
     // ডকুমেন্টেশন পৃষ্ঠা ২ অনুযায়ী HMAC-SHA512 এবং Base64 ব্যবহার করে হ্যাশ তৈরি
     const hashKey = process.env.EPS_HASH_KEY || "";
