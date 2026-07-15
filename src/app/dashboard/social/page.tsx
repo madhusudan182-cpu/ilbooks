@@ -181,7 +181,8 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 lg:p-8 max-w-3xl mx-auto space-y-4 w-full">
+
       <h1 className="text-2xl font-bold text-center mb-6">Social Circle</h1>
       
       {/* 📝 পরিবর্তিত রেসপন্সিভ ট্যাব ডিজাইন */}

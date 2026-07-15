@@ -43,26 +43,33 @@ export default function AdminTransactionsPage() {
   useEffect(() => {
     setLoading(true);
     
-    const transactionsRef = collection(db, 'payments');
-    const ordersRef = collection(db, 'orders');
+    const transactionsRef = collection(db, 'transactions');
+const ordersRef = collection(db, 'orders');
 
     let transactionsData: Transaction[] = [];
     let ordersData: Transaction[] = [];
 
-    const unsubscribeTransactions = onSnapshot(transactionsRef, (snapshot) => {
-      transactionsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          amount: Number(data.amount || 0),
-          date: convertToDate(data.date).toISOString(),
-          type: data.type || 'Exam Fee',
-          userId: data.userId || '',
-          userName: data.userName || 'Unknown User'
-        } as Transaction;
-      });
-      combineAndSortData();
-    });
+    // শুরু
+const unsubscribeTransactions = onSnapshot(transactionsRef, (snapshot) => {
+  transactionsData = snapshot.docs.map(doc => {
+    const data = doc.data();
+    
+    // ডাটাবেজের 'date' এবং 'userName' ফিল্ডের সঠিক ম্যাপিং
+    const transactionDate = data.date ? convertToDate(data.date) : new Date();
+
+    return {
+      id: doc.id,
+      amount: Number(data.amount || 0),
+      date: transactionDate.toISOString(),
+      type: data.type || 'Exam Fee',
+      userId: data.userId || '',
+      userName: data.userName || 'Unknown User'
+    } as Transaction;
+  });
+  combineAndSortData();
+});
+// শেষ
+
 
     const unsubscribeOrders = onSnapshot(ordersRef, (snapshot) => {
       ordersData = snapshot.docs.map(doc => {
@@ -148,10 +155,16 @@ export default function AdminTransactionsPage() {
         }
       }
 
-      if (filter === 'All Transactions') return true;
-      return transaction.type === filter;
-    });
-  }, [transactions, filter, selectedYear, selectedMonth, selectedDate]);
+      // শুরু
+        if (filter !== 'All Transactions' && transaction.type !== filter) {
+          return false;
+        }
+
+        return true;
+      });
+    }, [transactions, filter, selectedYear, selectedMonth, selectedDate]);
+    // শেষ
+
 
   let cumulativeAmount = 0;
 
