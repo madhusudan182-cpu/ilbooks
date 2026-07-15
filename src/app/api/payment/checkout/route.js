@@ -130,10 +130,11 @@ export async function POST(req) {
 
     // ৩. টোকেন ও হ্যাশ ব্যবহার করে পেমেন্ট ইনিশিয়ালাইজ করার পেলোড (ডকুমেন্টেশন পৃষ্ঠা ৫ অনুযায়ী) [source: 5]
     const epsPayload = {
+      merchantId: process.env.EPS_MERCHANT_ID || "আপনার-মার্চেন্ট-আইডি-এখানে", // গাইডের পৃষ্ঠা ৩ অনুযায়ী বাধ্যতামূলক
       storeId: process.env.EPS_STORE_ID,
       CustomerOrderId: currentOrderId,
-      merchantTransactionId: merchantTxnId,
-      transactionTypeId: 1, // 1 = Web View
+      merchantTransactionId: merchantTxnId, // গাইডের পৃষ্ঠা ৩ অনুযায়ী সঠিক কী-নাম
+      transactionTypeId: 1, // Web View
       totalAmount: Number(amount) || 10,
       successUrl: finalSuccessUrl,
       failUrl: `${currentBaseUrl}/dashboard/payment-failed`,
@@ -146,17 +147,19 @@ export async function POST(req) {
       customerState: "Dhaka",
       customerPostcode: "1200",
       customerCountry: "BD",
-      productName: "ILBooks Service",
+      productName: productName || "ILBooks Service",
       version: "1"
     };
 
+
     console.log("Sending Live Payload to EPS Gateway for Order:", currentOrderId);
 
-        // ডকুমেন্টেশন পৃষ্ঠা ৪ ও ৫ অনুযায়ী merchantTransactionId দিয়ে ২য় হ্যাশ তৈরি
-    const checkoutHash = crypto
-      .createHmac("sha512", hashKey)
-      .update(merchantTxnId)
-      .digest("base64");
+        // ২য় হ্যাশ তৈরির জন্য অফিসিয়াল গাইড অনুযায়ী সঠিক ভ্যারিয়েবল পাস নিশ্চিত করা হলো
+const checkoutHash = crypto
+  .createHmac("sha512", hashKey)
+  .update(merchantTxnId) // আপনার জেনারেট করা ইউনিক ট্রানজেকশন আইডি স্ট্রিং
+  .digest("base64");
+
 
     // ৪. সরাসরি পেমেন্ট এপিআই এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো (কাস্টম বাইপাসার দিয়ে)
     const epsResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
