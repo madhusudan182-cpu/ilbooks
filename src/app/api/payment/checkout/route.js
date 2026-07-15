@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { initializeApp, getApps, getApp } from "firebase/app";
 // HMAC-SHA512 হ্যাশ তৈরির জন্য নোডের বিল্ট-ইন ক্রিপ্টো মডিউল যোগ করা হলো
-
+export const dynamic = 'force-dynamic';
 import crypto from "crypto";
 import { getFirestore, doc, updateDoc, setDoc } from "firebase/firestore";
-import https from "https";
 
 // লাইভ এনভায়রনমেন্ট ভ্যারিয়েবল থেকে ডাইনামিক কনফিগ অবজেক্ট তৈরি
 const firebaseConfig = {
@@ -16,7 +15,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-const agent = new Agent.Agent({ rejectUnauthorized: false });
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
@@ -68,35 +66,42 @@ export async function POST(req) {
 
         // SSL এরর বাইপাস করে ডাটা নিয়ে আসার জন্য নিরাপদ নেটওয়ার্ক রিকোয়েস্ট লজিক
     const fetchWithSSLBypass = (url, options) => {
-      return new Promise((resolve, reject) => {
-        const urlObj = new URL(url);
-        const httpsOptions = {
-          method: options.method,
-          hostname: urlObj.hostname,
-          path: urlObj.pathname,
-          headers: options.headers,
-          // এই লাইনটি লাইভ সার্ভারেও SSL সার্টিফিকেটের মেয়াদ অগ্রাহ্য করবে
-          rejectUnauthorized: false 
-        };
+      return new Promise(async (resolve, reject) => {
+        try {
+          // ক্লাউড হোস্টিং ফ্রেন্ডলি ডাইনামিক মডিউল লোড
+          const httpsModule = await import('https');
+          const urlObj = new URL(url);
+          
+          const httpsOptions = {
+            method: options.method,
+            hostname: urlObj.hostname,
+            path: urlObj.pathname + urlObj.search,
+            headers: options.headers,
+            rejectUnauthorized: false // EPS এররের লাইভ বাইপাস
+          };
 
-        const reqHttps = https.request(httpsOptions, (resHttps) => {
-          let data = '';
-          resHttps.on('data', (chunk) => { data += chunk; });
-          resHttps.on('end', () => {
-            resolve({
-              ok: resHttps.statusCode >= 200 && resHttps.statusCode < 300,
-              status: resHttps.statusCode,
-              json: async () => JSON.parse(data),
-              text: async () => data
+          const reqHttps = httpsModule.default.request(httpsOptions, (resHttps) => {
+            let data = '';
+            resHttps.on('data', (chunk) => { data += chunk; });
+            resHttps.on('end', () => {
+              resolve({
+                ok: resHttps.statusCode >= 200 && resHttps.statusCode < 300,
+                status: resHttps.statusCode,
+                json: async () => JSON.parse(data),
+                text: async () => data
+              });
             });
           });
-        });
 
-        reqHttps.on('error', (e) => reject(e));
-        if (options.body) reqHttps.write(options.body);
-        reqHttps.end();
+          reqHttps.on('error', (e) => reject(e));
+          if (options.body) reqHttps.write(options.body);
+          reqHttps.end();
+        } catch (err) {
+          reject(err);
+        }
       });
     };
+
 
     // ১. টোকেন নিয়ে আসার রিকোয়েস্ট (কাস্টম বাইপাসার দিয়ে)
     const tokenResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/Auth/GetToken`, {
@@ -203,7 +208,7 @@ export async function POST(req) {
         success: true,
         url: epsData.RedirectURL, // সঠিক অবজেক্ট কী পাস করা হলো [source: 6]
       });
-    }
+    } 
 
     console.warn("EPS API response missing RedirectURL, falling back.");
     return NextResponse.json({
