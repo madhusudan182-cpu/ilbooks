@@ -1,8 +1,12 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, collection, writeBatch, doc } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -16,69 +20,57 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 
-function generateUniqueId(text: string, fallback: string): string {
-  if (!text) return fallback;
-  let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    hash = (hash << 5) - hash + text.charCodeAt(i);
-    hash |= 0;
-  }
-  return `q-${Math.abs(hash)}`;
-}
-
 async function seedDatabase() {
-  console.log("⏳ ফায়ারস্টোরে আপনার ২০০ লেভেলের সব ফাইল ফ্রেশ স্ক্যান ও সিঙ্ক হচ্ছে...");
-  
-  const batch = writeBatch(db);
-  const questionsRef = collection(db, 'questions');
-  let totalUploaded = 0;
+  console.log("🚀 ফায়ারস্টোর স্ক্যানিং ও আপলোড প্রসেস শুরু হচ্ছে...\n");
 
   const libDir = path.join(__dirname, '../src/lib');
+  if (!fs.existsSync(libDir)) {
+    console.log("❌ এরর: src/lib ফোল্ডারটি খুঁজে পাওয়া যায়নি!");
+    process.exit(1);
+  }
+
   const files = fs.readdirSync(libDir);
+  const questionsRef = collection(db, 'questions');
+  
+  let totalUploaded = 0;
+  let currentBatch = writeBatch(db);
+  let batchCounter = 0;
 
   for (const file of files) {
     if (file.startsWith('level-') && file.endsWith('.ts')) {
-      const parts = file.replace('.ts', '').split('-');
-      
-      let mainLevel = "0";
-      let subLevel = "0";
-      let subject = "english";
-
-      // যদি ফাইলের নাম level-0-english-questions ফরম্যাটে হয় (৪টি অংশ)
-      if (parts.length === 4) {
-        mainLevel = parts[1]; // "0"
-        subLevel = "0";       // "0"
-        subject = parts[2];   // "english" বা "bengali"
-      } 
-      // যদি ফাইলের নাম level-0-1-english-questions ফরম্যাটে হয় (৫টি অংশ)
-      else if (parts.length === 5) {
-        mainLevel = parts[1];
-        subLevel = parts[2];
-        subject = parts[3];
-      }
-
-      const levelStr = `${mainLevel}.${subLevel}`;
-      const subjectFormatted = subject.charAt(0).toUpperCase() + subject.slice(1);
-
       const filePath = path.join(libDir, file);
+      const fileNameWithoutExt = file.replace('.ts', '');
       
-      // ক্যাশ ক্লিয়ার করে ফ্রেশ ইম্পোর্ট করা
+      // ডাইনামিক এবং ফ্রেশ মডিউল ইম্পোর্ট নিশ্চিত করা
       delete require.cache[require.resolve(filePath)];
       const fileModule = require(filePath);
       
-      // মডিউলের ভেতরের আসল ডাটা কি (Key) খুঁজে বের করা
       const validKey = Object.keys(fileModule).find(key => key !== '__esModule');
       const questionsArray = validKey ? fileModule[validKey] : null;
 
-      if (Array.isArray(questionsArray) && questionsArray.length > 0) {
-        questionsArray.forEach((question, i) => {
-          const uniqueId = generateUniqueId(question.questionText, `${subject}-${levelStr}-${i}`);
+      if (Array.isArray(questionsArray)) {
+        console.log(`📂 ফাইল সনাক্ত: ${file} -> (${questionsArray.length}টি প্রশ্ন পাওয়া গেছে)`);
+        
+        for (let i = 0; i < questionsArray.length; i++) {
+          const question = questionsArray[i];
+          
+          // ইউনিক আইডি জেনারেট করা (কোনো কোটেশন এরর ছাড়া)
+          const uniqueId = `${fileNameWithoutExt}-q${i + 1}`;
           const docRef = doc(questionsRef, uniqueId);
           
-          batch.set(docRef, {
+          // লেভেল এবং সাবজেক্ট এক্সট্রাক্ট করা
+          const parts = fileNameWithoutExt.split('-');
+          const mainLevel = parts[1] || "0";
+          const subLevel = parts[2] || "0";
+          const levelStr = `${mainLevel}.${subLevel}`; // সবসময় "0.0", "0.1" নিশ্চিত করবে
+          
+          const subjectRaw = parts[3] || "english";
+          const subjectFormatted = subjectRaw.charAt(0).toUpperCase() + subjectRaw.slice(1);
+
+          currentBatch.set(docRef, {
             ...question,
             level: levelStr,
             subject: subjectFormatted,
@@ -86,18 +78,28 @@ async function seedDatabase() {
           }, { merge: true });
 
           totalUploaded++;
-        });
+          batchCounter++;
+
+          // ফায়ারস্টোর ব্যাচ লিমিট (৫০০) হ্যান্ডেল করা এবং await নিশ্চিত করা
+          if (batchCounter === 400) {
+            console.log(`⏳ ৪০০টি প্রশ্নের একটি ব্যাচ আপলোড হচ্ছে...`);
+            await currentBatch.commit();
+            currentBatch = writeBatch(db);
+            batchCounter = 0;
+          }
+        }
+      } else {
+        console.log(`⚠️ ফাইল স্কিপড: ${file} (কোনো সঠিক অ্যারে খুঁজে পাওয়া যায়নি)`);
       }
     }
   }
 
-  if (totalUploaded > 0) {
-    await batch.commit();
-    console.log(`✅ সফলভাবে মোট ${totalUploaded}টি প্রশ্ন ফায়ারস্টোরে সিঙ্ক হয়েছে!`);
-  } else {
-    console.log("ℹ️ কোনো প্রশ্ন খুঁজে পাওয়া যায়নি। ফাইলের ভেতরের অ্যারে চেক করুন।");
+  // অবশিষ্ট ডেটা আপলোড করা
+  if (batchCounter > 0) {
+    await currentBatch.commit();
   }
-  
+
+  console.log(`\n🎉 অপারেশন সফল! মোট ${totalUploaded}টি প্রশ্ন ডাটাবেজে আপলোড হয়েছে।`);
   process.exit(0);
 }
 

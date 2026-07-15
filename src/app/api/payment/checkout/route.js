@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { initializeApp, getApps, getApp } from "firebase/app";
 // HMAC-SHA512 হ্যাশ তৈরির জন্য নোডের বিল্ট-ইন ক্রিপ্টো মডিউল যোগ করা হলো
+
 import crypto from "crypto";
-
 import { getFirestore, doc, updateDoc, setDoc } from "firebase/firestore";
-import { firebaseConfig } from "../../../../firebase/config";
-// SSL সার্টিফিকেট এরর সাময়িকভাবে ইগনোর করার এজেন্ট যোগ করা হলো
 import Agent from 'https';
-const agent = new Agent.Agent({ rejectUnauthorized: false });
 
+// লাইভ এনভায়রনমেন্ট ভ্যারিয়েবল থেকে ডাইনামিক কনফিগ অবজেক্ট তৈরি
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
+
+const agent = new Agent.Agent({ rejectUnauthorized: false });
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
 
 

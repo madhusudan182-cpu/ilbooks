@@ -40,52 +40,70 @@ import { newEnglishLevel8Questions } from "@/lib/level-0-8-english-questions";
 import { newBengaliLevel9Questions } from "@/lib/level-0-9-bengali-questions";
 import { newEnglishLevel9Questions } from "@/lib/level-0-9-english-questions";
 
+
+// ১. lib ফোল্ডারের ভেতরের সব .ts ফাইল ডাইনামিকালি রিড করার কনটেক্সট তৈরি
+const questionsContext = (require as any).context(
+  '../../../lib', // আপনার ফাইল স্ট্রাকচার অনুযায়ী lib ফোল্ডারের রিলেটিভ পাথ
+  false,         // সাব-ফোল্ডার খুঁজবে না
+  /level-.*-questions\.ts$/ // শুধুমাত্র লেভেলের ফাইলগুলো ফিল্টার করবে
+);
+
+// ২. সব ফাইলের ডেটা লুপ চালিয়ে একটি মাস্টার অ্যারেতে জমা করা
+const allQuestionsMasterList: any[] = [];
+
+questionsContext.keys().forEach((key: string) => {
+  const fileModule = questionsContext(key);
+  // মডিউলের ভেতরের আসল এক্সপোর্ট করা কী (Key) খুঁজে বের করা (যেমন: newBengaliLevel0Questions)
+  const validKey = Object.keys(fileModule).find(k => k !== '__esModule');
+  if (validKey && Array.isArray(fileModule[validKey])) {
+    allQuestionsMasterList.push(...fileModule[validKey]);
+  }
+});
+
 export default function AllQuestionsPage() {
   const firestore = useFirestore();
   
   // ক্লাউড ডাটাবেজ থেকে সরাসরি প্রশ্ন কুয়েরি করা
   const questionsQuery = useMemo(() => (firestore ? collection(firestore, 'questions') : null), [firestore]);
   const { data: questions, loading: questionsLoading } = useCollection<Question>(questionsQuery);
-  
+
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>([]);
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => { 
-    setIsClient(true); 
+  useEffect(() => {
+    setIsClient(true);
   }, []);
 
-  // ২০০টি লেভেলের তালিকা তৈরি (০.০ থেকে ১৯.৯)
+  // ✅ ১. ২০০টি লেভেলের তালিকা সঠিকভাবে দশমিক স্ট্রিং তৈরি ("0.0" থেকে "19.9")
   const allLevels = useMemo(() => {
     const levels: string[] = [];
     for (let i = 0; i <= 19; i++) {
       for (let j = 0; j <= 9; j++) {
-        levels.push(`${i}.${j}`);
+        levels.push(`${i}.${j}`); // ব্যাকটিক সিনট্যাক্স ঠিক করা হলো
       }
     }
     return levels;
   }, []);
 
-    // === এই কোডটুকু দিয়ে পুরনো questionsByLevel ব্লকটি পরিবর্তন করুন ===
+  // ✅ ২. ডাটাবেজ থেকে আসা প্রশ্নগুলোকে দশমিক লেভেল অনুযায়ী নিখুঁত গ্রুপ করা
   const questionsByLevel = useMemo(() => {
     if (!questions) return {};
-
     const groups: Record<string, Question[]> = {};
 
     questions.forEach((q: any) => {
       if (!q) return;
       
-      // লেভেল ফরম্যাটটি সবসময় '০.০' বা '১.৫' নিশ্চিত করা
-      const safeLevel = q.level ? parseFloat(String(q.level)).toFixed(1) : "0.0";
+      // ডাটাবেজের পিওর স্ট্রিং লেভেলকে কোনো রূপান্তর ছাড়া সরাসরি রিড করা
+      const safeLevel = q.level ? String(q.level).trim() : "0.0";
 
       if (!groups[safeLevel]) {
         groups[safeLevel] = [];
       }
 
-      // ডাটাবেজের ০, ১, ২, ৩ অবজেক্ট ফরম্যাটকে answers অ্যারেতে রূপান্তর করার লজিক
+      // answers অবজেক্ট ফরম্যাটকে অ্যারেতে রূপান্তর করার লজিক
       let formattedAnswers = Array.isArray(q.answers) ? [...q.answers] : [];
-      
       if (formattedAnswers.length === 0) {
         const optionKeys = ['0', '1', '2', '3'];
         optionKeys.forEach((key) => {
@@ -98,7 +116,6 @@ export default function AllQuestionsPage() {
         });
       }
 
-      // একটি স্ট্যান্ডার্ড অবজেক্ট তৈরি করা যা ফ্রন্টএন্ড রিড করতে পারে
       const standardizedQuestion = {
         ...q,
         id: q.id || `q-missing-${Date.now()}-${Math.random()}`,
@@ -108,7 +125,7 @@ export default function AllQuestionsPage() {
         answers: formattedAnswers
       };
 
-      // ডুপ্লিকেট আইডি এড়াতে চেকিং
+      // ডুপ্লিকেট আইডি এড়ানো নিশ্চিত করা
       if (!groups[safeLevel].some(existingQ => existingQ.id === standardizedQuestion.id)) {
         groups[safeLevel].push(standardizedQuestion);
       }
@@ -116,18 +133,12 @@ export default function AllQuestionsPage() {
 
     return groups;
   }, [questions]);
-  // === এখানে নতুন questionsByLevel ব্লকটি শেষ হলো ===
 
- 
-
-  // এডিট বাটনে ক্লিক করলে ঐ লেভেলের সব প্রশ্নের ফ্রেশ ডেটা লোড করার ডাইনামিক ফাংশন
+  // ✅ ৩. এডিট বাটনে ক্লিক করার ডাইনামিক ফাংশন
   const handleEditClick = (level: string) => {
-    const targetLevelStr = parseFloat(level).toFixed(1);
-    
-    // ডাটাবেজের বর্তমান প্রশ্নগুলোর একটি ফ্রেশ মেমোরি কপি নেওয়া
+    const targetLevelStr = String(level).trim();
     let questionsToEdit = JSON.parse(JSON.stringify(questionsByLevel[targetLevelStr] || []));
 
-    // নিশ্চিত করা হচ্ছে যেন প্রতিটি প্রশ্নের ৪টি অপশন ফর্মের ভেতর সুন্দরভাবে খোলে
     questionsToEdit.forEach((q: Question) => {
       if (!q.answers) q.answers = [];
       while (q.answers.length < 4) {
@@ -138,6 +149,7 @@ export default function AllQuestionsPage() {
     setEditingLevel(level);
     setEditedQuestions(questionsToEdit);
   };
+
 
 
 
