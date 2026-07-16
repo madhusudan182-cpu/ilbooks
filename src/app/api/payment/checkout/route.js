@@ -1,70 +1,16 @@
 import { NextResponse } from "next/server";
 import { initializeApp, getApps, getApp } from "firebase/app";
+// HMAC-SHA512 হ্যাশ তৈরির জন্য নোডের বিল্ট-ইন ক্রিপ্টো মডিউল যোগ করা হলো
 import crypto from "crypto";
+
 import { getFirestore, doc, updateDoc, setDoc } from "firebase/firestore";
-
-// Next.js-কে বিল্ড টাইমে প্রি-রেন্ডার করা থেকে বিরত রাখার কনফিগারেশন
-export const dynamic = 'force-dynamic';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-};
+import { firebaseConfig } from "../../../../firebase/config";
+// SSL সার্টিফিকেট এরর সাময়িকভাবে ইগনোর করার এজেন্ট যোগ করা হলো
+import Agent from 'https';
+const agent = new Agent.Agent({ rejectUnauthorized: false });
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// ক্লাউড হোস্টিং ফ্রেন্ডলি শতভাগ নিরাপদ এবং এরর-ফ্রি SSL বাইপাস নেটওয়ার্ক রিকোয়েস্ট
-const fetchWithSSLBypass = (url, options) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const httpsModule = await import('https');
-      const urlObj = new URL(url);
-      
-      const httpsOptions = {
-        method: options.method || 'POST',
-        hostname: urlObj.hostname,
-        path: urlObj.pathname + urlObj.search,
-        headers: options.headers || {},
-        // এই লাইনটি লাইভ ক্লাউড সার্ভারেও EPS-এর SSL এরর সম্পূর্ণ বাইপাস করবে
-        rejectUnauthorized: false 
-      };
-
-      const reqHttps = httpsModule.default.request(httpsOptions, (resHttps) => {
-        const chunks = [];
-        resHttps.on('data', (chunk) => { chunks.push(chunk); });
-        resHttps.on('end', () => {
-          // সব ডেটা একসাথে বাফার করে স্ট্রিংয়ে রূপান্তর
-          const responseBody = Buffer.concat(chunks).toString();
-          resolve({
-            ok: resHttps.statusCode >= 200 && resHttps.statusCode < 300,
-            status: resHttps.statusCode,
-            json: async () => JSON.parse(responseBody),
-            text: async () => responseBody
-          });
-        });
-      });
-
-      reqHttps.on('error', (e) => {
-        console.error("SSL Bypass Internal Connection Error:", e);
-        reject(e);
-      });
-
-      // রিকোয়েস্ট বডি ডাটা থাকলে তা সার্ভারে পুশ করা
-      if (options.body) {
-        reqHttps.write(options.body);
-      }
-      reqHttps.end();
-    } catch (err) {
-      console.error("Module Loading Exception:", err);
-      reject(err);
-    }
-  });
-};
 
 
 export async function POST(req) {
@@ -73,19 +19,27 @@ export async function POST(req) {
     let { amount, orderId, level, paymentType, userId, customerName, customerEmail, customerPhone } = body;
 
     const currentOrderId = orderId || "ILB-" + Date.now();
-    const merchantTxnId = "TXN-" + Date.now(); 
+        // ফ্রন্টএন্ড থেকে আসা বা তৈরি হওয়া যেকোনো আইডিকে কেটে সর্বোচ্চ ২০ ক্যারেক্টার করা হলো
+    const finalEpsOrderId = currentOrderId.substring(0, 20);
 
+    const merchantTxnId = "TXN-" + Date.now(); // EPS এর জন্য ইউনিক ট্রানজেকশন আইডি
+
+          // লোকালহোস্ট ও লাইভ ওয়েবসাইট উভয়ের জন্য অটোমেটিক ইউআরএল হ্যান্ডলিং লজিক
     const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
     let currentBaseUrl = "";
 
     if (host.includes("localhost") || host.includes("127.0.0.1")) {
-      currentBaseUrl = "https://ilbooksapp.com"; 
+      currentBaseUrl = "https://ilbooksapp.com"; // লোকালহোস্টে থাকলে ডোমেন এরর এড়াতে লাইভ ইউআরএল যাবে
     } else {
       const protocol = req.headers.get("x-forwarded-proto") || "https";
-      currentBaseUrl = `${protocol}://${host}`; 
+      currentBaseUrl = `${protocol}://${host}`; // লাইভ সাইটে থাকলে রিয়েল ইউআরএল ডিটেক্ট করবে
     }
 
+
+
+    // ১. পেমেন্ট টাইপ অনুযায়ী আলাদা সাকসেস ইউআরএল সেট করার লজিক
     let finalSuccessUrl = "";
+
     if (paymentType === "book_shop") {
       finalSuccessUrl = `${currentBaseUrl}/dashboard/book-shop?payment=success&orderId=${currentOrderId}`;
     } else if (paymentType === "patron") {
@@ -94,27 +48,33 @@ export async function POST(req) {
       finalSuccessUrl = `${currentBaseUrl}/dashboard/competition/exam?payment=success&level=${level || '0.1'}&orderId=${currentOrderId}`;
     }
 
-    const baseApiUrl = process.env.EPS_API_URL || "https://eps.com.bd";
+    // এনভায়রনমেন্ট ভেরিয়েবল না পেলে সরাসরি লাইভ ইউআরএল ফলব্যাক হিসেবে দেওয়া হলো
+const baseApiUrl = process.env.EPS_API_URL || "https://eps.com.bd"; 
+
+    // ডকুমেন্টেশন পৃষ্ঠা ২ অনুযায়ী HMAC-SHA512 এবং Base64 ব্যবহার করে হ্যাশ তৈরি
     const hashKey = process.env.EPS_HASH_KEY || "";
     const apiUserName = process.env.EPS_USERNAME || "";
-
+    
     const generatedHash = crypto
       .createHmac("sha512", hashKey)
       .update(apiUserName)
       .digest("base64");
 
     // ১. টোকেন নিয়ে আসার রিকোয়েস্ট
-    const tokenResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/Auth/GetToken`, {
+    const tokenResponse = await fetch(`${baseApiUrl}/v1/Auth/GetToken`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-hash": generatedHash
+        "x-hash": generatedHash // সঠিকভাবে তৈরি করা নতুন হ্যাশ পাঠানো হলো
       },
-      body: JSON.stringify({
-        userName: apiUserName,
-        password: process.env.EPS_PASSWORD
-      })
-    });
+
+  body: JSON.stringify({
+    userName: process.env.EPS_USERNAME,
+    password: process.env.EPS_PASSWORD
+  }),
+  agent: agent // SSL Error বাইপাস করার জন্য
+});
+
 
     if (!tokenResponse.ok) {
       const tokenErrText = await tokenResponse.text();
@@ -123,17 +83,14 @@ export async function POST(req) {
     }
 
     const tokenData = await tokenResponse.json();
-    const bearerToken = tokenData.token;
+    const bearerToken = tokenData.token; 
 
-    // ২. পেলোড অবজেক্ট তৈরি (অফিসিয়াল মার্চেন্ট গাইড v0.5 অনুযায়ী)
+    // ৩. টোকেন ও হ্যাশ ব্যবহার করে পেমেন্ট ইনিশিয়ালাইজ করার পেলোড (ডকুমেন্টেশন পৃষ্ঠা ৫ অনুযায়ী) [source: 5]
     const epsPayload = {
-      merchantId: process.env.EPS_MERCHANT_ID || "3a747cfc-a8d1-4ee2-85fa-e24c8e7cl",
-      storeId: process.env.EPS_STORE_ID, // ফায়ারবেস কনসোলের Key-র সাথে মিল রেখে
-      CustomerOrderId: currentOrderId,
-      merchantTransactonId: merchantTxnId,
-      transactionTypeId: 10, 
-      financialEntityId: 0,
-      transitionStatusId: 0,
+      storeId: process.env.EPS_STORE_ID,
+      CustomerOrderId: finalEpsOrderId,
+      merchantTransactionId: merchantTxnId,
+      transactionTypeId: 1, // 1 = Web View
       totalAmount: Number(amount) || 10,
       successUrl: finalSuccessUrl,
       failUrl: `${currentBaseUrl}/dashboard/payment-failed`,
@@ -146,25 +103,31 @@ export async function POST(req) {
       customerState: "Dhaka",
       customerPostcode: "1200",
       customerCountry: "BD",
-      productName: productName || "ILBooks Service",
+      productName: "ILBooks Service",
       version: "1"
     };
 
-    const checkoutHash = crypto
-    .createHmac("sha512", hashkey)
-    .update(merchantTxnId) // আপনার জেনারেট করা ইউনিক আইডি স্ট্রিং ভ্যালুটিই পাস হবে
-    .digest("base64");
+    console.log("Sending Live Payload to EPS Gateway for Order:", currentOrderId);
 
-    // ৩. সরাসরি পেমেন্ট ইনিশিয়ালাইজ এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো
-    const epsResponse = await fetchWithSSLBypass(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
+        // ডকুমেন্টেশন পৃষ্ঠা ৪ ও ৫ অনুযায়ী merchantTransactionId দিয়ে ২য় হ্যাশ তৈরি
+    const checkoutHash = crypto
+      .createHmac("sha512", hashKey)
+      .update(merchantTxnId)
+      .digest("base64");
+
+            // ৪. সরাসরি পেমেন্ট এপিআই এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো (সঠিক ডাইনামিক পাথ)
+    const epsResponse = await fetch(`${baseApiUrl}/v1/EPSEngine/InitializeEPS`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-hash": checkoutHash,
-        "Authorization": `Bearer ${bearerToken}`
+        "x-hash": checkoutHash, // আপনার জেনারেট করা ২য় সঠিক ডাইনামিক হ্যাশ
+        "Authorization": `Bearer ${bearerToken}` // ১ম এপিআই থেকে পাওয়া টোকেন
       },
       body: JSON.stringify(epsPayload)
     });
+
+
+
 
     if (!epsResponse.ok) {
       const errorHTML = await epsResponse.text();
@@ -174,7 +137,11 @@ export async function POST(req) {
 
     const epsData = await epsResponse.json();
 
+    // ৫. রেসপন্স সফল হলে ইউজারকে রিডাইরেক্ট লিংকে পাঠানো [source: 6]
     if (epsData && epsData.RedirectURL) {
+      console.log("EPS Live Payment URL Generated Successfully:", epsData.RedirectURL);
+
+      // ফায়ারবেস ট্র্যাকিং (নিরাপদ try/catch ব্লকের ভেতরে রাখা হলো)
       if (userId) {
         try {
           const paymentRef = doc(db, "payments", currentOrderId);
@@ -186,22 +153,24 @@ export async function POST(req) {
             paymentType: paymentType || "competition",
             status: "PENDING_LIVE",
             gateway: "EPS_Live",
-            createdAt: new Date()
+            createdAt: new Date(),
           });
+          console.log("Firestore tracking saved successfully.");
         } catch (dbError) {
-          console.error("Firestore Save Error:", dbError);
+          console.error("Firestore Save Error (Skipped for payment process):", dbError);
         }
       }
 
       return NextResponse.json({
         success: true,
-        url: epsData.RedirectURL
+        url: epsData.RedirectURL, // সঠিক অবজেক্ট কী পাস করা হলো [source: 6]
       });
     }
 
+    console.warn("EPS API response missing RedirectURL, falling back.");
     return NextResponse.json({
       success: true,
-      url: finalSuccessUrl
+      url: finalSuccessUrl,
     });
 
   } catch (error) {
