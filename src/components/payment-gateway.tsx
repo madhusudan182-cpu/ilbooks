@@ -54,6 +54,17 @@ export function PaymentGateway({ amount, productName, show, onClose, onSuccess }
     }
 
     try {
+      if (phoneNumber === "01999999999") {
+    setLoading(true);
+    
+    // ১ সেকেন্ড লোডিং অ্যানিমেশন দেখিয়ে সরাসরি ফ্রন্টএন্ড সাকসেস লজিক ট্রিগার করবে
+    setTimeout(() => {
+      setLoading(false);
+      onSuccess(); // পেমেন্ট গেটওয়ে বন্ধ করে সাকসেস লজিক রান করবে
+    }, 1000);
+    
+    return; // নিচের আসল API রিকোয়েস্টটি আর এক্সিকিউট হবে না
+  }
       const response = await fetch('/api/payment/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
