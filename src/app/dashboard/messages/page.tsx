@@ -72,25 +72,45 @@ export default function MessagesPage() {
     const friendsMap = new Map<string, any>();
     const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
 
-    allFollows.forEach((f: any) => {
-      const isMeFollower = f.followerId === user.uid && f.status === "ACTIVE";
-      if (isMeFollower) {
-        const partnerId = f.followingId;
-        if (partnerId === ADMIN_ID) return;
+      // লাইন ৭৫ থেকে ৯৩ পর্যন্ত এই কোডটি রিপ্লেস করুন
+  allFollows.forEach((f: any) => {
+    const isMeFollower = f.followerId === user.uid && f.status === "ACTIVE";
+    if (isMeFollower) {
+      const partnerId = f.followingId;
+      if (partnerId === ADMIN_ID) return;
 
-        const backFollow = allFollows.some((b: any) => b.followerId === partnerId && b.followingId === user.uid && b.status === "ACTIVE");
-        if (backFollow) {
-          const existingConvo = rawConversations.find((c: any) => c.participants?.includes(partnerId));
-          friendsMap.set(partnerId, {
-            id: existingConvo ? existingConvo.id : `new_${partnerId}`,
-            participants: [user.uid, partnerId],
-            updatedAt: existingConvo?.updatedAt || { seconds: 0 },
-            lastMessage: existingConvo?.lastMessage || "এখনই চ্যাট শুরু করুন...",
-            partnerId: partnerId
-          });
-        }
+      const backFollow = allFollows.some((b: any) => b.followerId === partnerId &&
+        b.followingId === user.uid && b.status === "ACTIVE");
+
+      if (backFollow) {
+        const existingConvo = rawConversations.find((c: any) => c.participants?.includes(partnerId));
+        friendsMap.set(partnerId, {
+          id: existingConvo ? existingConvo.id : `new_${partnerId}`,
+          participants: [user.uid, partnerId],
+          updatedAt: existingConvo?.updatedAt || { seconds: 0 },
+          lastMessage: existingConvo?.lastMessage || "এখনই চ্যাট শুরু করুন...",
+          partnerId: partnerId
+        });
+      }
+    }
+  });
+
+  // মেইন ফিক্স: যদি কারেন্ট ইউজার অ্যাডমিন হন, তবে সব একটিভ চ্যাট পার্টনারকে ফ্রেন্ডশিপ ছাড়াই লিস্টে পুশ করা হবে
+  if (user?.uid === ADMIN_ID) {
+    rawConversations?.forEach((convo: any) => {
+      const partnerId = convo.participants?.find((p: string) => p !== ADMIN_ID);
+      if (partnerId) {
+        friendsMap.set(partnerId, {
+          id: convo.id,
+          participants: convo.participants,
+          updatedAt: convo.updatedAt || { seconds: 0 },
+          lastMessage: convo.lastMessage || "",
+          partnerId: partnerId
+        });
       }
     });
+  }
+
 
     let finalConvos = Array.from(friendsMap.values()).sort((a, b) => {
       return (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);
