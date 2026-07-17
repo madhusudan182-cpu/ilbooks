@@ -180,19 +180,26 @@ export default function MessagesPage() {
   }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const chatWithIdToCheck = searchParams.get('chatWith');
-    const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
+  e.preventDefault();
+  const chatWithIdToCheck = searchParams.get('chatWith');
+  const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
 
-    if (user?.uid !== ADMIN_ID && chatWithIdToCheck && allFollows && user?.uid) {
-      const iFollowThem = allFollows.some(f => f.followerId === user.uid && f.followingId === chatWithIdToCheck && f.status === "ACTIVE");
-      const theyFollowMe = allFollows.some(f => f.followerId === chatWithIdToCheck && f.followingId === user.uid && f.status === "ACTIVE");
-      if (!iFollowThem || !theyFollowMe) {
-        alert("You can no longer chat. You are not friends anymore!");
-        return;
-      }
+  // ১৮৭ নম্বর লাইনে `chatWithIdToCheck !== ADMIN_ID` কন্ডিশনটি যুক্ত করা হয়েছে
+  if (user?.uid !== ADMIN_ID && chatWithIdToCheck !== ADMIN_ID && chatWithIdToCheck && allFollows && user?.uid) {
+    const iFollowThem = allFollows.some(f => f.followerId === user.uid &&
+      f.followingId === chatWithIdToCheck && f.status === "ACTIVE");
+    const theyFollowMe = allFollows.some(f => f.followerId === chatWithIdToCheck &&
+      f.followingId === user.uid && f.status === "ACTIVE");
+    if (!iFollowThem || !theyFollowMe) {
+      alert("You can no longer chat. You are not friends anymore!");
+      return;
     }
-    if (!newMessage.trim() || !user || !firestore) return;
+  }
+
+  if (!newMessage.trim() || !user || !firestore) return;
+
+
+
     const chatWithId = searchParams.get('chatWith');
     if (!chatWithId) return;
 

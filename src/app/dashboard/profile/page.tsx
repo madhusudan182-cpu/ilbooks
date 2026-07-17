@@ -14,6 +14,8 @@ import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment,
 setDoc, deleteDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { Camera } from "lucide-react";
+import { useParams } from "next/navigation";
+
 
 
 export default function ProfilePage() {
@@ -73,14 +75,25 @@ export default function ProfilePage() {
 
 
 
-  // ফায়ারস্টোর ভ্যালিডেশন সহ ইউজার রেফারেন্স
-  const userRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+    // প্রথমে useParams হুকটি কল করে ইউআরএল থেকে আইডি রিড করুন
+  const params = useParams();
+  const profileId = params?.id as string;
+
+  // ফায়ারস্টোর ভ্যালিডেশন সহ ইউজার রেফারেন্স (লাইন ৭৭ এর পরিবর্তে)
+  const userRef = useMemo(() => {
+    if (!firestore) return null;
+    const targetUid = profileId || user?.uid;
+    return targetUid ? doc(firestore, 'users', targetUid) : null;
+  }, [user?.uid, firestore, profileId]);
+
   const { data: profile, loading: profileLoading } = useDoc<any>(userRef);
 
- const isOwnProfile = useMemo(() => {
-    if (!user || !profile) return false;
-    return true; 
-  }, [user, profile]);
+  // নিজের প্রোফাইল কিনা তা যাচাই করার লজিক (লাইন ৮০ থেকে ৮৩ এর পরিবর্তে)
+  const isOwnProfile = useMemo(() => {
+    if (!user?.uid || !profile) return false;
+    return !profileId || profileId === user.uid;
+  }, [user?.uid, profileId, profile]);
+
 const followsRef = useMemo(() => (firestore ? collection(firestore, "follows") : null), [firestore]);
 const { data: allFollows = [] } = useCollection<any>(followsRef);
 
