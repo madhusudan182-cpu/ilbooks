@@ -178,10 +178,14 @@ export default function UserProfilePage() {
                     Level: {parseFloat(userData?.level?.toString() || "0").toFixed(1)}
                   </Badge>
                   
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                    {userData?.thana ? `${userData.thana}, ${userData.district}` : "Sujanagar, Pabna, Bangladesh"}
-                  </span>
+                  {/* ইউজারের location ডেটা থাকলেই কেবল পুরো span ব্লকটি আইকনসহ ডমে রেন্ডার হবে */}
+                  {userData?.location && (
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      {userData.location}
+                    </span>
+                  )}
+
                 </div>
 
                 {userData?.institution && (

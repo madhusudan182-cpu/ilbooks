@@ -29,7 +29,7 @@ export function useCollection<T>(queryObj: Query<DocumentData> | null) {
     setState(prevState => ({ ...prevState, loading: true }));
 
     // ২ নম্বর পরিবর্তন: এখানে পাস করা কোয়েরির উপর ৫০টি ডকুমেন্টের সেফটি লিমিট দেওয়া হলো
-    const limitedQuery = firestoreQuery(queryObj, limit(5000));
+    const limitedQuery = firestoreQuery(queryObj, limit(50));
 
     const unsubscribe = onSnapshot(
       limitedQuery,

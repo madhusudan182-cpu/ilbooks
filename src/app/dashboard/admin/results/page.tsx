@@ -20,6 +20,8 @@ export default function AdminResultsPage() {
     const [year, setYear] = useState(new Date().getFullYear().toString());
     const [month, setMonth] = useState(new Date().getMonth().toString());
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [filterMode, setFilterMode] = useState<'date' | 'week' | 'month'>('date');
+
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - i).toString());
@@ -59,7 +61,30 @@ export default function AdminResultsPage() {
         }
     }, [days]);
 
-    const filtered = results.filter(r => isSameDay(r.examDate, selectedDate));
+    const filtered = results.filter(r => {
+  if (!r.examDate) return false;
+  const now = new Date();
+
+  // ক) This Month ফিল্টার
+  if (filterMode === 'month') {
+    return (
+      r.examDate.getFullYear() === now.getFullYear() &&
+      r.examDate.getMonth() === now.getMonth()
+    );
+  }
+
+  // খ) This Week ফিল্টার (গত ৭ দিন)
+  if (filterMode === 'week') {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate() - 7);
+    oneWeekAgo.setHours(0, 0, 0, 0);
+    return r.examDate >= oneWeekAgo && r.examDate <= now;
+  }
+
+  // গ) ডিফল্ট নির্দিষ্ট দিনের ফিল্টার (আপনার আগের লজিক)
+  return isSameDay(r.examDate, selectedDate);
+});
+
 
     return (
         <div className="p-6 max-w-6xl mx-auto">
@@ -68,14 +93,59 @@ export default function AdminResultsPage() {
 
             <Card className="mb-6">
                 <CardContent className="pt-6">
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <select value={year} onChange={(e) => setYear(e.target.value)} className="p-2 border rounded">{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                        <select value={month} onChange={(e) => setMonth(e.target.value)} className="p-2 border rounded">{months.map((m, i) => <option key={i} value={i}>{m}</option>)}</select>
+                    {/* ড্রপডাউন এবং নতুন বাটন দুটিকে একই লাইনে সাজানো হয়েছে */}
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    
+                    {/* ড্রপডাউন গ্রুপ */}
+                    <div className="flex gap-4">
+                        <select 
+                        value={year} 
+                        onChange={(e) => { setYear(e.target.value); setFilterMode('date'); }}
+                        className="p-2 border rounded w-32 bg-white text-black"
+                        >
+                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                        
+                        <select 
+                        value={month} 
+                        onChange={(e) => { setMonth(e.target.value); setFilterMode('date'); }}
+                        className="p-2 border rounded w-40 bg-white text-black"
+                        >
+                        {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                        </select>
                     </div>
+
+                    {/* রেজাল্ট সেকশনের নতুন বাটন গ্রুপ */}
+                    <div className="flex gap-2">
+                        <button
+                        type="button"
+                        onClick={() => setFilterMode('week')}
+                        className={`text-xs px-4 py-2 font-medium h-9 rounded-md transition-all ${
+                            filterMode === 'week' 
+                            ? "bg-blue-600 text-white shadow-sm font-bold" 
+                            : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                        }`}
+                        >
+                        This Week
+                        </button>
+                        <button
+                        type="button"
+                        onClick={() => setFilterMode('month')}
+                        className={`text-xs px-4 py-2 font-medium h-9 rounded-md transition-all ${
+                            filterMode === 'month' 
+                            ? "bg-blue-600 text-white shadow-sm font-bold" 
+                            : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                        }`}
+                        >
+                        This Month
+                        </button>
+                    </div>
+                    </div>
+
                     
                     <div ref={scrollRef} className="flex overflow-x-auto gap-2 p-2 border-t pt-4">
                         {days.map((day, i) => (
-                            <button key={i} data-active={isSameDay(day, selectedDate)} onClick={() => setSelectedDate(day)} className={`min-w-[40px] p-2 rounded border ${isSameDay(day, selectedDate) ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+                            <button key={i} data-active={isSameDay(day, selectedDate)} onClick={() => { setSelectedDate(day); setFilterMode('date'); }} className={`min-w-[40px] p-2 rounded border ${isSameDay(day, selectedDate) ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
                                 {format(day, 'd')}
                             </button>
                         ))}

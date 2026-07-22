@@ -7,17 +7,21 @@ import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export default function AdminOrdersPage() {
+  const router = useRouter();
   const firestore = useFirestore();
   const activeDateRef = useRef<HTMLDivElement>(null);
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [selectedMonth, setSelectedMonth] = useState<string>(
-    new Date().toLocaleString('default', { month: 'short' })
+    new Date().toLocaleString('default', { month: 'long' })
   );
   const [selectedDate, setSelectedDate] = useState<number>(new Date().getDate());
+  // এই লাইনটি যোগ করুন
+  const [filterMode, setFilterMode] = useState<'date' | 'week' | 'month'>('date');
 
   const ordersQuery = useMemo(() => (firestore ? collection(firestore, 'orders') : null), [firestore]);
   const { data: orders, loading } = useCollection<any>(ordersQuery);
@@ -36,30 +40,42 @@ export default function AdminOrdersPage() {
     return () => clearTimeout(timer);
   }, [loading]); 
 
-  // 💡 ২. ডাইনামিক তারিখ অনুযায়ী অর্ডার ফিল্টার করার ম্যাজিক লজিক
-  const filteredOrders = useMemo(() => {
-    if (!orders) return [];
-    return orders.filter((order: any) => {
-      if (!order.orderDate) return false;
-      
-      // ফায়ারবেস টাইমস্ট্যাম্প থেকে ডেট অবজেক্ট তৈরি করা
-      const orderSeconds = order.orderDate.seconds || order.orderDate._seconds;
-      if (!orderSeconds) return false;
-      
-      const date = new Date(orderSeconds * 1000);
-      
-      const orderYear = date.getFullYear().toString();
-      const orderMonth = date.toLocaleString('default', { month: 'short' });
-      const orderDay = date.getDate();
+  // এই কোডটুকু দিয়ে আগের filteredOrders ব্লকটি প্রতিস্থাপন (Replace) করুন
+const filteredOrders = useMemo(() => {
+  if (!orders) return [];
+  const now = new Date();
+  
+  return orders.filter((order: any) => {
+    if (!order.orderDate) return false;
+    const orderSeconds = order.orderDate.seconds || order.orderDate._seconds;
+    if (!orderSeconds) return false;
+    const date = new Date(orderSeconds * 1000);
 
-      // নির্বাচিত বছর, মাস এবং দিনের সাথে অর্ডারটি মিলছে কি না পরীক্ষা করা
-      return (
-        orderYear === selectedYear &&
-        orderMonth === selectedMonth &&
-        orderDay === selectedDate
-      );
-    });
-  }, [orders, selectedYear, selectedMonth, selectedDate]);
+    // This Month ফিল্টার
+    if (filterMode === 'month') {
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+    }
+
+    // This Week ফিল্টার (গত ৭ দিন)
+    if (filterMode === 'week') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(now.getDate() - 7);
+      return date >= oneWeekAgo && date <= now;
+    }
+
+    // ডিফল্ট নির্দিষ্ট দিনের ফিল্টার
+    const orderYear = date.getFullYear().toString();
+    const orderMonth = date.toLocaleString('default', { month: 'long' });
+    const orderDay = date.getDate();
+
+    return (
+      orderYear === selectedYear &&
+      orderMonth === selectedMonth &&
+      orderDay === selectedDate
+    );
+  });
+}, [orders, selectedYear, selectedMonth, selectedDate, filterMode]);
+
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     if (!firestore) return;
@@ -93,7 +109,8 @@ const getBooksList = (order: any): any[] => {
 };
 
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - 2 + i).toString());
 
   if (loading) {
@@ -101,31 +118,71 @@ const getBooksList = (order: any): any[] => {
   }
 
   return (
+    
     <div className="p-6 max-w-6xl mx-auto bg-white min-h-screen text-black">
-      {/* বছর এবং মাসের ড্রপডাউন */}
-      <div className="flex gap-4 mb-6">
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[120px] bg-white border border-gray-200">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200">
-            {years.map((year) => (
-              <SelectItem key={year} value={year}>{year}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* এই বাটনটি ঠিক এখানে পেস্ট করুন */}
+    <Button 
+      onClick={() => router.push('/dashboard/admin')} 
+      variant="ghost" 
+      size="sm" 
+      className="text-gray-500 hover:text-black mb-4 flex items-center gap-2 p-0 bg-transparent hover:bg-transparent font-medium"
+    >
+      ← Back to Admin Panel
+    </Button>
+<div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+  
+  {/* ড্রপডাউন দুটির জন্য ইনলাইন র্যাপার গ্রুপ */}
+  <div className="flex gap-4">
+    <Select value={selectedYear} onValueChange={(val) => { setSelectedYear(val); setFilterMode('date'); }}>
+      <SelectTrigger className="w-[120px] bg-white border border-gray-200">
+        <SelectValue placeholder="Year" />
+      </SelectTrigger>
+      <SelectContent className="bg-white border border-gray-200">
+        {years.map((year) => (
+          <SelectItem key={year} value={year}>{year}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
 
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[120px] bg-white border border-gray-200">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent className="bg-white border border-gray-200">
-            {months.map((month) => (
-              <SelectItem key={month} value={month}>{month}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <Select value={selectedMonth} onValueChange={(val) => { setSelectedMonth(val); setFilterMode('date'); }}>
+      <SelectTrigger className="w-[120px] bg-white border border-gray-200">
+        <SelectValue placeholder="Month" />
+      </SelectTrigger>
+      <SelectContent className="bg-white border border-gray-200">
+        {months.map((month) => (
+          <SelectItem key={month} value={month}>{month}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+
+  {/* ৩ নম্বর ধাপের নতুন ফাংশনাল বাটন দুটি এখানে যুক্ত হলো */}
+  <div className="flex gap-2">
+    <Button
+      type="button"
+      variant={filterMode === 'week' ? 'default' : 'outline'}
+      className={cn(
+        "text-xs px-4 py-2 font-medium h-9 transition-all",
+        filterMode === 'week' ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+      )}
+      onClick={() => setFilterMode('week')}
+    >
+      This Week
+    </Button>
+    <Button
+      type="button"
+      variant={filterMode === 'month' ? 'default' : 'outline'}
+      className={cn(
+        "text-xs px-4 py-2 font-medium h-9 transition-all",
+        filterMode === 'month' ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+      )}
+      onClick={() => setFilterMode('month')}
+    >
+      This Month
+    </Button>
+  </div>
+</div>
+
 
       {/* তারিখের অনুভূমিক স্লাইডার (Auto-Centers Today) */}
       <div className="mb-6">

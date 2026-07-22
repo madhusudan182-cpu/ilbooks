@@ -22,7 +22,7 @@ export default function AdminComplainPage() {
   const [year, setYear] = useState(today.getFullYear().toString());
   const [month, setMonth] = useState((today.getMonth() + 1).toString());
   const [selectedDay, setSelectedDay] = useState(today.getDate());
-
+  const [filterMode, setFilterMode] = useState<'date' | 'week' | 'month'>('date');
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeDayRef = useRef<HTMLButtonElement>(null);
@@ -48,19 +48,50 @@ export default function AdminComplainPage() {
   }, [selectedDay, month, year]);
 
   useEffect(() => {
-    if (firestore) {
+  if (firestore) {
+    let q;
+    const now = new Date();
+
+    if (filterMode === 'month') {
+      // চলতি মাসের ১ম দিন থেকে শেষ দিন পর্যন্ত ডেটা ফিল্টার
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      
+      q = query(
+        collection(firestore, 'complains'),
+        where('createdAt', '>=', Timestamp.fromDate(startOfMonth)),
+        where('createdAt', '<=', Timestamp.fromDate(endOfMonth)),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (filterMode === 'week') {
+      // গত ৭ দিনের কমপ্লেন ডেটা ফিল্টার
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(now.getDate() - 7);
+      oneWeekAgo.setHours(0, 0, 0, 0);
+
+      q = query(
+        collection(firestore, 'complains'),
+        where('createdAt', '>=', Timestamp.fromDate(oneWeekAgo)),
+        where('createdAt', '<=', Timestamp.fromDate(now)),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      // ডিফল্ট: নির্দিষ্ট দিনের ফিল্টার (আপনার আগের লজিক)
       const startOfDay = new Date(parseInt(year), parseInt(month) - 1, selectedDay, 0, 0, 0);
       const endOfDay = new Date(parseInt(year), parseInt(month) - 1, selectedDay, 23, 59, 59);
 
-      const q = query(
-        collection(firestore, 'complains'), 
+      q = query(
+        collection(firestore, 'complains'),
         where('createdAt', '>=', Timestamp.fromDate(startOfDay)),
         where('createdAt', '<=', Timestamp.fromDate(endOfDay)),
         orderBy('createdAt', 'desc')
       );
-      setComplainQuery(q);
     }
-  }, [firestore, year, month, selectedDay]);
+
+    setComplainQuery(q);
+  }
+}, [firestore, year, month, selectedDay, filterMode]); // এখানে filterMode যুক্ত করা হয়েছে
+
 
   const { data: complains, loading } = useCollection(complainQuery);
 
@@ -76,16 +107,56 @@ export default function AdminComplainPage() {
         
         <CardContent className="space-y-4">
           {/* Year and Month Dropdowns - Justified */}
-          <div className="flex justify-between items-center w-full">
-            <select value={year} onChange={(e) => setYear(e.target.value)} className="border p-2 rounded w-32">
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-            </select>
-            <select value={month} onChange={(e) => setMonth(e.target.value)} className="border p-2 rounded w-40">
-              {months.map((m, index) => (
-                <option key={m} value={index + 1}>{m}</option>
-              ))}
-            </select>
+          {/* ড্রপডাউন এবং বাটনগুলোকে একই লাইনে সুন্দরভাবে সাজানো হয়েছে */}
+          <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+            
+            {/* ড্রপডাউন গ্রুপ */}
+            <div className="flex gap-4">
+              <select 
+                value={year} 
+                onChange={(e) => { setYear(e.target.value); setFilterMode('date'); }}
+                className="border p-2 rounded w-32 bg-white text-black"
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+              </select>
+
+              <select 
+                value={month} 
+                onChange={(e) => { setMonth(e.target.value); setFilterMode('date'); }}
+                className="border p-2 rounded w-40 bg-white text-black"
+              >
+                {months.map((m, index) => (
+                  <option key={m} value={index + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* কমপ্লেন সেকশনের নতুন বাটন দুটি এখানে যুক্ত হলো */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFilterMode('week')}
+                className={`text-xs px-4 py-2 font-medium h-9 rounded-md transition-all ${
+                  filterMode === 'week' 
+                    ? "bg-blue-600 text-white shadow-sm font-bold" 
+                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                This Week
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterMode('month')}
+                className={`text-xs px-4 py-2 font-medium h-9 rounded-md transition-all ${
+                  filterMode === 'month' 
+                    ? "bg-blue-600 text-white shadow-sm font-bold" 
+                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                This Month
+              </button>
+            </div>
           </div>
 
           <div ref={scrollContainerRef} className="flex overflow-x-auto gap-2 p-2 border rounded-lg bg-slate-50 scrollbar-hide">
@@ -93,7 +164,8 @@ export default function AdminComplainPage() {
               <button
                 key={day}
                 ref={day === selectedDay ? activeDayRef : null}
-                onClick={() => setSelectedDay(day)}
+                onClick={() => { setSelectedDay(day); setFilterMode('date'); }}
+
                 className={`min-w-[40px] h-10 rounded-md transition-colors ${
                   selectedDay === day ? 'bg-blue-600 text-white shadow-lg' : 'bg-white hover:bg-slate-200 border'
                 }`}

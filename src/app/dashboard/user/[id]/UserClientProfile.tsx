@@ -260,10 +260,13 @@ const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
                   <Badge variant="secondary" className="bg-purple-950 text-purple-300 border-purple-900 text-[10px] font-bold py-0.5">
                     Level: {parseFloat(userData?.level?.toString() || "0").toFixed(1)}
                   </Badge>
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                    {userData?.thana ? `${userData.thana}, ${userData.district}` : "Sujanagar, Pabna, Bangladesh"}
-                  </span>
+                  {/* ফায়ারস্টোরে location ডেটা থাকলেই কেবল আইকন এবং অ্যাড্রেস দেখাবে, অন্যথায় ব্ল্যাংক থাকবে */}
+                  {userData?.location && (
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      {userData.location}
+                    </span>
+                  )}
                 </div>
                 {userData?.institution && (
                   <p className="text-xs text-slate-400 bg-slate-900/50 border border-slate-800/65 rounded-md px-2 py-1 mt-0.5 w-fit">
