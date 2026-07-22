@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:9002"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "responseHeader": ["Content-Type", "Authorization", "x-firebase-storage-version"],
+    "maxAgeSeconds": 3600
+  }
+]

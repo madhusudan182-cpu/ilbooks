@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Gift, ArrowLeft, ChevronLeft, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
+
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -55,6 +56,22 @@ export default function PrizesAndGiftsPage() {
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(new Date().getMonth()); 
   const [selectedDate, setSelectedDate] = useState<Date | 'all'>(new Date());
+
+  const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month'>('all');
+
+const handleThisWeek = () => {
+  setTimeFilter('week');
+  setSelectedYear('all');
+  setSelectedMonth('all');
+  setSelectedDate('all');
+};
+
+const handleThisMonth = () => {
+  setTimeFilter('month');
+  setSelectedYear('all');
+  setSelectedMonth('all');
+  setSelectedDate('all');
+};
 
 
   const [winners, setWinners] = useState<ParticipantResult[]>([]);
@@ -192,10 +209,22 @@ export default function PrizesAndGiftsPage() {
 
   const filteredWinners = useMemo(() => {
   return winners.filter(winner => {
-    // ১. winner.date থেকে নিরাপদভাবে Date অবজেক্ট তৈরি করা
     const wDate = winner.date instanceof Date ? winner.date : new Date(winner.date);
-    
-    // ২. টাইমজোনের ঝামেলা এড়াতে বছর, মাস এবং দিন আলাদা করে নেওয়া
+    const now = new Date();
+
+    // "This Week" ফিল্টার চেক
+    if (timeFilter === 'week') {
+      const startOfWeekDate = startOfWeek(now, { weekStartsOn: 6 }); // শনিবার থেকে সপ্তাহ শুরু ধরতে চাইলে (অথবা আপনার ইচ্ছেমতো)
+      const endOfWeekDate = endOfWeek(now, { weekStartsOn: 6 });
+      return wDate >= startOfWeekDate && wDate <= endOfWeekDate;
+    }
+
+    // "This Month" ফিল্টার চেক
+    if (timeFilter === 'month') {
+      return wDate.getFullYear() === now.getFullYear() && wDate.getMonth() === now.getMonth();
+    }
+
+    // আগের ড্রপডাউন ভিত্তিক ফিল্টারিং লজিক নিচে থাকবে
     const wYear = wDate.getFullYear();
     const wMonth = wDate.getMonth();
     const wDay = wDate.getDate();
@@ -203,7 +232,6 @@ export default function PrizesAndGiftsPage() {
     if (selectedYear !== 'all' && wYear !== selectedYear) return false;
     if (selectedYear !== 'all' && selectedMonth !== 'all' && wMonth !== selectedMonth) return false;
 
-    // ৩. নির্দিষ্ট দিন ফিল্টারিং ট্র্যাকিং (টাইমজোন মুক্ত সরাসরি দিন তুলনা)
     if (selectedYear !== 'all' && selectedMonth !== 'all' && selectedDate !== 'all' && selectedDate) {
       const sDate = new Date(selectedDate);
       if (wDay !== sDate.getDate() || wMonth !== sDate.getMonth() || wYear !== sDate.getFullYear()) {
@@ -212,7 +240,9 @@ export default function PrizesAndGiftsPage() {
     }
     return true;
   });
-}, [winners, selectedYear, selectedMonth, selectedDate]);
+}, [winners, selectedYear, selectedMonth, selectedDate, timeFilter]); 
+// dependency-তে timeFilter যুক্ত করা হয়েছে
+
 
 
   const scroll = (direction: 'left' | 'right') => {
@@ -252,15 +282,19 @@ export default function PrizesAndGiftsPage() {
         <CardContent>
           {/* বছর ও মাস সিলেকশন ড্রপডাউন */}
           <div className="mb-6 flex gap-4">
+          
+            <div className="mb-6 flex flex-wrap items-end gap-4">
+            {/* Year Select */}
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground font-medium">Year</label>
-              <select 
-                value={selectedYear.toString()} 
+              <select
+                value={selectedYear.toString()}
                 onChange={(e) => {
                   const val = e.target.value;
                   setSelectedYear(val === 'all' ? 'all' : Number(val));
                   setSelectedMonth('all');
                   setSelectedDate('all');
+                  setTimeFilter('all'); // বাটন রিসেট
                 }}
                 className="border rounded p-2 text-sm bg-background w-32"
               >
@@ -269,15 +303,17 @@ export default function PrizesAndGiftsPage() {
               </select>
             </div>
 
+            {/* Month Select */}
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground font-medium">Month</label>
-              <select 
-                value={selectedMonth.toString()} 
+              <select
+                value={selectedMonth.toString()}
                 disabled={selectedYear === 'all'}
                 onChange={(e) => {
                   const val = e.target.value;
                   setSelectedMonth(val === 'all' ? 'all' : Number(val));
                   setSelectedDate('all');
+                  setTimeFilter('all'); // বাটন রিসেট
                 }}
                 className="border rounded p-2 text-sm bg-background w-40 disabled:opacity-50"
               >
@@ -285,6 +321,26 @@ export default function PrizesAndGiftsPage() {
                 {months.map((m, index) => <option key={m} value={index}>{m}</option>)}
               </select>
             </div>
+
+            {/* নতুন যুক্ত করা ২ টি বাটন (একই লাইনে রাখার জন্য flex এবং gap ব্যবহার করা হয়েছে) */}
+            <div className="flex gap-2">
+              <Button 
+                variant={timeFilter === 'week' ? 'default' : 'outline'} 
+                onClick={handleThisWeek}
+                className="h-9"
+              >
+                This Week
+              </Button>
+              <Button 
+                variant={timeFilter === 'month' ? 'default' : 'outline'} 
+                onClick={handleThisMonth}
+                className="h-9"
+              >
+                This Month
+              </Button>
+            </div>
+          </div>
+
           </div>
 
           {/* হরিজন্টাল ডেট স্ক্রোলার */}

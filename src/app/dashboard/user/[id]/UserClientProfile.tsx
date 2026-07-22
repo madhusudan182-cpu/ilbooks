@@ -388,6 +388,12 @@ const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
                 <div className="p-4 bg-white min-h-[60px]">
                   <div className="text-sm text-slate-700 leading-relaxed">
                     {post.content}
+                    {post.imageUrl && (
+                      <div className="px-4 pb-4 bg-white w-full flex items-center justify-center">
+                        <div className="overflow-hidden rounded-lg border border-slate-100 max-h-[450px] w-full bg-slate-50 flex items-center justify-center">
+                          <img src={post.imageUrl} alt="User post attachment" className="w-full h-auto object-contain max-h-[450px]" />
+                        </div>
+                      </div>)}
                   </div>
                 </div>
 

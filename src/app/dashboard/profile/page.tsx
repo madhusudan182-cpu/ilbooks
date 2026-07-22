@@ -569,8 +569,18 @@ useEffect(() => {
                         </div>
                       </div>
                     ) : (
-                      <LivePostContent text={post.content || post.text} />
+                      <LivePostContent text={post.content || post.text} />                      
                     )}
+                    {post.imageUrl && (
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-black/95 flex items-center justify-center">
+                        <img 
+                          src={post.imageUrl} 
+                          alt="Post attachment" 
+                          className="w-full h-auto object-contain max-h-[500px]" 
+                        />
+                      </div>
+                    )}
+
                   </CardContent>
                 <CardFooter className="flex items-center gap-6 p-2 px-3 border-t bg-slate-50/50 justify-start">
                   <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-500 hover:text-pink-500 transition-colors active:scale-90 duration-100">

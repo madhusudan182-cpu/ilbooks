@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Landmark, ArrowLeft, BookOpen, Crown, Trophy, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
+
 import { cn } from '@/lib/utils';
 import { db } from '@/firebase/config';
 import { collection, onSnapshot, doc, getDoc, Timestamp } from 'firebase/firestore';
@@ -20,7 +21,22 @@ export default function AdminTransactionsPage() {
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(new Date().getMonth());
   const [selectedDate, setSelectedDate] = useState<Date | 'all'>(new Date());
-  
+  const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month'>('all');
+
+const handleThisWeek = () => {
+  setTimeFilter('week');
+  setSelectedYear('all');
+  setSelectedMonth('all');
+  setSelectedDate('all');
+};
+
+const handleThisMonth = () => {
+  setTimeFilter('month');
+  setSelectedYear('all');
+  setSelectedMonth('all');
+  setSelectedDate('all');
+};
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -186,20 +202,35 @@ export default function AdminTransactionsPage() {
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
-// কোডের শেষ (Part 3)
-// কোডের শুরু: Dashboard/admin/accounts/transactions/page.tsx (Part 4)
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const tDate = new Date(t.date);
-      if (selectedYear !== 'all' && tDate.getFullYear() !== selectedYear) return false;
-      if (selectedYear !== 'all' && selectedMonth !== 'all' && tDate.getMonth() !== selectedMonth) return false;
-      if (selectedYear !== 'all' && selectedMonth !== 'all' && selectedDate !== 'all') {
-        if (!isSameDay(tDate, new Date(selectedDate))) return false;
-      }
-      if (filter !== 'All Transactions' && t.type !== filter) return false;
-      return true;
-    });
-  }, [transactions, filter, selectedYear, selectedMonth, selectedDate]);
+const filteredTransactions = useMemo(() => {
+  return transactions.filter(t => {
+    const tDate = new Date(t.date);
+    const now = new Date();
+
+    // "This Week" ফিল্টার চেক
+    if (timeFilter === 'week') {
+      const startOfWeekDate = startOfWeek(now, { weekStartsOn: 6 }); // শনিবার থেকে সপ্তাহ শুরু
+      const endOfWeekDate = endOfWeek(now, { weekStartsOn: 6 });
+      return tDate >= startOfWeekDate && tDate <= endOfWeekDate && (filter === 'All Transactions' || t.type === filter);
+    }
+
+    // "This Month" ফিল্টার চেক
+    if (timeFilter === 'month') {
+      return tDate.getFullYear() === now.getFullYear() && tDate.getMonth() === now.getMonth() && (filter === 'All Transactions' || t.type === filter);
+    }
+
+    // আগের ড্রপডাউন ভিত্তিক ফিল্টারিং লজিক নিচে থাকবে
+    if (selectedYear !== 'all' && tDate.getFullYear() !== selectedYear) return false;
+    if (selectedYear !== 'all' && selectedMonth !== 'all' && tDate.getMonth() !== selectedMonth) return false;
+    if (selectedYear !== 'all' && selectedMonth !== 'all' && selectedDate !== 'all') {
+      if (!isSameDay(tDate, new Date(selectedDate))) return false;
+    }
+    if (filter !== 'All Transactions' && t.type !== filter) return false;
+    return true;
+  });
+}, [transactions, filter, selectedYear, selectedMonth, selectedDate, timeFilter]); 
+// dependency-তে timeFilter যুক্ত করা হয়েছে
+
 
   let cumulativeAmount = 0;
 
@@ -239,23 +270,63 @@ export default function AdminTransactionsPage() {
         </CardHeader>
         
         <CardContent>
-          <div className="mb-6 flex gap-4">
+          <div className="mb-6 flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground font-medium">Year</label>
-              <select value={selectedYear.toString()} onChange={(e) => { setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value)); setSelectedMonth('all'); setSelectedDate('all'); }} className="border rounded p-2 text-sm bg-background w-32">
+              <select 
+                value={selectedYear.toString()} 
+                onChange={(e) => { 
+                  setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value)); 
+                  setSelectedMonth('all'); 
+                  setSelectedDate('all'); 
+                  setTimeFilter('all'); // বাটন রিসেট
+                }} 
+                className="border rounded p-2 text-sm bg-background w-32"
+              >
                 <option value="all">All Years</option>
                 <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
               </select>
             </div>
+
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground font-medium">Month</label>
-              <select value={selectedMonth.toString()} disabled={selectedYear === 'all'} onChange={(e) => { setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value)); setSelectedDate('all'); }} className="border rounded p-2 text-sm bg-background w-40 disabled:opacity-50">
+              <select 
+                value={selectedMonth.toString()} 
+                disabled={selectedYear === 'all'}
+                onChange={(e) => { 
+                  setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value)); 
+                  setSelectedDate('all'); 
+                  setTimeFilter('all'); // বাটন রিসেট
+                }} 
+                className="border rounded p-2 text-sm bg-background w-40 disabled:opacity-50"
+              >
                 <option value="all">All Months</option>
-                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => <option key={m} value={i}>{m}</option>)}
+                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, i) => (
+                  <option key={m} value={i}>{m}</option>
+                ))}
               </select>
+            </div>
+
+            {/* একই লাইনে নতুন বাটন দুটি */}
+            <div className="flex gap-2">
+              <Button 
+                variant={timeFilter === 'week' ? 'default' : 'outline'} 
+                onClick={handleThisWeek}
+                className="h-9"
+              >
+                This Week
+              </Button>
+              <Button 
+                variant={timeFilter === 'month' ? 'default' : 'outline'} 
+                onClick={handleThisMonth}
+                className="h-9"
+              >
+                This Month
+              </Button>
             </div>
           </div>
 
+          
           {/* ফিক্স ২ (সমাধান): স্ক্রলবার ফিরিয়ে আনা এবং কন্টেইনার ডিজাইন মডিফিকেশন */}
           {selectedYear !== 'all' && selectedMonth !== 'all' && (
             <div className="mb-6 flex items-center border rounded-lg p-3 bg-slate-50/80 shadow-inner relative">

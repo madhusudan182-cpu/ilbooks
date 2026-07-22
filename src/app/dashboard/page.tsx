@@ -46,23 +46,17 @@ export default function HomePage() {
 
   const handleCancel = () => {
     setPostContent("");
+    setPostImage(null);
+    setImagePreview(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
     setIsPosting(false);
   };
 
-  /*const handleImageClick = () => {
-    imageInputRef.current?.click();
-  };
 
-  const handleVideoClick = () => {
-    videoInputRef.current?.click();
-  };*/
-//When the VIP users will be introduce the above 4 lines will be freed and the two function below. 
   const handleImageClick = () => {
-    toast({
-      title: "Coming soon!",
-      description: "Image upload feature is currently under development.",
-    });
-  };
+  imageInputRef.current?.click();
+};
+
 
   const handleVideoClick = () => {
     toast({
@@ -243,17 +237,41 @@ export default function HomePage() {
                   onChange={(e) => setPostContent(e.target.value)}
                 />
                 {imagePreview && (
-                  <div className="relative mt-2 w-full max-h-60 overflow-hidden rounded-lg border border-slate-700">
-                    <img src={imagePreview} alt="Selected preview" className="w-full h-auto object-cover max-h-60" />
-                    <button 
-                      type="button"
-                      onClick={() => { setPostImage(null); setImagePreview(null); }}
-                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 text-xs transition-colors"
-                    >
-                      ✕
-                    </button>
+                  <div className="relative mt-2 w-full max-h-60 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/10 flex items-center justify-center">
+                    <img 
+                      src={imagePreview} 
+                      alt="Selected preview" 
+                      className={cn(
+                        "w-full h-auto object-cover max-h-60 transition-all",
+                        isSubmitting ? "blur-[2px] opacity-70" : ""
+                      )} 
+                    />
+                    
+                    {/* ছবি আপলোড হওয়ার সময় লোডিং স্পিনার এবং টেক্সট */}
+                    {isSubmitting && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 gap-2 text-white font-medium text-xs">
+                        <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
+                        <span>Uploading image...</span>
+                      </div>
+                    )}
+
+                    {/* ক্যানসেল বাটন (লোডিং চলার সময় হাইড থাকবে) */}
+                    {!isSubmitting && (
+                      <button
+                        type="button"
+                        onClick={() => { 
+                          setPostImage(null); 
+                          setImagePreview(null); 
+                          if (imageInputRef.current) imageInputRef.current.value = ""; 
+                        }}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 text-xs transition-colors z-10"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 )}
+
               </form>
             </div>
           </div>
@@ -267,13 +285,23 @@ export default function HomePage() {
                   accept="image/*" 
                   className="hidden" 
                   onChange={(e) => {
-                    const file = e.target.files?.[0]; // এখানে অবশ্যই [0] হতে হবে
-                            if (file) {
-                    setPostImage(file);
-                    setImagePreview(URL.createObjectURL(file));
-                    console.log("Image selected:", file.name);
-                  }
-
+                    const file = e.target.files?.[0];
+                      if (file) {
+                        // ১০ MB সাইজ ভ্যালিডেশন (10 * 1024 * 1024 bytes)
+                        if (file.size > 10485760) {
+                          toast({
+                            variant: "destructive",
+                            title: "File too large",
+                            description: "Please select an image smaller than 10MB.",
+                          });
+                          // ইনপুট ফিল্ড রিসেট করা হচ্ছে
+                          if (imageInputRef.current) imageInputRef.current.value = "";
+                          return;
+                        }
+                        setPostImage(file);
+                        setImagePreview(URL.createObjectURL(file));
+                        console.log("Image selected:", file.name);
+                      }
                   }}
                 /> 
                 <input type="file" ref={videoInputRef} accept="video/*" className="hidden" />
@@ -348,6 +376,17 @@ export default function HomePage() {
                   {/* 📄 ২য় বক্স: বডি (পোস্টের মূল লেখা - সাদা ব্যাকগ্রাউন্ড এবং মোটা হালকা নীল বর্ডার ডিজাইন) */}
                   <CardContent className="p-4 bg-white min-h-[60px] border-t-2 border-b-2 border-sky-200/80 text-sm text-slate-700 text-left my-1.5 transition-all">
                     <LivePostContent text={post.content || post.text} />
+                    {post.imageUrl && (
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-black/95 flex items-center justify-center">
+                        <img 
+                          src={post.imageUrl} 
+                          alt="Profile post attachment" 
+                          className="w-full h-auto object-contain max-h-[500px]" 
+                        />
+                      </div>
+                    )}
+
+
                   </CardContent>
 
                 {/* 👍 💬 🔗 অ্যাকশন বাটনসমূহ (একেবারে কাছাকাছি ও সুন্দরভাবে সাজানো) */}
