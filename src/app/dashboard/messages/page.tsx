@@ -377,9 +377,11 @@ export default function MessagesPage() {
                           {/* ফিক্স: সাধারণ টেক্সটের বদলে আমাদের তৈরি ফাংশনটি কল করা হলো যেন লিংক ক্লিকেবল হয় */}
                           <span>{renderMessageText(msg.text)}</span>
                           {msg.senderId === user?.uid && (
-
-                            msg.status === 'seen' ? <CheckCheck className="h-3 w-3 text-green-600 shrink-0 ml-1 inline-block align-middle" /> : msg.status === 'sent' ? <CheckCheck className="h-3 w-3 text-slate-500 opacity-80 shrink-0 ml-1 inline-block align-middle" /> : <Check className="h-3 w-3 text-slate-400 opacity-70 shrink-0 ml-1 inline-block align-middle" />
+                            msg.status === 'seen' ? 
+                              <CheckCheck className="h-3 w-3 text-green-600 shrink-0 ml-1 inline-block align-middle" /> : 
+                              <CheckCheck className="h-3 w-3 text-red-600 shrink-0 ml-1 inline-block align-middle" />
                           )}
+
                         </p>
                       </div>
                     </div>
