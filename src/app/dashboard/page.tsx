@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, increment, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import * as nsfwjs from 'nsfwjs';
 
 
 import type { User } from "@/lib/types";
@@ -73,6 +74,91 @@ export default function HomePage() {
 
     setIsSubmitting(true);
     try {
+    // কোডের শুরু (Beginning of the code)
+    // ১. পরিচিত অ্যাডাল্ট ওয়েবসাইট ও ডোমেইন সমূহের তালিকা
+    const badDomains = [
+      "xhamster", "xvideos", "pornhub", "xnxx", "youporn", "brazzers", "chaturbate", 
+      "onlyfans", "redtube", "stripchat", "bongacams", "livejasmin", "xv-videos", 
+      "spankbang", "eporner", "hqporner", "txxx", "voyeurhouse", "xhamsterlive"
+    ];
+
+    // ২. ট্রিকি বাইপাস (যেমন: p0rn, p*rn, s3x) ধরার জন্য রেগুলার এক্সপ্রেশন (Regex) প্যাটার্ন
+    // এটি 'porn', 'p0rn', 'p*rn', 'p_orn', 'p.orn' ইত্যাদি সব ধরনের কম্বিনেশন একসাথে ব্লক করবে
+    const badPatterns = [
+      /p[o0\*\_]rn/i,          // porn, p0rn, p*rn
+      /s[e3\*\_]x/i,           // sex, s3x, s*x
+      /n[u0\*\_]d[e3\*\_]/i,   // nude, n0de, n*de
+      /b[o0\*\_]{2}bs/i,       // boobs, b00bs
+      /p[e3\*\_]n[i1\*\_]s/i,   // penis, p3n1s
+      /v[a4\*\_]g[i1\*\_]n[a4\*\_]/i, // vagina
+      /n[i1\*\_]ppl[e3\*\_]/i,  // nipple
+      /c[h0\*\_]t[i1\*\_]/i,   // choti (বাংলা চটি)
+      /[a4\*\_]d[u0\*\_]lt/i,   // adult
+      /n[a4\*\_]k[e3\*\_]d/i,   // naked
+      /xxx/i,                  // xxx
+      /hentai/i,               // hentai
+      /milf/i                  // milf
+    ];
+
+    const lowercaseContent = postContent.toLowerCase();
+
+    // চেক করা: টেক্সটের ভেতর কোনো পর্নো ডোমেইন আছে কিনা
+    const hasBadDomain = badDomains.some(domain => lowercaseContent.includes(domain));
+
+    // চেক করা: টেক্সটের ভেতর ট্রিকি কোনো অ্যাডাল্ট প্যাটার্ন ম্যাচ করে কিনা
+    const hasBadPattern = badPatterns.some(pattern => pattern.test(lowercaseContent));
+
+    // যেকোনো একটি সত্য হলেই পোস্ট ব্লক হবে
+    if (hasBadDomain || hasBadPattern) {
+      toast({
+        variant: "destructive",
+        title: "অ্যাকশন ব্লক করা হয়েছে!",
+        description: "You can't post it here!",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+// কোডের শুরু (Beginning of the code)
+    // ==========================================
+    // এআই দিয়ে ছবির পিক্সেল স্ক্যান এবং নগ্নতা ফিল্টার করার লজিক (লাইন ১৪১ এর ঠিক ওপরে)
+    // ==========================================
+    if (postImage) {
+      try {
+        // ১. ক্লায়েন্ট-সাইড এআই মডেল ব্যাকগ্রাউন্ডে লোড করা
+        const model = await nsfwjs.load();
+        
+        // ২. আপলোড করা ফাইলটিকে মেমোরিতে একটি ইমেজ এলিমেন্টে রূপান্তর
+        const imgElement = document.createElement('img');
+        imgElement.src = URL.createObjectURL(postImage);
+        
+        // ইমেজ পুরোপুরি লোড হওয়া পর্যন্ত অপেক্ষা করা
+        await new Promise((resolve) => {
+          imgElement.onload = resolve;
+        });
+
+        // ৩. এআই মডেল দিয়ে ছবিটির পিক্সেল ক্লাসিফাই/স্ক্যান করা
+        const predictions = await model.classify(imgElement);
+        
+        // ৪. ছবিতে Porn বা Explicit Nudity এর উপস্থিতি চেক করা (কনফিডেন্স স্কোর ৭০% এর বেশি হলে)
+        const isNSFW = predictions.some(p => 
+          (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.7
+        );
+
+        if (isNSFW) {
+          toast({
+            variant: "destructive",
+            title: "অ্যাকশন ব্লক করা হয়েছে!",
+            description: "You can't post it here!",
+          });
+          setIsSubmitting(false);
+          return; // ফায়ারবেস স্টোরেজ ও ফায়ারস্টোরে ডাটা পাঠানো আটকে দেবে
+        }
+      } catch (error) {
+        console.error("AI Image scanning failed:", error);
+      }
+    }
+
+
       let finalImageUrl = null;
 
       // ১. ইউজার ছবি সিলেক্ট করে থাকলে সেটি ফায়ারবেস স্টোরেজে আপলোড করা
@@ -615,37 +701,107 @@ function LiveCommentsList({ postId, firestore }: { postId: string; firestore: an
     </div>
   );
 }
-// ৫টি বাক্যের বেশি হলে 'Show More' এবং 'Show Less' মেকানিজম হ্যান্ডেল করার কম্পোনেন্ট
+// কোডের শুরু (Beginning of the code)
+// লিঙ্ক ক্লিকেবল করা এবং ওয়েবসাইটের ছোট প্রিভিউ/ছবি দেখানোর কম্পোনেন্ট
 function LivePostContent({ text }: { text: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!text) return null;
 
-  // নতুন লাইন (\n) অথবা ডট (.) দিয়ে বাক্যগুলোকে আলাদা করা হচ্ছে
+  // ইউআরএল (URL) ডিটেক্ট করার জন্য রেগুলার এক্সপ্রেশন
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const matchedUrls = text.match(urlRegex);
+
+  // টেক্সটকে লিঙ্কে রূপান্তর করার ফাংশন
+  const renderClickableText = (inputText: string) => {
+    const parts = inputText.split(urlRegex);
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-pink-500 hover:text-pink-600 hover:underline font-medium break-all inline-block"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   const sentences = text.split(/(?<=\n)|(?<=\. )/);
-
-  // যদি ৫ বা তার কম বাক্য থাকে, তবে পুরো টেক্সট সরাসরি দেখিয়ে দেবে
-  if (sentences.length <= 3) {
-    return <p className="whitespace-pre-wrap font-normal leading-relaxed text-left">{text}</p>;
-  }
-
-  // প্রথম ৫টি বাক্য এবং বাকি বাক্যগুলো আলাদা করা হলো
+  const isLongText = sentences.length > 3;
   const truncatedText = sentences.slice(0, 3).join("");
 
   return (
-    <div className="text-left">
-      <p className="whitespace-pre-wrap font-normal leading-relaxed">
-        {isExpanded ? text : truncatedText}
-        {!isExpanded && " ..."}
-      </p>
-      <button
-        type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-2 transition-colors cursor-pointer block"
-      >
-        {isExpanded ? "Show Less" : "Show More"}
-      </button>
+    <div className="text-left space-y-3">
+      <div>
+        <p className="whitespace-pre-wrap font-normal leading-relaxed">
+          {isLongText ? (isExpanded ? renderClickableText(text) : renderClickableText(truncatedText)) : renderClickableText(text)}
+          {isLongText && !isExpanded && " ..."}
+        </p>
+        {isLongText && (
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-2 transition-colors cursor-pointer block"
+          >
+            {isExpanded ? "Show Less" : "Show More"}
+          </button>
+        )}
+      </div>
+
+      {/* ২ নম্বর কাজের সমাধান: লিঙ্কের ছোট ছবি/প্রিভিউ দেখানো */}
+      {matchedUrls && matchedUrls.map((url, idx) => (
+        <LinkPreviewCard key={idx} url={url} />
+      ))}
     </div>
   );
 }
+
+// ওয়েবসাইটের মেটাডাটা থেকে ছবি এনে ছোট প্রিভিউ কার্ড বানানোর কম্পোনent
+function LinkPreviewCard({ url }: { url: string }) {
+  const [previewData, setPreviewData] = useState<{ title: string; image: string } | null>(null);
+
+  useEffect(() => {
+    // ওপেন গ্রাফ (OpenGraph) ডাটা ফ্রিতে স্ক্র্যাপ করার একটি পাবলিক এপিআই ব্যবহার
+    fetch(`https://microlink.io{encodeURIComponent(url)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'success' && data.data) {
+          setPreviewData({
+            title: data.data.title || 'Shared Link',
+            image: data.data.image?.url || data.data.logo?.url || '',
+          });
+        }
+      })
+      .catch(() => setPreviewData(null));
+  }, [url]);
+
+  if (!previewData || !previewData.image) return null;
+
+  return (
+    <a 
+      href={url} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="flex items-center gap-3 p-2 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors max-w-md mt-2"
+    >
+      <img 
+        src={previewData.image} 
+        alt="Preview" 
+        className="w-16 h-16 object-cover rounded border bg-white shrink-0"
+      />
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-slate-700 truncate">{previewData.title}</p>
+        <p className="text-[10px] text-slate-400 truncate">{url}</p>
+      </div>
+    </a>
+  );
+}
+// কোডের শেষ (Ending of the code)
 

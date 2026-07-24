@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, CreditCard, Plus, Minus, Trash2, Download, Loader2 } from 'lucide-react';
+
+import { ShoppingCart, CreditCard, Plus, Minus, Trash2, Download, Loader2, Youtube } from 'lucide-react';
+
 import { PaymentGateway } from '@/components/payment-gateway';
 import { useToast } from '@/hooks/use-toast';
 import type { Book, User } from '@/lib/types';
@@ -310,7 +312,8 @@ export default function BookShopPage() {
                       <Skeleton className="h-8 w-full" />
                     </div>
                   ))
-                ) : displayedBooks.length > 0 ? (
+                ) : displayedBooks.length > 0 ? (                  
+                  
                   displayedBooks.map((book) => (
                     <Card key={book.id} className="overflow-hidden flex flex-col">
                       <div className="relative aspect-[2/3] w-full">
@@ -325,30 +328,68 @@ export default function BookShopPage() {
                       <div className="p-2 flex flex-col flex-grow">
                         <h3 className="font-semibold font-headline text-xs flex-grow">{book.title}</h3>
                         <p className="text-xs text-muted-foreground">{book.author}</p>
+                        
                         {book.pdfUrl ? (
-                            <div className="flex justify-between items-center mt-2 w-full gap-2">
-                                <Button size="sm" asChild className="flex-1">
-                                    <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
-                                        Read
-                                    </Link>
-                                </Button>
-                                <Button size="icon" variant="secondary" asChild>
-                                    <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
-                                        <Download className="h-4 w-4" />
-                                    </Link>
-                                </Button>
+                          <div className="flex flex-col gap-2 mt-2 w-full">
+                            <div className="flex justify-between items-center w-full gap-2">
+                              <Button size="sm" asChild className="flex-1">
+                                <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                  Read
+                                </Link>
+                              </Button>
+                              <Button size="icon" variant="secondary" asChild>
+                                <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                  <Download className="h-4 w-4" />
+                                </Link>
+                              </Button>
                             </div>
+                            
+                            {/* ইউটিউব লিঙ্ক থাকলে লোগো দেখাবে */}
+                            {book.youtubeUrl && (
+                              <div className="flex justify-center items-center w-full pt-1">
+                                <a 
+                                  href={book.youtubeUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-red-600 hover:text-red-700 transition-colors flex items-center justify-center p-1 rounded-full hover:bg-red-50"
+                                  title="Watch on YouTube"
+                                >
+                                  <Youtube className="h-6 w-6 stroke-[2.5]" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         ) : (
-                            <div className="flex justify-between items-center mt-2 w-full">
-                                <p className="font-bold text-sm text-primary">Tk {book.price}</p>
-                                <Button size="sm" onClick={() => handleAddToCart(book)}>
-                                    <ShoppingCart className="h-4 w-4" />
-                                </Button>
+                          <div className="flex flex-col gap-2 mt-2 w-full">
+                            <div className="flex justify-between items-center w-full">
+                              <p className="font-bold text-sm text-primary">Tk {book.price}</p>
+                              <Button size="sm" onClick={() => handleAddToCart(book)}>
+                                <ShoppingCart className="h-4 w-4" />
+                              </Button>
                             </div>
+                            
+                            {/* পেইড বইয়ের নিচেও ইউটিউব লিঙ্ক থাকলে লোগো দেখাবে */}
+                            {book.youtubeUrl && (
+                              <div className="flex justify-center items-center w-full pt-1">
+                                <a 
+                                  href={book.youtubeUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-red-600 hover:text-red-700 transition-colors flex items-center justify-center p-1 rounded-full hover:bg-red-50"
+                                  title="Watch on YouTube"
+                                >
+                                  <Youtube className="h-6 w-6 stroke-[2.5]" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </Card>
                   ))
+
+
+
                 ) : (
                   <div className="col-span-full text-center text-muted-foreground py-10">
                     <p>

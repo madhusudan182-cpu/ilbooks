@@ -79,6 +79,18 @@ const EditableBookGrid = ({
                         <Input id={`pdfUrl-${book.id}`} placeholder="https://example.com/book.pdf" value={book.pdfUrl || ''} onChange={(e) => onBookChange(book.id, 'pdfUrl', e.target.value)} />
                          <p className="text-xs text-muted-foreground">Upload PDF to a service (e.g. Google Drive) and paste the public link here.</p>
                     </div>
+                    
+                    <div className="grid gap-2">
+                    <Label htmlFor={`youtubeUrl-${book.id}`}>YouTube Video URL (Optional)</Label>
+                    <Input 
+                        id={`youtubeUrl-${book.id}`}
+                        placeholder="https://youtube.com..." 
+                        value={book.youtubeUrl || ''} 
+                        onChange={(e) => onBookChange(book.id, 'youtubeUrl', e.target.value)} 
+                    />
+                    <p className="text-xs text-muted-foreground">Add a YouTube video link related to this book.</p>
+                    </div>
+                   
                      <div className="grid gap-2">
                         <Label>Cover Image</Label>
                         <input 
@@ -193,9 +205,15 @@ function BooksPageContent() {
                 dataToSave.category = book.category;
             }
             if (book.pdfUrl) {
-                dataToSave.pdfUrl = book.pdfUrl;
+            dataToSave.pdfUrl = book.pdfUrl;
             } else {
-                dataToSave.pdfUrl = ''; // Explicitly clear if empty
+            dataToSave.pdfUrl = ''; 
+            }
+
+            if (book.youtubeUrl) {
+            dataToSave.youtubeUrl = book.youtubeUrl;
+            } else {
+            dataToSave.youtubeUrl = ''; // ফায়ারবেস থেকে খালি করার জন্য স্পষ্ট ক্লিয়ারিং
             }
 
             batch.set(docRef, dataToSave, { merge: true });
@@ -247,6 +265,7 @@ function BooksPageContent() {
             coverUrl: `https://picsum.photos/seed/new-${Date.now()}/400/600`,
             level: editingMode.type === 'levels' ? editingMode.identifier : 'all',
             pdfUrl: '',
+            youtubeUrl: '',
         };
 
         if (editingMode.type === 'vocab') {

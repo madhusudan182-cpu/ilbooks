@@ -34,6 +34,7 @@ export type Book = {
   price: number;
   coverUrl: string;
   pdfUrl?: string;
+  youtubeUrl?: string;
   level: string;
   category?: 'vocab_grammar' | 'popular';
 };
