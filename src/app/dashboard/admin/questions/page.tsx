@@ -13,10 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, query, where } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
+
 
 
 import { newBengaliLevel0Questions } from "@/lib/level-0-0-bengali-questions";
@@ -44,48 +45,52 @@ import { newEnglishLevel9Questions } from "@/lib/level-0-9-english-questions";
 
 
 export default function AllQuestionsPage() {
-  const firestore = useFirestore();
-  
-  // ক্লাউড ডাটাবেজ থেকে সরাসরি প্রশ্ন কুয়েরি করা
-  const questionsQuery = useMemo(() => (firestore ? collection(firestore, 'questions') : null), [firestore]);
-  const { data: questions, loading: questionsLoading } = useCollection<Question>(questionsQuery);
+    const firestore = useFirestore();
 
+  // ১. স্টেটগুলো সবার আগে ডিফাইন করতে হবে (অর্ডার ঠিক করা হলো)
+  const [activeLevel, setActiveLevel] = useState<string | null>(null);
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>([]);
-  const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // ✅ ১. ২০০টি লেভেলের তালিকা সঠিকভাবে দশমিক স্ট্রিং তৈরি ("0.0" থেকে "19.9")
+  // ২. ডাইনামিক কোয়েরি লজিক
+  const questionsQuery = useMemo(() => {
+    if (!firestore || !activeLevel) return null;
+    const targetLevelStr = parseFloat(activeLevel).toFixed(1);
+    return query(collection(firestore, 'questions'), where('level', '==', targetLevelStr));
+  }, [firestore, activeLevel]);
+
+  // ৩. ফায়ারবেস কানেকশন হুক (যা মুছে গিয়েছিল, তা লিমিটসহ ফেরত আনা হলো)
+  const { data: questions, loading: questionsLoading } = useCollection<Question>(questionsQuery, 150);
+
+  // ৪. ২০০টি লেভেলের তালিকা তৈরি
   const allLevels = useMemo(() => {
     const levels: string[] = [];
     for (let i = 0; i <= 19; i++) {
       for (let j = 0; j <= 9; j++) {
-        levels.push(`${i}.${j}`); // ব্যাকটিক সিনট্যাক্স ঠিক করা হলো
+        levels.push(`${i}.${j}`);
       }
     }
     return levels;
   }, []);
 
-  // ✅ ২. ডাটাবেজ থেকে আসা প্রশ্নগুলোকে দশমিক লেভেল অনুযায়ী নিখুঁত গ্রুপ করা
+  // ৫. ডেটা গ্রুপ করার লজিক
   const questionsByLevel = useMemo(() => {
     if (!questions) return {};
     const groups: Record<string, Question[]> = {};
-
     questions.forEach((q: any) => {
       if (!q) return;
-      
-      // ডাটাবেজের পিওর স্ট্রিং লেভেলকে কোনো রূপান্তর ছাড়া সরাসরি রিড করা
-      const safeLevel = q.level ? String(q.level).trim() : "0.0";
 
+      const safeLevel = q.level ? String(q.level).trim() : "0.0";
       if (!groups[safeLevel]) {
         groups[safeLevel] = [];
       }
 
-      // answers অবজেক্ট ফরম্যাটকে অ্যারেতে রূপান্তর করার লজিক
       let formattedAnswers = Array.isArray(q.answers) ? [...q.answers] : [];
       if (formattedAnswers.length === 0) {
         const optionKeys = ['0', '1', '2', '3'];
@@ -108,30 +113,27 @@ export default function AllQuestionsPage() {
         answers: formattedAnswers
       };
 
-      // ডুপ্লিকেট আইডি এড়ানো নিশ্চিত করা
       if (!groups[safeLevel].some(existingQ => existingQ.id === standardizedQuestion.id)) {
         groups[safeLevel].push(standardizedQuestion);
       }
     });
-
     return groups;
   }, [questions]);
 
-  // ✅ ৩. এডিট বাটনে ক্লিক করার ডাইনামিক ফাংশন
+  // ৬. এডিট বাটনের ফাংশন
   const handleEditClick = (level: string) => {
     const targetLevelStr = String(level).trim();
     let questionsToEdit = JSON.parse(JSON.stringify(questionsByLevel[targetLevelStr] || []));
-
     questionsToEdit.forEach((q: Question) => {
       if (!q.answers) q.answers = [];
       while (q.answers.length < 4) {
         q.answers.push({ text: 'New Answer', isCorrect: false });
       }
     });
-
     setEditingLevel(level);
     setEditedQuestions(questionsToEdit);
   };
+
 
 
 
@@ -222,7 +224,19 @@ export default function AllQuestionsPage() {
           {(questionsLoading || !isClient) ? (
             <div className="space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
           ) : (
-            <Accordion type="single" collapsible className="w-full max-h-[60rem] overflow-y-auto">
+            <Accordion 
+              type="single" 
+              collapsible 
+              className="w-full max-h-[60rem] overflow-y-auto"
+              onValueChange={(value) => {
+                if (value) {
+                  const selectedLevel = value.replace('level-q-', '');
+                  setActiveLevel(selectedLevel);
+                } else {
+                  setActiveLevel(null);
+                }
+              }}
+            >
               {allLevels.map((level) => {
                 const targetLevelStr = parseFloat(level).toFixed(1);
                 const questionsForLevel = questionsByLevel[targetLevelStr] || [];
