@@ -77,7 +77,10 @@ export type Question = {
   subject: 'Bengali' | 'English';
   questionText: string;
   answers: Answer[];
+  youtubeUrl?: string; // অপশনাল ইউটিউব লিঙ্ক এরর এড়ানোর জন্য
+  pdfUrl?: string;     // অপশনাল পিডিএফ লিঙ্ক এরর এড়ানোর জন্য
 };
+
 
 export type SyllabusTopic = {
   marks: number;

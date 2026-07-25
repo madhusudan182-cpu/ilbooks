@@ -210,11 +210,12 @@ function BooksPageContent() {
             dataToSave.pdfUrl = ''; 
             }
 
-            if (book.youtubeUrl) {
-            dataToSave.youtubeUrl = book.youtubeUrl;
+            if (book.youtubeUrl !== undefined) {
+                dataToSave.youtubeUrl = book.youtubeUrl;
             } else {
-            dataToSave.youtubeUrl = ''; // ফায়ারবেস থেকে খালি করার জন্য স্পষ্ট ক্লিয়ারিং
+                dataToSave.youtubeUrl = '';
             }
+
 
             batch.set(docRef, dataToSave, { merge: true });
         });

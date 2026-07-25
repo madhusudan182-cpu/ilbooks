@@ -315,80 +315,94 @@ export default function BookShopPage() {
                 ) : displayedBooks.length > 0 ? (                  
                   
                   displayedBooks.map((book) => (
-                    <Card key={book.id} className="overflow-hidden flex flex-col">
-                      <div className="relative aspect-[2/3] w-full">
-                        <Image
-                          src={book.coverUrl}
-                          alt={book.title}
-                          fill
-                          className="object-cover"
-                          data-ai-hint="book cover"
-                        />
+                    <Card key={book.id} className="overflow-hidden flex flex-col justify-between border bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow h-full">
+                      {/* ওপরের অংশ: ইমেজ এবং টেক্সট কন্টেন্ট */}
+                      <div>
+                        <div className="relative aspect-[3/4] w-full bg-slate-50 border-b">
+                          <Image
+                            src={book.coverUrl}
+                            alt={book.title}
+                            fill
+                            className="object-cover"
+                            data-ai-hint="book cover"
+                          />
+                        </div>
+                        <div className="p-3 space-y-1">
+                          <h3 className="font-semibold text-slate-800 text-xs line-clamp-2 min-h-[2rem] leading-tight">
+                            {book.title}
+                          </h3>
+                          {/* পরিবর্তনের ১ নম্বর পয়েন্ট: লেখক না থাকলে কিছুই দেখাবে না */}
+                          {book.author && book.author.trim() !== "" && (
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {book.author}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="p-2 flex flex-col flex-grow">
-                        <h3 className="font-semibold font-headline text-xs flex-grow">{book.title}</h3>
-                        <p className="text-xs text-muted-foreground">{book.author}</p>
-                        
+
+                      {/* নিচের অংশ: অ্যাকশন বাটনসমূহ */}
+                      <div className="p-3 pt-0 mt-auto w-full">
                         {book.pdfUrl ? (
-                          <div className="flex flex-col gap-2 mt-2 w-full">
-                            <div className="flex justify-between items-center w-full gap-2">
-                              <Button size="sm" asChild className="flex-1">
+                          /* পরিবর্তনের ২ নম্বর পয়েন্ট: YouTube URL এর ওপর ভিত্তি করে ফ্লেক্স লেআউট পরিবর্তন */
+                          <div className={`flex w-full gap-1.5 ${book.youtubeUrl ? "flex-col" : "flex-row items-center"}`}>
+                            <div className="flex justify-between items-center w-full gap-1.5 flex-1">
+                              <Button size="sm" asChild className="flex-1 text-xs h-8 bg-blue-600 hover:bg-blue-700">
                                 <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
                                   Read
                                 </Link>
                               </Button>
-                              <Button size="icon" variant="secondary" asChild>
+                              <Button size="icon" variant="secondary" asChild className="h-8 w-8 shrink-0 border">
                                 <Link href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
                                   <Download className="h-4 w-4" />
                                 </Link>
                               </Button>
                             </div>
                             
-                            {/* ইউটিউব লিঙ্ক থাকলে লোগো দেখাবে */}
+                            {/* পরিবর্তনের ৩ নম্বর পয়েন্ট: কাস্টম SVG ইউটিউব ট্রায়াঙ্গেল লোগো ও টেক্সট */}
                             {book.youtubeUrl && (
-                              <div className="flex justify-center items-center w-full pt-1">
-                                <a 
-                                  href={book.youtubeUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-red-600 hover:text-red-700 transition-colors flex items-center justify-center p-1 rounded-full hover:bg-red-50"
-                                  title="Watch on YouTube"
-                                >
-                                  <Youtube className="h-6 w-6 stroke-[2.5]" />
-                                </a>
-                              </div>
+                              <a
+                                href={book.youtubeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-1.5 w-full h-8 text-[11px] font-medium text-white bg-[#FF0000] hover:bg-[#E60000] transition-colors rounded-md shadow-sm"
+                                title="Watch on YouTube"
+                              >
+                                {/* অফিশিয়াল ইউটিউব আইকন (লাল ব্যাকগ্রাউন্ডের ওপর সাদা ট্রায়াঙ্গেল) */}
+                                <svg className="h-3 w-4 shrink-0 fill-white" viewBox="0 0 24 24" xmlns="http://w3.org">
+                                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                <span>YouTube</span>
+                              </a>
                             )}
                           </div>
                         ) : (
-                          <div className="flex flex-col gap-2 mt-2 w-full">
-                            <div className="flex justify-between items-center w-full">
-                              <p className="font-bold text-sm text-primary">Tk {book.price}</p>
-                              <Button size="sm" onClick={() => handleAddToCart(book)}>
+                          /* পেইড বইয়ের লেআউট (এখানেও ২ ও ৩ নম্বর পয়েন্ট যুক্ত করা হয়েছে) */
+                          <div className={`flex w-full gap-1.5 ${book.youtubeUrl ? "flex-col" : "flex-row items-center justify-between"}`}>
+                            <div className="flex justify-between items-center gap-2 flex-1">
+                              <p className="font-bold text-sm text-primary truncate">Tk {book.price}</p>
+                              <Button size="sm" onClick={() => handleAddToCart(book)} className="h-8 w-8 p-0 shrink-0">
                                 <ShoppingCart className="h-4 w-4" />
                               </Button>
                             </div>
-                            
-                            {/* পেইড বইয়ের নিচেও ইউটিউব লিঙ্ক থাকলে লোগো দেখাবে */}
                             {book.youtubeUrl && (
-                              <div className="flex justify-center items-center w-full pt-1">
-                                <a 
-                                  href={book.youtubeUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="text-red-600 hover:text-red-700 transition-colors flex items-center justify-center p-1 rounded-full hover:bg-red-50"
-                                  title="Watch on YouTube"
-                                >
-                                  <Youtube className="h-6 w-6 stroke-[2.5]" />
-                                </a>
-                              </div>
+                              <a
+                                href={book.youtubeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-1.5 w-full h-8 text-[11px] font-medium text-white bg-[#FF0000] hover:bg-[#E60000] transition-colors rounded-md shadow-sm"
+                                title="Watch on YouTube"
+                              >
+                                <svg className="h-3 w-4 shrink-0 fill-white" viewBox="0 0 24 24" xmlns="http://w3.org">
+                                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                                <span>YouTube</span>
+                              </a>
                             )}
                           </div>
                         )}
                       </div>
                     </Card>
                   ))
-
-
 
                 ) : (
                   <div className="col-span-full text-center text-muted-foreground py-10">

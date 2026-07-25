@@ -58,15 +58,17 @@ export default function AllQuestionsPage() {
     setIsClient(true);
   }, []);
 
-  // ২. ডাইনামিক কোয়েরি লজিক
+  // ২. ডাইনামিক কোয়েরি লজিক (শুধুমাত্র একটি লেভেল একটিভ হলেই ফায়ারবেসে হিট করবে)
   const questionsQuery = useMemo(() => {
     if (!firestore || !activeLevel) return null;
     const targetLevelStr = parseFloat(activeLevel).toFixed(1);
     return query(collection(firestore, 'questions'), where('level', '==', targetLevelStr));
   }, [firestore, activeLevel]);
 
-  // ৩. ফায়ারবেস কানেকশন হুক (যা মুছে গিয়েছিল, তা লিমিটসহ ফেরত আনা হলো)
-  const { data: questions, loading: questionsLoading } = useCollection<Question>(questionsQuery, 150);
+  // ৩. লিমিট বাড়িয়ে ৩০০০ বা ৫০০০ কস্ট ছাড়াই ৩০০০ ডেটা রিড করার সুবিধা (কারণ এটি একবারে মাত্র ১টি লেভেল রিড করে)
+  const { data: questions, loading: questionsLoading } =
+  useCollection<Question>(questionsQuery, 3000);
+
 
   // ৪. ২০০টি লেভেলের তালিকা তৈরি
   const allLevels = useMemo(() => {
@@ -79,46 +81,49 @@ export default function AllQuestionsPage() {
     return levels;
   }, []);
 
-  // ৫. ডেটা গ্রুপ করার লজিক
-  const questionsByLevel = useMemo(() => {
-    if (!questions) return {};
-    const groups: Record<string, Question[]> = {};
-    questions.forEach((q: any) => {
-      if (!q) return;
+  // ৫. ডেটা গ্রুপ করার লজিক (ডায়নামিক রিড এর জন্য অপটিমাইজড)
+const questionsByLevel = useMemo(() => {
+  if (!questions || !activeLevel) return {};
+  const groups: Record<string, Question[]> = {};
+  const targetLevelStr = parseFloat(activeLevel).toFixed(1);
+  
+  questions.forEach((q: any) => {
+    if (!q) return;
+    const safeLevel = q.level ? parseFloat(String(q.level)).toFixed(1) : "0.0";
+    
+    if (!groups[safeLevel]) {
+      groups[safeLevel] = [];
+    }
 
-      const safeLevel = q.level ? String(q.level).trim() : "0.0";
-      if (!groups[safeLevel]) {
-        groups[safeLevel] = [];
-      }
+    let formattedAnswers = Array.isArray(q.answers) ? [...q.answers] : [];
+    if (formattedAnswers.length === 0) {
+      const optionKeys = ['0', '1', '2', '3'];
+      optionKeys.forEach((key) => {
+        if (q[key]) {
+          formattedAnswers.push({
+            text: q[key].text || q[key].test || "",
+            isCorrect: q[key].isCorrect === true || q[key].isCorrect === 'true' || false
+          });
+        }
+      });
+    }
 
-      let formattedAnswers = Array.isArray(q.answers) ? [...q.answers] : [];
-      if (formattedAnswers.length === 0) {
-        const optionKeys = ['0', '1', '2', '3'];
-        optionKeys.forEach((key) => {
-          if (q[key]) {
-            formattedAnswers.push({
-              text: q[key].text || q[key].test || "",
-              isCorrect: q[key].isCorrect === true || q[key].isCorrect === 'true' || false
-            });
-          }
-        });
-      }
+    const standardizedQuestion = {
+      ...q,
+      id: q.id || `q-missing-${Date.now()}-${Math.random()}`,
+      level: safeLevel,
+      subject: q.subject || "English",
+      questionText: q.questionText || "",
+      answers: formattedAnswers
+    };
 
-      const standardizedQuestion = {
-        ...q,
-        id: q.id || `q-missing-${Date.now()}-${Math.random()}`,
-        level: safeLevel,
-        subject: q.subject || "English",
-        questionText: q.questionText || "",
-        answers: formattedAnswers
-      };
+    if (!groups[safeLevel].some(existingQ => existingQ.id === standardizedQuestion.id)) {
+      groups[safeLevel].push(standardizedQuestion);
+    }
+  });
+  return groups;
+}, [questions, activeLevel]);
 
-      if (!groups[safeLevel].some(existingQ => existingQ.id === standardizedQuestion.id)) {
-        groups[safeLevel].push(standardizedQuestion);
-      }
-    });
-    return groups;
-  }, [questions]);
 
   // ৬. এডিট বাটনের ফাংশন
   const handleEditClick = (level: string) => {
@@ -162,13 +167,36 @@ export default function AllQuestionsPage() {
 
       let saveBatch = writeBatch(firestore);
       let saveCount = 0;
+
       for (const question of editedQuestions) {
         const { id, ...questionData } = question;
-        questionData.level = targetLevelStr; // ফায়ারস্টোরে পিওর স্ট্রিং "0.0" হিসেবে সিঙ্ক
-        saveBatch.set(doc(firestore, "questions", id), questionData);
+        
+        const dataToSave: Record<string, any> = {
+          level: targetLevelStr,
+          subject: questionData.subject || "English",
+          questionText: questionData.questionText || "",
+          answers: (questionData.answers || []).map(ans => ({
+            text: ans.text || "",
+            isCorrect: !!ans.isCorrect
+          }))
+        };
+
+        if (question.youtubeUrl !== undefined) {
+          dataToSave.youtubeUrl = question.youtubeUrl;
+        }
+
+        saveBatch.set(doc(firestore, "questions", id), dataToSave);
         saveCount++;
-        if (saveCount === 400) { await saveBatch.commit(); saveBatch = writeBatch(firestore); saveCount = 0; }
+        if (saveCount === 400) { 
+          await saveBatch.commit(); 
+          saveBatch = writeBatch(firestore); 
+          saveCount = 0; 
+        }
       }
+
+
+
+
       if (saveCount > 0) await saveBatch.commit();
       toast({ title: "Questions saved!", description: `Changes for Level ${targetLevelStr} have been saved.` });
     } catch (serverError) {
@@ -228,6 +256,8 @@ export default function AllQuestionsPage() {
               type="single" 
               collapsible 
               className="w-full max-h-[60rem] overflow-y-auto"
+              
+              
               onValueChange={(value) => {
                 if (value) {
                   const selectedLevel = value.replace('level-q-', '');
@@ -236,6 +266,8 @@ export default function AllQuestionsPage() {
                   setActiveLevel(null);
                 }
               }}
+
+
             >
               {allLevels.map((level) => {
                 const targetLevelStr = parseFloat(level).toFixed(1);
