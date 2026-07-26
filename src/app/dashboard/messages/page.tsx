@@ -28,6 +28,8 @@ export default function MessagesPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null); // এখানে HTMLTextAreaElement করা হলো
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
+
 
   // নতুন লজিকের জন্য স্টেট ও টাইমার রেফ
   // নতুন লজিকের জন্য স্টেট ও টাইমার রেফ
@@ -36,6 +38,9 @@ const iconTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 // ফাইল এবং ভয়েস রেকর্ডিংয়ের জন্য নতুন স্টেটসমূহ
 const [isRecording, setIsRecording] = useState(false);
+const [recordingSeconds, setRecordingSeconds] = useState(0);
+const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 const [uploading, setUploading] = useState(false);
 const [showAttachMenu, setShowAttachMenu] = useState(false);
 const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -77,7 +82,6 @@ const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf'
   }
 };
 
-// ভয়েস রেকর্ড শুরু করার ফাংশন
 const startRecording = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -85,33 +89,73 @@ const startRecording = async () => {
     mediaRecorderRef.current = mediaRecorder;
     audioChunksRef.current = [];
 
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) audioChunksRef.current.push(event.data);
-    };
-
+    mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
     mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-      const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
-      await uploadAndSendFile(audioFile, 'audio' as any); // অডিও ফাইল আপলোড
-      stream.getTracks().forEach(track => track.stop()); // মাইক্রোফোন বন্ধ করা
+      stream.getTracks().forEach(track => track.stop());
+      if (audioChunksRef.current.length > 0) {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
+        await uploadAndSendFile(audioFile, 'audio' as any);
+      }
+      setRecordingSeconds(0);
     };
 
     mediaRecorder.start();
     setIsRecording(true);
     setShowLeftIcons(false);
-  } catch (err) {
-    alert("মাইক্রোফোন পারমিশন প্রয়োজন!");
-  }
+    setRecordingSeconds(0);
+
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingSeconds((prev) => {
+        if (prev >= 119) { // ১২০ সেকেন্ড বা ২ মিনিট পূর্ণ হলে অটো-সেন্ড
+          if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+          mediaRecorderRef.current?.stop();
+          setIsRecording(false);
+          setShowLeftIcons(true);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+  } catch (err) { alert("মাইক্রোফোন পারমিশন প্রয়োজন!"); }
 };
 
-// ভয়েস রেকর্ড শেষ করার ফাংশন
-const stopRecording = () => {
+
+const stopAndSendRecording = () => {
+  if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
   if (mediaRecorderRef.current && isRecording) {
     mediaRecorderRef.current.stop();
     setIsRecording(false);
     setShowLeftIcons(true);
   }
 };
+
+const cancelAndDeleteRecording = () => {
+  if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+  if (mediaRecorderRef.current && isRecording) {
+    audioChunksRef.current = []; // ডাটা ডিলিট করে দেওয়া হলো যাতে সেন্ড না হয়
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+    setShowLeftIcons(true);
+    setRecordingSeconds(0);
+  }
+};
+
+const formatAudioTimer = (secs: number) => {
+  const mins = Math.floor(secs / 60);
+  const remainingSecs = secs % 60;
+  return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`;
+};
+
+// মোবাইল কিপ্যাড পপ-আপ হলে শেষ মেসেজটি উপরে পুশ করার ফিক্স
+useEffect(() => {
+  if (messagesEndRef.current) {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 150);
+  }
+}, []);
+
 
 
   const handleInputChange = (val: string) => {
@@ -487,7 +531,15 @@ const stopRecording = () => {
                 <div className="text-sm break-words whitespace-pre-wrap flex flex-col gap-2">
                   {msg.fileUrl ? (
                     <>
-                      {msg.fileType === 'image' && <img src={msg.fileUrl} alt="Shared" className="max-w-xs max-h-48 rounded-lg object-cover border" />}
+                      {msg.fileType === 'image' && (
+                        <img 
+                          src={msg.fileUrl} 
+                          alt="Shared" 
+                          className="max-w-xs max-h-48 rounded-lg object-cover border cursor-pointer hover:opacity-90 transition-opacity" 
+                          onClick={() => setActiveLightboxImage(msg.fileUrl)} // ছবিতে ক্লিক করলে বড় হবে
+                        />
+                      )}
+
                       {msg.fileType === 'video' && <video src={msg.fileUrl} controls className="max-w-xs max-h-48 rounded-lg" />}
                       {msg.fileType === 'pdf' && (
                         <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-white/10 rounded-lg text-blue-600 underline">
@@ -500,6 +552,20 @@ const stopRecording = () => {
                   ) : (
                     <span>{renderMessageText(msg.text)}</span>
                   )}
+                  
+                  {/* ৩ রঙের মেসেজ টিক্স সিস্টেম */}
+                  {msg.senderId === user?.uid && (
+                    <div className="absolute bottom-1 right-2 flex items-center">
+                      {msg.status === 'seen' ? (
+                        <CheckCheck className="h-3.5 w-3.5 text-green-500 font-bold" />
+                      ) : partnerUserProfile?.isOnline ? (
+                        <CheckCheck className="h-3.5 w-3.5 text-red-500" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>
@@ -537,40 +603,64 @@ const stopRecording = () => {
           }} 
         />
 
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          <div className={cn(
-            "flex items-center gap-1 transition-all duration-300 overflow-hidden",
-            showLeftIcons ? "w-auto opacity-100" : "w-0 opacity-0 pointer-events-none"
-          )}>
-            <Button type="button" variant="ghost" size="icon" onClick={() => setShowAttachMenu(!showAttachMenu)}>
-              <Paperclip className="h-5 w-5 text-muted-foreground" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" onClick={isRecording ? stopRecording : startRecording}>
-              {isRecording ? <Square className="h-5 w-5 text-red-500 animate-pulse" /> : <Mic className="h-5 w-5 text-muted-foreground" />}
-            </Button>
-          </div>
+                {isRecording ? (
+          /* হোয়াটসঅ্যাপ / মেসেঞ্জার স্টাইল ফুল উইডথ ভয়েস রেকর্ডার প্যানেল */
+          <div className="flex items-center justify-between w-full bg-slate-100 dark:bg-slate-900 px-4 py-2 rounded-xl transition-all duration-300">
+            {/* বামে: ডিলিট বাটন */}
+            <button type="button" onClick={cancelAndDeleteRecording} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full transition-colors active:scale-95">
+              <X className="h-5 w-5" />
+            </button>
+            
+            {/* মাঝে: ওয়েভ অ্যানিমেশন ও টাইমার */}
+            <div className="flex-1 flex items-center justify-center gap-3 px-4">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0" />
+              <div className="flex items-center gap-1 overflow-hidden h-6 text-purple-600">
+                <span className="w-1 h-3 bg-current rounded-full animate-pulse" />
+                <span className="w-1 h-5 bg-current rounded-full animate-pulse" />
+                <span className="w-1 h-2 bg-current rounded-full animate-pulse" />
+                <span className="w-1 h-6 bg-current rounded-full animate-pulse" />
+              </div>
+              <span className="text-sm font-mono font-bold text-slate-700 dark:text-slate-300">{formatAudioTimer(recordingSeconds)}</span>
+            </div>
 
-          {uploading && <div className="text-xs text-purple-600 animate-pulse px-2">Uploading...</div>}
-
-          <div className="relative flex-1 flex items-center">
-            <textarea
-              ref={inputRef}
-              value={newMessage}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onFocus={() => setShowLeftIcons(false)}
-              onBlur={() => {
-                setTimeout(() => setShowLeftIcons(true), 200);
-              }}
-              placeholder="Type a message..."
-              rows={Math.min(4, newMessage.split('\n').length || 1)}
-              className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
-              onKeyDown={handleKeyDown}
-            />
+            {/* ডানে: সেন্ড বাটন */}
+            <button type="button" onClick={stopAndSendRecording} className="p-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-md transition-all active:scale-95">
+              <Send className="h-4 w-4 transform rotate-[-45deg]" />
+            </button>
           </div>
-          <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim() && !uploading}>
-            <Send className="h-5 w-5" />
-          </Button>
-        </form>
+        ) : (
+          /* নরমাল টেক্সট ইনপুট মোড */
+          <form onSubmit={handleSendMessage} className="flex items-center gap-2 w-full">
+            <div className={cn("flex items-center gap-1 transition-all duration-300 overflow-hidden", showLeftIcons ? "w-auto opacity-100" : "w-0 opacity-0 pointer-events-none")}>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setShowAttachMenu(!showAttachMenu)}>
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+              </Button>
+              <Button type="button" variant="ghost" size="icon" onClick={startRecording}>
+                <Mic className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            </div>
+
+            {uploading && <div className="text-xs text-purple-600 animate-pulse px-2 shrink-0">Uploading...</div>}
+
+            <div className="relative flex-1 flex items-center">
+              <textarea
+                ref={inputRef}
+                value={newMessage}
+                onChange={(e) => handleInputChange(e.target.value)}
+                onFocus={() => setShowLeftIcons(false)}
+                onBlur={() => setTimeout(() => setShowLeftIcons(true), 200)}
+                placeholder="Type a message..."
+                rows={1}
+                className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+            <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim() && !uploading}>
+              <Send className="h-5 w-5" />
+            </Button>
+          </form>
+        )}
+
       </div>
     </>
   ) : (
@@ -580,10 +670,22 @@ const stopRecording = () => {
       <p className="text-sm">Select a reader to start chatting</p>
     </div>
   )}
-</main>
-</div>
-</div>
-);
+        </main>
+      </div>
+
+      {/* ইমেজ পপ-আপ লাইটবক্স মডাল এলিমেন্ট */}
+      {activeLightboxImage && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+          <img src={activeLightboxImage} alt="Popup View" className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl" />
+          <div className="flex items-center gap-4 mt-6 bg-white dark:bg-slate-900 border p-3 rounded-full shadow-xl">
+            <a href={activeLightboxImage} download target="_blank" rel="noreferrer" className="text-xs bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-bold transition-transform active:scale-95">Save Image</a>
+            <button onClick={() => setActiveLightboxImage(null)} className="text-xs bg-slate-200 dark:bg-slate-800 text-black dark:text-white px-5 py-2 rounded-xl font-bold flex items-center gap-1 transition-transform active:scale-95"><X className="h-3 w-3" /> Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+
+  );
 }
 
 // ফিক্সড রো কম্পোনেন্ট

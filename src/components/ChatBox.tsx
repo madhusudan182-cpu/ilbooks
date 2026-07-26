@@ -21,10 +21,11 @@ interface Message {
   senderId: string;
   text: string;
   createdAt: any;
-  fileUrl?: string;   // নতুন যুক্ত করা হলো এরর কাটানোর জন্য
-  fileType?: string;  // নতুন যুক্ত করা হলো এরর কাটানোর জন্য
-  fileName?: string;  // নতুন যুক্ত করা হলো এরর কাটানোর জন্য
+  fileUrl?: string;   // ফাইল লিংকের জন্য
+  fileType?: string;  // ফাইলের প্রকারের জন্য
+  fileName?: string;  // ফাইলের নামের জন্য
 }
+
 
 
 export default function ChatBox({ currentUserId, targetUserId, targetUserName, onClose }: ChatBoxProps) {
@@ -32,6 +33,13 @@ const firestore = getFirestore();
 const [messages, setMessages] = useState<any[]>([]); // type altered for custom fields
 const [newMessage, setNewMessage] = useState('');
 const [loading, setLoading] = useState(true);
+  // ছবির পপ-আপ (Lightbox) স্টেট
+  const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
+  
+  // নতুন ভয়েস রেকর্ডার স্টেট ও টাইমার
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 
 // নতুন স্টেটসমূহ
 const [isRecording, setIsRecording] = useState(false);
@@ -69,25 +77,67 @@ const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf'
   }
 };
 
-const startRecording = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunksRef.current = [];
-    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-      const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
-      await uploadAndSendFile(audioFile, 'audio' as any);
-      stream.getTracks().forEach(t => t.stop());
-    };
-    mediaRecorder.start();
-    setIsRecording(true);
-  } catch (err) { alert("মাইক্রোফোন পারমিশন দিন"); }
-};
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-const stopRecording = () => { if (mediaRecorderRef.current && isRecording) { mediaRecorderRef.current.stop(); setIsRecording(false); } };
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (audioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
+          await uploadAndSendFile(audioFile, 'audio' as any);
+        }
+        setRecordingSeconds(0);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      // ২ মিনিট (১২০ সেকেন্ড) পর অটো-সেন্ড লজিক
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => {
+          if (prev >= 119) {
+            if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) { alert("মাইক্রোফোন পারমিশন দিন"); }
+  };
+
+  const stopAndSendRecording = () => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const cancelAndDeleteRecording = () => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && isRecording) {
+      audioChunksRef.current = [];
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setRecordingSeconds(0);
+    }
+  };
+
+  const formatAudioTimer = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remainingSecs = secs % 60;
+    return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`;
+  };
+
 
 
 
@@ -271,7 +321,15 @@ const stopRecording = () => { if (mediaRecorderRef.current && isRecording) { med
                   <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} className="break-words">
                     {msg.fileUrl ? (
                       <div className="flex flex-col gap-2">
-                        {msg.fileType === 'image' && <img src={msg.fileUrl} alt="Shared" className="max-w-xs max-h-40 rounded-lg object-cover border" />}
+                        {msg.fileType === 'image' && (
+                          <img 
+                            src={msg.fileUrl} 
+                            alt="Shared" 
+                            className="max-w-xs max-h-40 rounded-lg object-cover border cursor-pointer hover:opacity-90" 
+                            onClick={() => setActiveLightboxImage(msg.fileUrl || null)} // ছবিতে ক্লিক করলে বড় হবে
+                          />
+                        )}
+
                         {msg.fileType === 'video' && <video src={msg.fileUrl} controls className="max-w-xs max-h-40 rounded-lg" />}
                         {msg.fileType === 'pdf' && (
                           <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-1.5 bg-slate-800 rounded-lg text-purple-400 underline">
@@ -316,38 +374,66 @@ const stopRecording = () => { if (mediaRecorderRef.current && isRecording) { med
           uploadAndSendFile(file, t);
         }} />
 
-        <form onSubmit={handleSendMessage} className="p-2 flex items-center gap-2 shrink-0">
-          <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
-            <Paperclip className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={isRecording ? stopRecording : startRecording} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
-            {isRecording ? <Square className="h-4 w-4 text-red-500 animate-pulse" /> : <Mic className="h-4 w-4" />}
-          </button>
-          {uploading && <span className="text-[10px] text-purple-400">Uploading...</span>}
-          
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            rows={Math.min(4, newMessage.split('\n').length || 1)}
-            className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
-            onKeyDown={(e) => {
-              const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
-              if (!isMobileDevice && e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage({ preventDefault: () => {} } as any);
-              }
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 h-[38px] w-[38px] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
-      </div>
+                {isRecording ? (
+          <div className="flex items-center justify-between w-full bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl transition-all duration-300">
+            <button type="button" onClick={cancelAndDeleteRecording} className="p-2 text-red-500 hover:bg-red-50/10 rounded-full">
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex-1 flex items-center justify-center gap-3 px-4">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span className="text-xs font-mono font-bold text-slate-300">{formatAudioTimer(recordingSeconds)}</span>
+            </div>
+            <button type="button" onClick={stopAndSendRecording} className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full">
+              <Send className="h-3.5 w-3.5 transform rotate-[-45deg]" />
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSendMessage} className="p-1 flex items-center gap-2 shrink-0 w-full">
+            <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
+              <Paperclip className="h-4 w-4" />
+            </button>
+            <button type="button" onClick={startRecording} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
+              <Mic className="h-4 w-4" />
+            </button>
+            {uploading && <span className="text-[10px] text-purple-400">Uploading...</span>}
+            
+            <textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              rows={1}
+              className="flex-1 bg-slate-900 border border-slate-800 text-white text-xs sm:text-sm rounded-xl px-3 py-2 resize-none min-h-[36px] max-h-[100px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all placeholder-slate-500"
+              onKeyDown={(e) => {
+                const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+                if (!isMobileDevice && e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage({ preventDefault: () => {} } as any);
+                }
+              }}
+            />
+            <button
+              type="submit"
+              disabled={!newMessage.trim()}
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 h-[36px] w-[36px] flex items-center justify-center disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        )}
+
+            </div>
+
+      {/* ইমেজ পপ-আপ লাইটবক্স মডাল এলিমেন্ট */}
+      {activeLightboxImage && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+          <img src={activeLightboxImage} alt="Popup" className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl" />
+          <div className="flex items-center gap-4 mt-6 bg-slate-900 border border-slate-800 px-6 py-2 rounded-full">
+            <a href={activeLightboxImage} download target="_blank" rel="noreferrer" className="text-xs bg-green-600 text-white px-4 py-1.5 rounded-xl font-bold">Save</a>
+            <button onClick={() => setActiveLightboxImage(null)} className="text-xs bg-slate-800 text-white px-4 py-1.5 rounded-xl font-bold">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
