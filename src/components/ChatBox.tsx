@@ -237,7 +237,12 @@ const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf'
     return () => unsubscribe();
   }, [firestore, chatRoomId, targetUserId]); // useEffect এখানে শেষ হচ্ছে
 
-
+ useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+  
   // ✉️ মেসেজ পাঠানোর ফাংশন
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

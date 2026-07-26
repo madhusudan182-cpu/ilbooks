@@ -213,14 +213,17 @@ useEffect(() => {
     );
   }, [firestore, user]);
 
-  // ফায়ারস্টোর থেকে ফিল্টার করা প্রথম ১০ জন ডাটা প্রসেস লজিক
+  const { data: rawConversations, loading: convosLoading } = useCollection<any>(convosQuery);
+  const followsRef = useMemo(() => (firestore ? collection(firestore, "follows") : null), [firestore]);
+  const { data: allFollows = [] } = useCollection<any>(followsRef);
+
+  // ফায়ারস্টোর থেকে ফিল্টার করা প্রথম ১০ জন ডাটা প্রসেস লজিক (সঠিক সিকোয়েন্সে ফিক্সড)
   const conversations = useMemo(() => {
     if (!user?.uid || !allFollows || !rawConversations) return [];
     const friendsMap = new Map<string, any>();
     const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
     
     allFollows.forEach((f: any) => {
-      
       const isMeFollower = f.followerId === user.uid && f.status === "ACTIVE";
       if (isMeFollower) {
         const partnerId = f.followingId;
@@ -269,15 +272,9 @@ useEffect(() => {
       isAdminSupport: true
     });
 
-    // এখানে প্রথম ১০ জনকে স্লাইস করে রিটার্ন করা হলো
     return finalConvos.slice(0, visibleConversationsCount);
   }, [rawConversations, allFollows, user?.uid, visibleConversationsCount]);
 
-
-  const { data: rawConversations, loading: convosLoading } = useCollection<any>(convosQuery);
-
-  const followsRef = useMemo(() => (firestore ? collection(firestore, "follows") : null), [firestore]);
-  const { data: allFollows = [] } = useCollection<any>(followsRef);
 
   
 
@@ -314,16 +311,15 @@ useEffect(() => {
       setMessages([]);
       return;
     }
-        const messagesQuery = query(
+     const messagesQuery = query(
       collection(firestore, 'conversations', activeConversationId, 'messages'),
-      orderBy('createdAt', 'desc'),
-      limit(visibleMessagesCount)
+      orderBy('createdAt', 'asc'), // এখানে 'asc' দিন যাতে রিভার্স করার ঝামেলা না থাকে
+      limitToLast(visibleMessagesCount) // শেষ দিক থেকে ডেটা লিমিট করার জন্য
     );
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       // স্ক্রিনে দেখানোর সময় কালানুক্রমিকভাবে সোজা (A to Z) করে সাজানো হলো
-      const sortedMsgs = msgs.reverse();
-      setMessages(sortedMsgs);
+      setMessages(msgs);
 
 
       snapshot.docs.forEach((messageDoc) => {
@@ -549,8 +545,22 @@ useEffect(() => {
                 </div>
               </div>
 
-                          <ScrollArea className="flex-1 p-4 bg-slate-50/50">
+      <ScrollArea className="flex-1 p-4 bg-slate-50/50">
+        {/* উপরের দিকে স্ক্রল আপ করলে আরও ১০টি পুরনো মেসেজ লোড করার গেট বাটন */}
+        {messages.length >= visibleMessagesCount && (
+          <div className="w-full flex justify-center py-2 bg-slate-50/10">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-[10px] h-7 rounded-full text-purple-600 hover:bg-purple-100/50 transition-colors"
+              onClick={() => setVisibleMessagesCount(prev => prev + 10)}
+            >
+              🔄 Load Previous Messages
+            </Button>
+          </div>
+        )}
         <div className="space-y-4">
+
           {messages.map((msg, index) => (
             <div key={`${msg.id}-${index}`} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
               <div className={cn("max-w-[80%] py-1.5 px-3 rounded-2xl shadow-sm", msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>

@@ -1,8 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
-// নোটিফিকেশন সার্ভিসটি ইমপোর্ট করা হলো
 import { getMessaging } from "firebase/messaging";
-
 
 export const firebaseConfig = {
   apiKey: "AIzaSyDpIIAxo4u932msHjCDXG357-UxZPmjmbo",
@@ -16,13 +14,14 @@ export const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// অফলাইন ক্যাশিং অন রেখে ফায়ারস্টোর ডাটাবেজ ইনিশিয়ালাইজ করা হলো
+// অফলাইন ক্যাশিং অন রেখে ফায়ারস্টোর ডাটাবেজ ইনিশিয়ালাইজ করা হলো
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 });
 
-
-// মেসেজিং সার্ভিসটি ক্লায়েন্ট সাইডের জন্য এক্সপোর্ট করা হলো
-export const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
+// উইন্ডো ও নোটিফিকেশন সাপোর্ট চেক করে মেসেজিং ইনস্ট্যান্স এক্সপোর্ট করা হলো
+export const messaging = typeof window !== "undefined" && "Notification" in window
+  ? getMessaging(app)
+  : null as any;
