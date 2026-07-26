@@ -242,7 +242,6 @@ const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf'
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
-  
   // ✉️ মেসেজ পাঠানোর ফাংশন
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

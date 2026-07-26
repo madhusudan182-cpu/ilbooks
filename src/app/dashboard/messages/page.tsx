@@ -350,8 +350,14 @@ useEffect(() => {
   }, [searchParams, conversations, user, firestore]);
 
   useEffect(() => {
-    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
-  }, [messages]);
+  if (messages.length > 0) {
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    }, 100);
+    return () => clearTimeout(timer);
+  }
+}, [messages]);
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -553,7 +559,7 @@ useEffect(() => {
               variant="ghost" 
               size="sm" 
               className="text-[10px] h-7 rounded-full text-purple-600 hover:bg-purple-100/50 transition-colors"
-              onClick={() => setVisibleMessagesCount(prev => prev + 10)}
+              onClick={() => setVisibleMessagesCount(prev => prev + 15)}
             >
               🔄 Load Previous Messages
             </Button>
@@ -563,7 +569,8 @@ useEffect(() => {
 
           {messages.map((msg, index) => (
             <div key={`${msg.id}-${index}`} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
-              <div className={cn("max-w-[80%] py-1.5 px-3 rounded-2xl shadow-sm", msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>
+              <div className={cn("max-w-[80%] pt-1.5 px-3 pb-5 rounded-2xl shadow-sm relative", 
+              msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>
                 <div className="text-sm break-words whitespace-pre-wrap flex flex-col gap-2">
                   {msg.fileUrl ? (
                     <>
@@ -591,7 +598,8 @@ useEffect(() => {
                   
                   {/* ৩ রঙের মেসেজ টিক্স সিস্টেম */}
                   {msg.senderId === user?.uid && (
-                    <div className="absolute bottom-1 right-2 flex items-center">
+                    <div className="absolute bottom-1 right-2 flex items-center shrink-0">
+
                       {msg.status === 'seen' ? (
                         <CheckCheck className="h-3.5 w-3.5 text-green-500 font-bold" />
                       ) : partnerUserProfile?.isOnline ? (
@@ -677,10 +685,11 @@ useEffect(() => {
             </div>
 
             {uploading && (
-              <div className="flex items-center justify-center px-1 shrink-0">
+              <div className="absolute right-14 top-1/2 -translate-y-1/2 z-20 bg-background/80 pl-1">
                 <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
               </div>
             )}
+
 
 
             <div className="relative flex-1 flex items-center">
@@ -688,13 +697,23 @@ useEffect(() => {
                 ref={inputRef}
                 value={newMessage}
                 onChange={(e) => handleInputChange(e.target.value)}
-                onFocus={() => setShowLeftIcons(false)}
-                onBlur={() => setTimeout(() => setShowLeftIcons(true), 200)}
+                onFocus={() => {
+                  // সমস্যা ৩ এর ফিক্স: টেক্সট ফাঁকা থাকলে আইকন শো করবে, না থাকলে হাইড হবে
+                  if (newMessage.trim()) {
+                    setShowLeftIcons(false);
+                  }
+                  // সমস্যা ২ এর ফিক্স: মোবাইলে কিবোর্ড পপ-আপ হলে শেষ মেসেজ স্ক্রিনে ধরে রাখবে
+                  setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                  }, 300);
+                }}
+                onBlur={() => setShowLeftIcons(true)}
                 placeholder="Type a message..."
                 rows={1}
                 className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
                 onKeyDown={handleKeyDown}
               />
+
             </div>
             <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim() && !uploading}>
               <Send className="h-5 w-5" />
