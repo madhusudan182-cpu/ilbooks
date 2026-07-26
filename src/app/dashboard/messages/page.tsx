@@ -331,14 +331,20 @@ useEffect(() => {
       });
     }, (err) => console.error(err));
     return () => unsubscribe();
-  }, [firestore, activeConversationId, user]);
+  }, [firestore, activeConversationId, user, visibleMessagesCount]);
 
-  useEffect(() => {
-    const chatWithId = searchParams.get('chatWith');
-    if (chatWithId && user && firestore) {
-      const existingConvo = conversations.find(c => c.participants?.includes(chatWithId));
-      setActiveConversationId(existingConvo ? existingConvo.id : `new_${chatWithId}`);
-      const otherUserRef = doc(firestore, 'users', chatWithId);
+    useEffect(() => {
+      const chatWithId = searchParams.get('chatWith');
+      if (chatWithId && user && firestore) {
+        const existingConvo = conversations.find(c =>
+          c.participants?.includes(chatWithId));
+        setActiveConversationId(existingConvo ? existingConvo.id : `new_${chatWithId}`);
+        
+        //  Reset count so new chats load instantly with only 10 messages
+        setVisibleMessagesCount(10); 
+        
+        const otherUserRef = doc(firestore, 'users', chatWithId);
+
       const unsubscribe = onSnapshot(otherUserRef, (docSnap) => {
         if (docSnap.exists()) setOtherUser({ id: docSnap.id, ...docSnap.data() });
       });
