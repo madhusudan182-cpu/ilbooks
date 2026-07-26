@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck, Loader2, Check, X } from "lucide-react";
+import { MessageCircle, Search, Send, ArrowLeft, Paperclip, CheckCheck, Loader2, Check, X, Mic, Square, FileText, Image, Video } from "lucide-react";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { format, formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
@@ -22,10 +23,111 @@ export default function MessagesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+  
   const [newMessage, setNewMessage] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null); // এখানে HTMLTextAreaElement করা হলো
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+
+  // নতুন লজিকের জন্য স্টেট ও টাইমার রেফ
+  // নতুন লজিকের জন্য স্টেট ও টাইমার রেফ
+const [showLeftIcons, setShowLeftIcons] = useState(true);
+const iconTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+// ফাইল এবং ভয়েস রেকর্ডিংয়ের জন্য নতুন স্টেটসমূহ
+const [isRecording, setIsRecording] = useState(false);
+const [uploading, setUploading] = useState(false);
+const [showAttachMenu, setShowAttachMenu] = useState(false);
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const audioChunksRef = useRef<Blob[]>([]);
+const fileInputRef = useRef<HTMLInputElement>(null);
+
+// ফাইল আপলোড ও মেসেজ পাঠানোর মূল ফাংশন
+const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf') => {
+  if (!firestore || !user || !activeConversationId) return;
+  setUploading(true);
+  try {
+    const storageInstance = getStorage();
+    const fileRef = ref(storageInstance, `chats/${activeConversationId}/${Date.now()}_${file.name}`);
+    const uploadTask = uploadBytesResumable(fileRef, file);
+
+    uploadTask.on('state_changed', 
+      null, 
+      (error) => console.error("Upload error:", error), 
+      async () => {
+        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+        // ফায়ারবেস মেসেজ কালেকশনে ফাইল লিংক পুশ করা হচ্ছে
+        const messagesCollection = collection(firestore, 'conversations', activeConversationId, 'messages');
+        await addDoc(messagesCollection, {
+          senderId: user.uid,
+          receiverId: chatWithId,
+          text: `[${fileType.toUpperCase()}]`, // টেক্সট এরিয়া ব্যাকআপ
+          fileUrl: downloadUrl,
+          fileType: fileType,
+          fileName: file.name,
+          createdAt: serverTimestamp(),
+          status: 'sent'
+        });
+        setUploading(false);
+      }
+    );
+  } catch (err) {
+    console.error(err);
+    setUploading(false);
+  }
+};
+
+// ভয়েস রেকর্ড শুরু করার ফাংশন
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    audioChunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunksRef.current.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+      const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
+      await uploadAndSendFile(audioFile, 'audio' as any); // অডিও ফাইল আপলোড
+      stream.getTracks().forEach(track => track.stop()); // মাইক্রোফোন বন্ধ করা
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
+    setShowLeftIcons(false);
+  } catch (err) {
+    alert("মাইক্রোফোন পারমিশন প্রয়োজন!");
+  }
+};
+
+// ভয়েস রেকর্ড শেষ করার ফাংশন
+const stopRecording = () => {
+  if (mediaRecorderRef.current && isRecording) {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+    setShowLeftIcons(true);
+  }
+};
+
+
+  const handleInputChange = (val: string) => {
+    setNewMessage(val);
+    setShowLeftIcons(false); // টাইপ করা শুরু করলে আইকন চলে যাবে
+
+    if (iconTimerRef.current) clearTimeout(iconTimerRef.current);
+
+    // ২ সেকেন্ড অলস (pause) থাকলে আইকন আবার ফেরত আসবে
+    iconTimerRef.current = setTimeout(() => {
+      setShowLeftIcons(true);
+    }, 2000);
+  };
+
+  
+  
   const [messages, setMessages] = useState<any[]>([]);
   const [otherUser, setOtherUser] = useState<any>(null);
   const chatWithId = searchParams.get('chatWith');
@@ -242,9 +344,17 @@ export default function MessagesPage() {
     const messagesCollection = collection(firestore, 'conversations', convoId, 'messages');
     addDoc(messagesCollection, msgData).then(() => {
       setNewMessage('');
-      updateDoc(doc(firestore, 'conversations', convoId!), { lastMessage: newMessage, updatedAt: serverTimestamp() }).catch(() => {});
-    }).catch((err) => console.error(err));
-  };
+      updateDoc(doc(firestore, 'conversations', convoId!), { lastMessage: newMessage, 
+      updatedAt: serverTimestamp() }).catch(() => {});
+      // মোবাইলে কিপ্যাড ধরে রাখার জন্য ইনপুটে আবার ফোকাস দেওয়া হলো
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 50);
+      }).catch((err) => console.error(err));
+    };
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
@@ -284,11 +394,11 @@ export default function MessagesPage() {
 
     return (
       <div className="p-4 md:p-6 lg:p-8 max-w-3xl mx-auto space-y-4 w-full">
-
-      <div className={cn(
+        <div className={cn(
         "flex bg-background overflow-hidden w-full relative transition-all duration-200 border rounded-xl shadow-sm",
-        isChatOpen ? "fixed inset-0 h-[100dvh] z-50 md:relative md:h-[calc(100vh-5.5rem)]" : "h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)]"
-      )}>
+        isChatOpen ? "fixed top-0 left-0 right-0 bottom-0 h-full z-50 md:relative md:h-[calc(100vh-5.5rem)]" : "h-[calc(100dvh-4rem)] md:h-[calc(100vh-5.5rem)]"
+        )}>
+
         <aside className={cn(
           "w-full md:w-64 lg:w-72 border-r flex flex-col",
           isChatOpen ? "hidden md:flex" : "flex"
@@ -368,51 +478,115 @@ export default function MessagesPage() {
                   <p className="text-xs text-muted-foreground">Level: {typeof otherUser?.level === 'number' ? otherUser.level.toFixed(1) : (Number(otherUser?.level) || 0).toFixed(1)}</p>
                 </div>
               </div>
-              <ScrollArea className="flex-1 p-4 bg-slate-50/50">
-                <div className="space-y-4">
-                  {messages.map((msg, index) => (
-                    <div key={`${msg.id}-${index}`} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
-                      <div className={cn("max-w-[80%] py-1.5 px-3 rounded-2xl shadow-sm", msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>
-                        <p className="text-sm break-words whitespace-pre-wrap flex items-center inline-flex flex-wrap gap-1">
-                          {/* ফিক্স: সাধারণ টেক্সটের বদলে আমাদের তৈরি ফাংশনটি কল করা হলো যেন লিংক ক্লিকেবল হয় */}
-                          <span>{renderMessageText(msg.text)}</span>
-                          {msg.senderId === user?.uid && (
-                            msg.status === 'seen' ? 
-                              <CheckCheck className="h-3 w-3 text-green-600 shrink-0 ml-1 inline-block align-middle" /> : 
-                              <CheckCheck className="h-3 w-3 text-red-600 shrink-0 ml-1 inline-block align-middle" />
-                          )}
 
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
+                          <ScrollArea className="flex-1 p-4 bg-slate-50/50">
+        <div className="space-y-4">
+          {messages.map((msg, index) => (
+            <div key={`${msg.id}-${index}`} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
+              <div className={cn("max-w-[80%] py-1.5 px-3 rounded-2xl shadow-sm", msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>
+                <div className="text-sm break-words whitespace-pre-wrap flex flex-col gap-2">
+                  {msg.fileUrl ? (
+                    <>
+                      {msg.fileType === 'image' && <img src={msg.fileUrl} alt="Shared" className="max-w-xs max-h-48 rounded-lg object-cover border" />}
+                      {msg.fileType === 'video' && <video src={msg.fileUrl} controls className="max-w-xs max-h-48 rounded-lg" />}
+                      {msg.fileType === 'pdf' && (
+                        <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-white/10 rounded-lg text-blue-600 underline">
+                          <FileText className="h-5 w-5 text-red-500" />
+                          <span className="truncate max-w-[150px]">{msg.fileName || "PDF Document"}</span>
+                        </a>
+                      )}
+                      {msg.fileType === 'audio' && <audio src={msg.fileUrl} controls className="max-w-xs h-10" />}
+                    </>
+                  ) : (
+                    <span>{renderMessageText(msg.text)}</span>
+                  )}
                 </div>
-              </ScrollArea>
-              <div className="p-3 border-t bg-background">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                  <Button type="button" variant="ghost" size="icon" className="hidden sm:inline-flex"><Paperclip className="h-5 w-5 text-muted-foreground" /></Button>
-                  <div className="relative flex-1 flex items-center">
-                    <textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." rows={Math.min(4, newMessage.split('\n').length || 1)} className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400" onKeyDown={handleKeyDown} />
-                  </div>
-                  <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim()}><Send className="h-5 w-5" /></Button>
-                </form>
               </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-slate-50/20">
-              <MessageCircle className="w-16 h-16 opacity-10 mb-4" />
-              <p className="font-headline text-lg">Your Bookshelf of Conversations</p>
-              <p className="text-sm">Select a reader to start chatting</p>
             </div>
-          )}
-        </main>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
+
+      <div className="p-3 border-t bg-background relative">
+        {showAttachMenu && (
+          <div className="absolute bottom-16 left-4 bg-white dark:bg-slate-900 border rounded-xl shadow-xl p-2 flex flex-col gap-2 z-50">
+            <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', 'image/*'); fileInputRef.current?.click(); setShowAttachMenu(false); }} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm text-black dark:text-white">
+              <Image className="h-4 w-4 text-green-500" /> ছবি (Image)
+            </button>
+            <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', 'video/*'); fileInputRef.current?.click(); setShowAttachMenu(false); }} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm text-black dark:text-white">
+              <Video className="h-4 w-4 text-blue-500" /> ভিডিও (Video)
+            </button>
+            <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', '.pdf'); fileInputRef.current?.click(); setShowAttachMenu(false); }} className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm text-black dark:text-white">
+              <FileText className="h-4 w-4 text-red-500" /> পিডিএফ (PDF)
+            </button>
+          </div>
+        )}
+
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            let type: 'image' | 'video' | 'pdf' = 'pdf';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('video/')) type = 'video';
+            uploadAndSendFile(file, type);
+          }} 
+        />
+
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+          <div className={cn(
+            "flex items-center gap-1 transition-all duration-300 overflow-hidden",
+            showLeftIcons ? "w-auto opacity-100" : "w-0 opacity-0 pointer-events-none"
+          )}>
+            <Button type="button" variant="ghost" size="icon" onClick={() => setShowAttachMenu(!showAttachMenu)}>
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={isRecording ? stopRecording : startRecording}>
+              {isRecording ? <Square className="h-5 w-5 text-red-500 animate-pulse" /> : <Mic className="h-5 w-5 text-muted-foreground" />}
+            </Button>
+          </div>
+
+          {uploading && <div className="text-xs text-purple-600 animate-pulse px-2">Uploading...</div>}
+
+          <div className="relative flex-1 flex items-center">
+            <textarea
+              ref={inputRef}
+              value={newMessage}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onFocus={() => setShowLeftIcons(false)}
+              onBlur={() => {
+                setTimeout(() => setShowLeftIcons(true), 200);
+              }}
+              placeholder="Type a message..."
+              rows={Math.min(4, newMessage.split('\n').length || 1)}
+              className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+          <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!newMessage.trim() && !uploading}>
+            <Send className="h-5 w-5" />
+          </Button>
+        </form>
       </div>
+    </>
+  ) : (
+    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-slate-50/20">
+      <MessageCircle className="w-16 h-16 opacity-10 mb-4" />
+      <p className="font-headline text-lg">Your Bookshelf of Conversations</p>
+      <p className="text-sm">Select a reader to start chatting</p>
     </div>
-  );
+  )}
+</main>
+</div>
+</div>
+);
 }
 
-
+// ফিক্সড রো কম্পোনেন্ট
 function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeConversationId, currentUserId }: any) {
   const [memberProfile, setMemberProfile] = useState<any>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -434,13 +608,7 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
   const isActive = activeConversationId === conv.id;
   const isUnread = unreadCount > 0;
   const normalBackground = isActive ? "bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200" : isUnread ? "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 font-semibold" : "hover:bg-gray-50 dark:hover:bg-slate-800/50";
-  
-  const rowBackground = conv.isAdminSupport
-    ? isActive
-      ? "bg-emerald-100/80 text-emerald-950 border-2 border-emerald-500 rounded-lg my-1 mx-2"
-      : "bg-emerald-50/60 hover:bg-emerald-100/50 border-2 border-dashed border-emerald-400 rounded-lg my-1 mx-2 text-emerald-900 font-medium"
-    : normalBackground;
-
+  const rowBackground = conv.isAdminSupport ? isActive ? "bg-emerald-100/80 text-emerald-950 border-2 border-emerald-500 rounded-lg my-1 mx-2" : "bg-emerald-50/60 hover:bg-emerald-100/50 border-2 border-dashed border-emerald-400 rounded-lg my-1 mx-2 text-emerald-900 font-medium" : normalBackground;
   const nameToDisplay = conv.isAdminSupport ? "Admin Support" : (memberProfile?.name || partnerId || "Conversation");
 
   return (

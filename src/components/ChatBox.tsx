@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, limitToLast } from 'firebase/firestore';
-import { X, Send, Loader2 } from 'lucide-react';
+import { X, Send, Loader2, Paperclip, Mic, Square, Image, Video, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
 
 interface ChatBoxProps {
   currentUserId: string;
@@ -19,13 +21,76 @@ interface Message {
   senderId: string;
   text: string;
   createdAt: any;
+  fileUrl?: string;   // নতুন যুক্ত করা হলো এরর কাটানোর জন্য
+  fileType?: string;  // নতুন যুক্ত করা হলো এরর কাটানোর জন্য
+  fileName?: string;  // নতুন যুক্ত করা হলো এরর কাটানোর জন্য
 }
 
+
 export default function ChatBox({ currentUserId, targetUserId, targetUserName, onClose }: ChatBoxProps) {
-  const firestore = getFirestore();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+const firestore = getFirestore();
+const [messages, setMessages] = useState<any[]>([]); // type altered for custom fields
+const [newMessage, setNewMessage] = useState('');
+const [loading, setLoading] = useState(true);
+
+// নতুন স্টেটসমূহ
+const [isRecording, setIsRecording] = useState(false);
+const [uploading, setUploading] = useState(false);
+const [showAttachMenu, setShowAttachMenu] = useState(false);
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const audioChunksRef = useRef<Blob[]>([]);
+const fileInputRef = useRef<HTMLInputElement>(null);
+
+const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf') => {
+  if (!firestore) return;
+  setUploading(true);
+  try {
+    const storageInstance = getStorage();
+    const fileRef = ref(storageInstance, `chats/${chatRoomId}/${Date.now()}_${file.name}`);
+    const uploadTask = uploadBytesResumable(fileRef, file);
+
+    uploadTask.on('state_changed', null, null, async () => {
+        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+        await addDoc(collection(firestore, 'messages'), {
+          chatRoomId,
+          senderId: currentUserId,
+          receiverId: targetUserId,
+          text: `[${fileType.toUpperCase()}]`,
+          fileUrl: downloadUrl,
+          fileType: fileType,
+          fileName: file.name,
+          createdAt: serverTimestamp(),
+          seen: false
+        });
+        setUploading(false);
+    });
+  } catch (err) {
+    setUploading(false);
+  }
+};
+
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    audioChunksRef.current = [];
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+      const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
+      await uploadAndSendFile(audioFile, 'audio' as any);
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    setIsRecording(true);
+  } catch (err) { alert("মাইক্রোফোন পারমিশন দিন"); }
+};
+
+const stopRecording = () => { if (mediaRecorderRef.current && isRecording) { mediaRecorderRef.current.stop(); setIsRecording(false); } };
+
+
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [targetUserData, setTargetUserData] = useState<any>(null);
 
@@ -145,26 +210,20 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
     }
   };
 
-    return (
+      return (
     <div className="flex flex-col h-full w-full bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-2xl min-h-0 relative">
-
-    {/* চ্যাট বক্স হেডার (নাম ও ছবি ক্লিকেবল করা হয়েছে) */}
-    <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
-
+      {/* চাট বক্স হেডার (নাম ও ছবি ক্লিকবল করা হয়েছে) */}
+      <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
         <div className="flex items-center gap-3">
           <Link href={`/dashboard/user/${targetUserId}`}>
-            {/* ডটটিকে ছবির সাথে লক করার জন্য মেইন কন্টেইনারে relative ক্লাস দেওয়া হয়েছে */}
             <div className="relative w-10 h-10 bg-purple-900/50 rounded-full flex items-center justify-center font-bold text-purple-400 border border-purple-800 cursor-pointer active:scale-95 transition-transform">
               {targetUserName ? targetUserName.charAt(0) : 'U'}
-              
-              {/* 🟢/🔴 অনলাইন-অফলাইন ডট ইন্ডিকেটর */}
               <span className={cn(
                 "absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-slate-900 ring-0",
                 targetUserData?.isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"
               )} />
             </div>
           </Link>
-
           <div>
             <Link href={`/dashboard/user/${targetUserId}`}>
               <h3 className="font-bold text-slate-200 hover:text-purple-400 hover:underline cursor-pointer transition-colors text-sm sm:text-base">
@@ -174,15 +233,13 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
             <p className="text-[10px] text-slate-500">Active Chat</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 text-slate-400   hover:text-white rounded-full hover:bg-slate-800 transition-colors">
-    <X className="w-5 h-5" />
-  </button>
-
+        <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors">
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* 💬 মেসেজ বডি এরিয়া */}
+      {/* মেসেজ বডি এরিয়া */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 w-full bg-slate-950">
-
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
@@ -196,35 +253,38 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
             const isMe = msg.senderId === currentUserId;
             return (
               <div key={msg.id} className={cn("flex items-end gap-2", isMe ? "justify-end" : "justify-start")}>
-                
-                {/* 📸 অন্য ইউজারের চ্যাট বাবল ছবি (ক্লিকেবল করা হয়েছে) */}
                 {!isMe && (
                   <Link href={`/dashboard/user/${targetUserId}`} className="relative shrink-0 active:scale-95 transition-transform mb-1">
                     <div className="w-7 h-7 bg-purple-950 rounded-full flex items-center justify-center text-xs font-bold text-purple-400 border border-purple-900 cursor-pointer">
                       {targetUserName ? targetUserName.charAt(0) : 'U'}
                     </div>
-                    {/* 🟢/🔴 ছোট ডট বাবল ছবির কোণায় */}
                     <span className={cn(
                       "absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full border border-slate-950",
                       targetUserData?.isOnline ? "bg-green-500" : "bg-red-500"
                     )} />
                   </Link>
                 )}
-
-
-                {/* 💬 মেসেজ টেক্সট */}
                 <div className={cn(
                   "max-w-[75%] px-3.5 py-2 rounded-2xl text-xs sm:text-sm shadow-md break-words whitespace-pre-wrap", 
                   isMe ? "bg-purple-600 text-white rounded-br-none" : "bg-slate-900 text-slate-200 rounded-bl-none border border-slate-800"
                 )}>
-
-
-                  {/* whitespace-pre-wrap যুক্ত করার ফলে এন্টার বা নতুন লাইনগুলো চ্যাটে হুবহু দেখা যাবে */}
-                  <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} className="break-words">
-                    {msg.text}
-                  </p>
-
-
+                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }} className="break-words">
+                    {msg.fileUrl ? (
+                      <div className="flex flex-col gap-2">
+                        {msg.fileType === 'image' && <img src={msg.fileUrl} alt="Shared" className="max-w-xs max-h-40 rounded-lg object-cover border" />}
+                        {msg.fileType === 'video' && <video src={msg.fileUrl} controls className="max-w-xs max-h-40 rounded-lg" />}
+                        {msg.fileType === 'pdf' && (
+                          <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-1.5 bg-slate-800 rounded-lg text-purple-400 underline">
+                            <FileText className="h-4 w-4" />
+                            <span className="truncate max-w-[120px]">{msg.fileName || "PDF"}</span>
+                          </a>
+                        )}
+                        {msg.fileType === 'audio' && <audio src={msg.fileUrl} controls className="max-w-[200px] h-8" />}
+                      </div>
+                    ) : (
+                      <p>{msg.text}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -233,39 +293,61 @@ export default function ChatBox({ currentUserId, targetUserId, targetUserName, o
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 📥 ইনপুট ফর্ম সেকশন */}
-      <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900/30 flex items-center gap-2 shrink-0">
-        <textarea
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          rows={Math.min(4, newMessage.split('\n').length || 1)}
-          className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
-          onKeyDown={(e) => {
-            const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
-            
-            if (!isMobileDevice) {
-              // পিসির ক্ষেত্রে: শুধু Enter চাপলে মেসেজ যাবে
-              if (e.key === 'Enter' && !e.shiftKey) {
+      {/* ইনপুট এরিয়া ও ফর্ম সেকশন */}
+      <div className="relative bg-slate-900/30 p-1 border-t border-slate-800">
+        {showAttachMenu && (
+          <div className="absolute bottom-16 left-4 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 flex flex-col gap-2 z-50">
+            <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', 'image/*'); fileInputRef.current?.click(); setShowAttachMenu(false); }} className="flex items-center gap-2 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800 rounded">
+              <Image className="h-3.5 w-3.5 text-green-500" /> Image
+            </button>
+            <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', 'video/*'); fileInputRef.current?.click(); setShowAttachMenu(false); }} className="flex items-center gap-2 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800 rounded">
+              <Video className="h-3.5 w-3.5 text-blue-500" /> Video
+            </button>
+            <button type="button" onClick={() => { fileInputRef.current?.setAttribute('accept', '.pdf'); fileInputRef.current?.click(); setShowAttachMenu(false); }} className="flex items-center gap-2 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800 rounded">
+              <FileText className="h-3.5 w-3.5 text-red-500" /> PDF
+            </button>
+          </div>
+        )}
+
+        <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => {
+          const file = e.target.files?.[0]; if (!file) return;
+          let t: 'image' | 'video' | 'pdf' = 'pdf';
+          if (file.type.startsWith('image/')) t = 'image'; else if (file.type.startsWith('video/')) t = 'video';
+          uploadAndSendFile(file, t);
+        }} />
+
+        <form onSubmit={handleSendMessage} className="p-2 flex items-center gap-2 shrink-0">
+          <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
+            <Paperclip className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={isRecording ? stopRecording : startRecording} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
+            {isRecording ? <Square className="h-4 w-4 text-red-500 animate-pulse" /> : <Mic className="h-4 w-4" />}
+          </button>
+          {uploading && <span className="text-[10px] text-purple-400">Uploading...</span>}
+          
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            rows={Math.min(4, newMessage.split('\n').length || 1)}
+            className="flex-1 bg-white border border-slate-300 text-black text-sm sm:text-base rounded-xl px-4 py-3 resize-none min-h-[46px] max-h-[140px] overflow-y-auto focus:outline-none focus:border-purple-600 transition-all shadow-sm placeholder-slate-400"
+            onKeyDown={(e) => {
+              const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+              if (!isMobileDevice && e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage({ preventDefault: () => {} } as any);
               }
-            }
-            // মোবাইলের ক্ষেত্রে: Enter চাপলে ডিফল্ট নতুন লাইনে চলে যাবে
-          }}
-        />
-
-
-
-
-        <button 
-          type="submit" 
-          disabled={!newMessage.trim()} 
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 h-[38px] w-[38px] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Send className="w-4 h-4" />
-        </button>
-      </form>
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!newMessage.trim()}
+            className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shrink-0 h-[38px] w-[38px] flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
