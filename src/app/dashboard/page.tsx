@@ -32,10 +32,16 @@ export default function HomePage() {
     return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: posts, loading: postsLoading } = useCollection<any>(postsQuery);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   const [postContent, setPostContent] = useState("");
   const [postImage, setPostImage] = useState<File | null>(null);
+
+
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [isPosting, setIsPosting] = useState(false);
@@ -44,6 +50,97 @@ export default function HomePage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+window.scrollTo(0, 0);
+fetchInitialPosts();
+}, [firestore]);
+
+// === নোটিফিকেশন থেকে আসা সিলেক্টেড পোস্টকে ইমেজের পরে অটো-স্ক্রোল করানোর লজিক ===
+useEffect(() => {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#post-')) {
+    const triggerTargetScroll = () => {
+      setTimeout(() => {
+        const selectedPostId = hash.substring(1);
+        const targetPostElement = document.getElementById(selectedPostId);
+        if (targetPostElement) {
+          targetPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 400); // ৪০০ মিলি-সেকেন্ডের সেফ বাফার যাতে ইমেজ রেন্ডারিং শেষ হতে পারে
+    };
+
+    if (document.readyState === 'complete') {
+      triggerTargetScroll();
+    } else {
+      window.addEventListener('load', triggerTargetScroll);
+      return () => window.removeEventListener('load', triggerTargetScroll);
+    }
+  }
+}, [postsLoading]); // পেজের বেসিক পোস্ট লোড সম্পন্ন হলে রান করবে
+
+const fetchInitialPosts = async () => {
+
+    if (!firestore) return;
+    setPostsLoading(true);
+    try {
+      const firebaseFirestore = await import("firebase/firestore");
+      const q = firebaseFirestore.query(
+        firebaseFirestore.collection(firestore, 'posts'),
+        firebaseFirestore.orderBy('createdAt', 'desc'), // নতুন পোস্ট উপরে থাকবে
+        firebaseFirestore.limit(20) // প্রথমবারে ২০টি
+      );
+      const snapshot = await firebaseFirestore.getDocs(q);
+      const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      setPosts(fetchedPosts);
+      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === 20);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  const fetchMorePosts = async () => {
+  if (!firestore || loadingMore || !hasMore || !lastVisible) return;
+  setLoadingMore(true);
+  try {
+    const firebaseFirestore = await import("firebase/firestore");
+    const q = firebaseFirestore.query(
+      firebaseFirestore.collection(firestore, 'posts'),
+      firebaseFirestore.orderBy('createdAt', 'desc'),
+      firebaseFirestore.startAfter(lastVisible),
+      firebaseFirestore.limit(10) // প্রতি স্ক্রোলে ১০টি করে
+    );
+    const snapshot = await firebaseFirestore.getDocs(q);
+    const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    if (fetchedPosts.length > 0) {
+      setPosts(prev => [...prev, ...fetchedPosts]);
+      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === 10);
+    } else {
+      setHasMore(false);
+    }
+  } catch (error) {
+    console.error("Error fetching more posts:", error);
+  } finally {
+    setLoadingMore(false);
+  }
+};
+
+// ৪. অটোমেটিক স্ক্রোল ডিটেক্টর লিসেনার
+useEffect(() => {
+  const handleScroll = () => {
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+      fetchMorePosts();
+    }
+  };
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, [lastVisible, loadingMore, hasMore, firestore]);
 
   const handleCancel = () => {
     setPostContent("");
@@ -190,12 +287,14 @@ export default function HomePage() {
         imageUrl: finalImageUrl
       });
 
-      // ৩. স্টেটগুলো রিসেট করা
-      setPostContent("");
-      setPostImage(null);
-      if (typeof setImagePreview === 'function') setImagePreview(null);
-      setIsPosting(false);
-      toast({ title: "Post published!" });
+      // ৩. স্টেটগুলো রিসেট করা এবং নতুন পোস্ট লিস্টের শুরুতে রিফ্রেশ করা
+    setPostContent("");
+    setPostImage(null);
+    if (typeof setImagePreview === 'function') setImagePreview(null);
+    setIsPosting(false);
+    toast({ title: "Post published!" });
+    fetchInitialPosts(); // নতুন পোস্ট দেওয়ার পর লিস্ট রিফ্রেশ করবে
+
 
     } catch (error: any) {
       console.error("Post creation error:", error);
@@ -461,16 +560,18 @@ export default function HomePage() {
 
                   {/* 📄 ২য় বক্স: বডি (পোস্টের মূল লেখা - সাদা ব্যাকগ্রাউন্ড এবং মোটা হালকা নীল বর্ডার ডিজাইন) */}
                   <CardContent className="p-4 bg-white min-h-[60px] border-t-2 border-b-2 border-sky-200/80 text-sm text-slate-700 text-left my-1.5 transition-all">
+
                     <LivePostContent text={post.content || post.text} />
-                    {post.imageUrl && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-black/95 flex items-center justify-center">
-                        <img 
-                          src={post.imageUrl} 
-                          alt="Profile post attachment" 
-                          className="w-full h-auto object-contain max-h-[500px]" 
-                        />
+                      {post.imageUrl && (
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 aspect-video max-h-[500px] w-full bg-black/95 flex items-center justify-center">
+                      <img
+                      src={post.imageUrl}
+                      alt="Profile post attachment"
+                      className="w-full h-full object-contain max-h-[500px]" // h-auto এর বদলে h-full করুন
+                      />
                       </div>
-                    )}
+                      )}
+
 
 
                   </CardContent>
@@ -548,19 +649,26 @@ export default function HomePage() {
                     </form>
 
                     {/* 👇 ৩. লাইভ কমেন্ট লিস্ট (Descending Order-এ দেখানোর কাস্টম কম্পোনেন্ট) */}
-                    <LiveCommentsList postId={post.id} firestore={firestore} />
+                          <LiveCommentsList postId={post.id} firestore={firestore} />
+                        </div>
+                      )}
+                    </Card>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-20 text-muted-foreground">
+                    <ImageIcon className="h-12 w-12 mx-auto opacity-20 mb-4" />
+                    <p>No posts yet. Be the first to share something!</p>
                   </div>
                 )}
-              </Card>
-            );
-          })
 
-        ) : (
-            <div className="text-center py-20 text-muted-foreground">
-                <ImageIcon className="h-12 w-12 mx-auto opacity-20 mb-4" />
-                <p>No posts yet. Be the first to share something!</p>
-            </div>
-        )}
+                {/* === এখানে অটো-লোডিং স্পিনার কোডটি রাখুন (শর্তহীনভাবে বা ম্যাপের বাইরে) === */}
+                {loadingMore && (
+                  <div className="flex flex-col items-center py-4 gap-1">
+                    <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
+                    <p className="text-xs text-muted-foreground">Loading more posts...</p>
+                  </div>
+                )}
       </div>
     </div>
   );

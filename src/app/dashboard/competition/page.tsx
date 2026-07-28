@@ -265,11 +265,12 @@ export default function CompetitionPage() {
                             <CardTitle className="flex items-center gap-3"><Award className="text-accent"/> Rules & Prizes</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
-                            <p className="flex items-start gap-2"><Percent className="w-4 h-4 mt-1 flex-shrink-0"/> Score 60% or more in each section to pass the level.</p>
-                            <p className="flex items-start gap-2"><Award className="w-4 h-4 mt-1 flex-shrink-0"/> Score 80% or more on your first try to be eligible for prizes.</p>
-                            <p className="flex items-start gap-2"><Edit className="w-4 h-4 mt-1 flex-shrink-0"/> A deduction of 0.5 marks for each wrong answer.</p>
-                            <p className="flex items-start gap-2"><Edit className="w-4 h-4 mt-1 flex-shrink-0"/> After starting the exam, please don't switch the tab.</p>
+                            <p className="flex items-start gap-2"><Percent className="w-4 h-4 mt-1 flex-shrink-0"/> লেভেল পাস করতে প্রতিটি সেকশনে 60% বা তার বেশি স্কোর করুন।</p>
+                            <p className="flex items-start gap-2"><Award className="w-4 h-4 mt-1 flex-shrink-0"/> পুরস্কারের জন্য এলিজিবল হতে আপনার প্রথম চেষ্টায় 80% বা তার বেশি স্কোর করুন।</p>
+                            <p className="flex items-start gap-2"><Edit className="w-4 h-4 mt-1 flex-shrink-0"/> প্রতিটি ভুল উত্তরের জন্য 0.5 মার্কস কাটা হবে।</p>
+                            <p className="flex items-start gap-2"><Edit className="w-4 h-4 mt-1 flex-shrink-0"/> এক্সাম শুরু করার পর, দয়া করে ট্যাব পরিবর্তন করবেন না।</p>
                         </CardContent>
+
                     </Card>
 
                     <Card>
@@ -277,7 +278,7 @@ export default function CompetitionPage() {
                             <CardTitle className="flex items-center gap-3"><DollarSign className="text-accent"/> Exam Fee</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <p className="text-muted-foreground">To participate in the exam, a fee of <span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span> is required for each attempt.</p>
+                            <p className="text-muted-foreground">এক্সামে অংশ নিতে প্রতিবারের জন্য আপনাকে<span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span> ফি প্রদান করতে হবে।</p>
                             <p className="font-semibold">Accepted Payment Methods:</p>
                             <div className="flex gap-4 items-center text-sm text-muted-foreground">
                                 <span className="font-bold text-pink-600">bKash, Rocket, Nagad, Visa Card etc.</span>

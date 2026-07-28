@@ -76,8 +76,9 @@ export default function PatronPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Become a Patron</CardTitle>
             <CardDescription className="text-white/90 mt-2 max-w-md mx-auto">
-              We are currently building a nationwide reading community in Bangladesh. Your generous contributions play a vital role in ensuring this movement continues to operate smoothly and effectively.
+              আমরা বাংলাদেশে একটি দেশব্যাপী বইপ্রেমীদের কমিউনিটি গড়ে তুলছি। এই মহৎ উদ্যোগটিকে সচল ও ফলপ্রসূ রাখতে আপনার মূল্যবান অবদান অনন্য ভূমিকা রাখবে।
             </CardDescription>
+
           </CardHeader>
         </Card>
 

@@ -81,10 +81,20 @@ export default function LiveDropdownList({ userId, notifList, handleNotifClick }
         }
 
         return (
-          <div
-            key={currentNotif.id || Math.random().toString()}
-            onClick={() => handleNotifClick(currentNotif)}
-            className={`p-2 text-left rounded cursor-pointer transition-colors hover:bg-gray-50 ${
+              <div
+              key={currentNotif.id || Math.random().toString()}
+              onClick={() => {
+                // ১. প্যারেন্ট থেকে আসা ক্লিক মেথডটি কল করে ড্রপডাউন ইনস্ট্যান্ট ক্লোজ করা
+                handleNotifClick(currentNotif); 
+                
+                // ২. যদি এটি কোনো পোস্ট রিলেটেড সোশ্যাল নোটিফিকেশন হয়, তবে সরাসরি ফোকাস পেজে পাঠানো
+                if (currentNotif.postId) {
+                  window.location.href = `/dashboard/profile#post-${currentNotif.postId}`;
+                } else {
+                  window.location.href = "/Notice-board";
+                }
+              }}
+              className={`p-2 text-left rounded cursor-pointer transition-colors hover:bg-gray-50 ${
               !currentNotif.isSeen && !currentNotif.isRead ? 'bg-blue-50/40 border-l-2 border-blue-500' : ''
             }`}
           >

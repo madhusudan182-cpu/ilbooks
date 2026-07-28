@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ArrowLeft, MessageCircle, UserPlus, MapPin, MoreVertical, Ban, Flag, Copy } from "lucide-react";
+import { ArrowLeft, MessageCircle, UserPlus, MapPin, MoreVertical, Ban, Flag, Copy, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, query, collection, orderBy, where, onSnapshot, setDoc, deleteDoc } from "firebase/firestore";
@@ -31,22 +31,98 @@ export default function UserProfilePage() {
   const userRef = useMemo(() => (userId && firestore ? doc(firestore, 'users', userId) : null), [userId, firestore]);
   const [relationStatus, setRelationStatus] = useState<'none' | 'following' | 'follower' | 'friend'>('none');
   const [relationLoading, setRelationLoading] = useState(true);
+  
+  
   const { data: userData, loading: userLoading } = useDoc<any>(userRef);
 
-  // ২. ফায়ারবেস থেকে এই নির্দিষ্ট ইউজারের করা পোস্টগুলো আনা
-  const postsQuery = useMemo(() => {
-    if (!firestore || !userId) return null;
-    return query(
-      collection(firestore, 'posts'),
-      where('author.id', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-  }, [firestore, userId]);
+  // --- ইনফিনিট স্ক্রোলের স্টেটসমূহ ---
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
 
-  // ৩. সোশ্যাল সার্কেলের মেথড অনুযায়ী আপনার ফলো এবং বিপরীত ফলো রিয়েল-টাইমে ট্র্যাক করা
+  // ১. পেজের একদম উপরে ল্যান্ড করার লজিক
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (userId && firestore) {
+      fetchInitialUserPosts();
+    }
+  }, [userId, firestore]);
+
+  // ২. প্রথমবারে ১০টি পোস্ট লোড করার ফাংশন
+  const fetchInitialUserPosts = async () => {
+    if (!firestore || !userId) return;
+    setPostsLoading(true);
+    try {
+      const firebaseFirestore = await import("firebase/firestore");
+      const q = firebaseFirestore.query(
+        firebaseFirestore.collection(firestore, 'posts'),
+        firebaseFirestore.where('author.id', '==', userId),
+        firebaseFirestore.orderBy('createdAt', 'desc'),
+        firebaseFirestore.limit(10) // প্রোফাইলে প্রথমবারে ১০টি
+      );
+      const snapshot = await firebaseFirestore.getDocs(q);
+      const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      setUserPosts(fetchedPosts);
+      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === 10);
+    } catch (error) {
+      console.error("Error fetching user posts:", error);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
+
+  // ৩. স্ক্রোল করলে পরবর্তী ১০টি পোস্ট লোড হওয়ার লজিক
+  const fetchMoreUserPosts = async () => {
+    if (!firestore || !userId || loadingMore || !hasMore || !lastVisible) return;
+    setLoadingMore(true);
+    try {
+      const firebaseFirestore = await import("firebase/firestore");
+      const q = firebaseFirestore.query(
+        firebaseFirestore.collection(firestore, 'posts'),
+        firebaseFirestore.where('author.id', '==', userId),
+        firebaseFirestore.orderBy('createdAt', 'desc'),
+        firebaseFirestore.startAfter(lastVisible),
+        firebaseFirestore.limit(10)
+      );
+      const snapshot = await firebaseFirestore.getDocs(q);
+      const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      if (fetchedPosts.length > 0) {
+        setUserPosts(prev => [...prev, ...fetchedPosts]);
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === 10);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Error fetching more user posts:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // ৪. অটোমেটিক স্ক্রোল ডিটেক্টর লিসেনার
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+        fetchMoreUserPosts();
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastVisible, loadingMore, hasMore, firestore, userId]);
+
   useEffect(() => {
     const authInstance = getAuth();
     const currentUser = authInstance.currentUser;
+
+
     const targetUserId = userId || userData?.id;
 
     if (!firestore || !currentUser?.uid || !targetUserId) return;
@@ -128,7 +204,7 @@ export default function UserProfilePage() {
       console.error("Error during unfollow execution: ", error);
     }
   };
-  const { data: userPosts, loading: postsLoading } = useCollection<any>(postsQuery);
+  
 
   if (userLoading || relationLoading) {
     return <div className="p-10 text-center text-white bg-[#0f172a] min-h-screen">Loading profile...</div>;
@@ -292,15 +368,26 @@ export default function UserProfilePage() {
         {postsLoading ? (
           <p className="text-sm text-slate-500">Loading posts...</p>
         ) : userPosts && userPosts.length > 0 ? (
-          userPosts.map((post: any) => (
-            <Card key={post.id} className="bg-slate-900 border-slate-800 p-4">
-              <p className="text-sm text-slate-300">{post.content}</p>
-            </Card>
-          ))
-        ) : (
-          <p className="text-sm text-slate-500 italic">No posts published by this user.</p>
-        )}
-      </div>
+          
+          
+                  userPosts.map((post: any) => (
+          <Card key={post.id} className="bg-slate-900 border-slate-800 p-4">
+            <p className="text-sm text-slate-300">{post.content}</p>
+          </Card>
+        ))
+      ) : (
+        <p className="text-sm text-slate-500 italic">No posts published by this user.</p>
+      )}
+
+      {/* === অটো-লোডিং স্পিনার (কন্ডিশনের বাইরে সঠিক রিঅ্যাক্ট ফ্র্যাগমেন্টে) === */}
+      {loadingMore && (
+        <div className="flex flex-col items-center py-4 gap-1">
+          <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
+          <p className="text-xs text-slate-400">Loading more posts...</p>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 }
+
