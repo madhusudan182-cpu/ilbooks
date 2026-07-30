@@ -30,6 +30,7 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [dbUsers, setDbUsers] = useState<UserData[]>([]);
   const [relations, setRelations] = useState<{ [key: string]: 'following' | 'follower' | 'friends' | 'blocked' }>({});
+  const [visibleCount, setVisibleCount] = useState(20);
 
   // ১. ইউজার অথেন্টিকেশন স্টেট ট্র্যাকিং
   useEffect(() => {
@@ -50,7 +51,8 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
       const lowerParam = tabParam.toLowerCase();
       if (validTabs.includes(lowerParam)) {
         setActiveTab(lowerParam as any);
-      }
+        setVisibleCount(20); // নতুন ট্যাবে গেলে লিমিট আবার ২০ এ রিসেট হবে
+        }
     }
   }, [tabParam]);
 
@@ -190,7 +192,7 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
           {['friends', 'following', 'followers', 'bookworms'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab as any)}
+              onClick={() => { setActiveTab(tab as any); setVisibleCount(20); }}
               className={`flex-1 text-center py-1.5 px-0.5 text-[10px] min-[360px]:text-[11px] sm:text-xs md:text-sm md:flex-none md:px-4 md:py-2 font-semibold rounded-lg capitalize transition-all active:scale-95 ${
                 activeTab === tab
                   ? 'bg-purple-700 text-white shadow-sm'
@@ -205,27 +207,50 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
       {/* ইউজার লিস্ট এরিয়া */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 min-h-[300px] flex flex-col">
         {displayUsers.length > 0 ? (
-          displayUsers.map((user) => (
-            <UserRow
-              key={user.id}
-              id={user.id}
-              name={user.name}
-              level={user.level}
-              avatarUrl={user.avatarUrl}
-              tabType={activeTab as any}
-               isOnline={user.isOnline}
-              isFollowing={relations[user.id] === 'following' || relations[user.id] === 'friends'}
-              isFriend={relations[user.id] === 'friends'}
-              isFollower={relations[user.id] === 'follower'}
-              onAction={handleUserAction}
-            />
-          ))
+          <>
+            {displayUsers.slice(0, visibleCount).map((user) => (
+              <UserRow
+                key={user.id}
+                id={user.id}
+                name={user.name}
+                level={user.level}
+                avatarUrl={user.avatarUrl}
+                tabType={activeTab as any}
+                isOnline={user.isOnline}
+                isFollowing={relations[user.id] === 'following' || relations[user.id] === 'friends'}
+                isFriend={relations[user.id] === 'friends'}
+                isFollower={relations[user.id] === 'follower'}
+                onAction={handleUserAction}
+              />
+            ))}
+
+            {/* Load More এবং Go To Top বাটন লজিক */}
+            <div className="flex flex-row justify-center items-center gap-4 pt-4 mt-2 border-t border-slate-100">
+              {displayUsers.length > visibleCount && (
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 20)}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all active:scale-95"
+                >
+                  Load More
+                </button>
+              )}
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl shadow-sm transition-all active:scale-95"
+              >
+                Go To Top
+              </button>
+            </div>
+          </>
         ) : (
           <div className="flex flex-col flex-1 items-center justify-center text-slate-400 text-sm py-12">
             No bookworms found in this tab.
           </div>
         )}
-      </div>
+        </div>
+
+
+
     </div>
   );
 }

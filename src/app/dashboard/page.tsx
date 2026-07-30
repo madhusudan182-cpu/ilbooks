@@ -400,7 +400,7 @@ useEffect(() => {
   const userAvatar = profile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-4 max-w-3xl mx-auto">
+    <div className="max-w-md mx-auto min-h-screen bg-slate-50 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
       <Card id="post">
         <CardContent className="p-2 pt-4">
           <div className="flex items-start gap-3">
@@ -533,7 +533,7 @@ useEffect(() => {
             const profileUrl = isMe ? "/dashboard/profile" : `/dashboard/user/${post.author.id}`;
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
             
-                        return (
+            return (
               <Card key={post.id} className="mb-6 shadow-sm border border-slate-200/80 overflow-hidden bg-white rounded-xl">
                 {/* 👤 পোস্ট হেডার */}
                 <CardHeader className="flex flex-row items-center gap-3 p-3 pb-2">
@@ -548,7 +548,7 @@ useEffect(() => {
                           {authorName}
                         </span>
                       </Link>
-                      <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-purple-600 border border-purple-100 rounded font-bold">
+                      <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-blue-600 border border-purple-100 rounded font-bold">
                         Level: <LiveAuthorLevel authorId={post.author.id} fallbackLevel={authorLevel} firestore={firestore} />
                       </Badge>
 
@@ -563,12 +563,12 @@ useEffect(() => {
 
                     <LivePostContent text={post.content || post.text} />
                       {post.imageUrl && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 aspect-video max-h-[500px] w-full bg-black/95 flex items-center justify-center">
-                      <img
-                      src={post.imageUrl}
-                      alt="Profile post attachment"
-                      className="w-full h-full object-contain max-h-[500px]" // h-auto এর বদলে h-full করুন
-                      />
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
+                        <img 
+                          src={post.imageUrl} 
+                          alt="Post attachment" 
+                          className="w-full h-auto object-contain max-h-[500px]" 
+                        />
                       </div>
                       )}
 

@@ -278,7 +278,7 @@ export default function CompetitionPage() {
                             <CardTitle className="flex items-center gap-3"><DollarSign className="text-accent"/> Exam Fee</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <p className="text-muted-foreground">এক্সামে অংশ নিতে প্রতিবারের জন্য আপনাকে<span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span> ফি প্রদান করতে হবে।</p>
+                            <p className="text-muted-foreground">এক্সামে অংশ নিতে প্রতিবারের জন্য আপনাকে <span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span> ফি প্রদান করতে হবে।</p>
                             <p className="font-semibold">Accepted Payment Methods:</p>
                             <div className="flex gap-4 items-center text-sm text-muted-foreground">
                                 <span className="font-bold text-pink-600">bKash, Rocket, Nagad, Visa Card etc.</span>

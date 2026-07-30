@@ -26,6 +26,7 @@ export default function UserProfilePage() {
   const { toast } = useToast();
   const userId = searchParams.get('id') as string;
   const firestore = useFirestore();
+  const [showFullAvatar, setShowFullAvatar] = useState(false);
 
   // ১. ফায়ারবেস থেকে লাইভ ইউজারের ডেটা আনা
   const userRef = useMemo(() => (userId && firestore ? doc(firestore, 'users', userId) : null), [userId, firestore]);
@@ -222,7 +223,7 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-3xl mx-auto text-white">
+    <div className="max-w-md mx-auto min-h-screen bg-slate-110 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
       {/* ব্যাক বাটন */}
       <Button onClick={() => router.back()} variant="ghost" size="sm" className="text-slate-400 hover:text-white">
         <ArrowLeft className="w-4 h-4 mr-2" /> Back
@@ -234,8 +235,10 @@ export default function UserProfilePage() {
           
           {/* বাম পাশের অংশ: নাম, ইউজারনেম, লেভেল ও বায়ো এক সাথে */}
           <div className="flex items-center gap-4">
-            <Avatar className="h-24 w-24 border-2 border-purple-500 shadow-xl shrink-0">
-              <AvatarImage src={userData?.avatarUrl || userData?.image} alt={userData?.name} />
+            <Avatar className="h-24 w-24 border-2 border-purple-500 shadow-xl shrink-0 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setShowFullAvatar(true)}>
+              <AvatarImage src={userData?.avatarUrl || userData?.image} alt={userData?.name}
+              />
+
               <AvatarFallback>{userData?.name?.charAt(0) || "U"}</AvatarFallback>
             </Avatar>
             
@@ -370,11 +373,22 @@ export default function UserProfilePage() {
         ) : userPosts && userPosts.length > 0 ? (
           
           
-                  userPosts.map((post: any) => (
-          <Card key={post.id} className="bg-slate-900 border-slate-800 p-4">
-            <p className="text-sm text-slate-300">{post.content}</p>
+        userPosts.map((post: any) => (
+          <Card key={post.id} className="bg-slate-900 border-slate-800 mb-6 rounded-xl overflow-hidden text-left w-full">
+            <div className="p-4 bg-slate-900 text-sm text-slate-300 border-b border-slate-800">
+              <p>{post.content}</p>
+              {post.imageUrl && (
+                // এখানে ওন প্রোফাইলের মতো ফিক্সড max-h-[500px] এবং object-cover যুক্ত করা হলো
+                <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
+                  <img src={post.imageUrl} alt="Post attachment" className="w-full h-auto object-cover max-h-[500px]" />
+                </div>
+              )}
+            </div>
           </Card>
         ))
+
+
+
       ) : (
         <p className="text-sm text-slate-500 italic">No posts published by this user.</p>
       )}
@@ -387,7 +401,18 @@ export default function UserProfilePage() {
         </div>
       )}
     </div>
+  {showFullAvatar && (
+  <div className="fixed inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+    <div className="w-full max-w-md md:max-w-xl max-h-[70vh] flex items-center justify-center overflow-hidden rounded-2xl shadow-2xl">
+      <img src={userData?.avatarUrl || userData?.image} alt={userData?.name} className="w-full h-auto object-contain max-h-[70vh]" />
+    </div>
+    <Button onClick={() => setShowFullAvatar(false)} className="mt-6 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl flex items-center gap-2">
+      <ArrowLeft className="w-4 h-4" /> Back
+    </Button>
   </div>
+)}
+</div>
 );
 }
+
 

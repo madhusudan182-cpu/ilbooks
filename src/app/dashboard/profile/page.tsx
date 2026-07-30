@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>("");
+  const [showFullAvatar, setShowFullAvatar] = useState(false);
 
   const handlePostAction = async (actionType: string, postId: string, currentContent?: string) => {
     if (!firestore) return;
@@ -339,7 +340,7 @@ useEffect(() => {
   if (!user || !firestore) return null;
   const userName = profile?.name || user.displayName || 'User';
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-50 p-4 pb-20 font-sans">
+    <div className="max-w-md mx-auto min-h-screen bg-slate-110 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
       <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-4">
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center">
@@ -355,8 +356,10 @@ useEffect(() => {
                 />
               )}
 
-              <Avatar className="w-24 h-24 border-4 border-purple-100 shadow-sm relative">
+              <Avatar className="w-24 h-24 border-4 border-purple-100 shadow-sm relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setShowFullAvatar(true)}>
                 <AvatarImage src={profile?.avatarUrl} />
+
+
                 <AvatarFallback className="text-xl font-bold bg-purple-50 text-purple-700">
                   {userName.charAt(0)}
                 </AvatarFallback>
@@ -572,7 +575,7 @@ useEffect(() => {
                       <LivePostContent text={post.content || post.text} />                      
                     )}
                     {post.imageUrl && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-black/95 flex items-center justify-center">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
                         <img 
                           src={post.imageUrl} 
                           alt="Post attachment" 
@@ -623,12 +626,44 @@ useEffect(() => {
         ) : (
           <div className="text-center py-20 text-muted-foreground">
             <p>No posts yet. Be the first to share something!</p>
-          </div>
-        )}
-      </div>
+</div>
+)}
+
+{/* নিজের প্রোফাইল পিকচার ফুল স্ক্রিন ভিউ মডাল এবং অ্যাক্টিভ এডিট ও ব্যাক বাটন */}
+{showFullAvatar && (
+  <div className="fixed inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+    <div className="w-full max-w-md md:max-w-xl max-h-[70vh] flex items-center justify-center overflow-hidden rounded-2xl shadow-2xl">
+      <img src={profile?.avatarUrl || "/fallback-avatar.png"} alt={userName} className="w-full h-auto object-contain max-h-[70vh]" />
     </div>
-  );
+    <div className="flex flex-row gap-4 mt-6">
+      <Button 
+        onClick={() => {
+          setShowFullAvatar(false);
+          avatarInputRef.current?.click(); // ক্যামেরা বাটনের মতো ফাইল আপলোড ট্রিগার করবে
+        }} 
+        className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-2 rounded-xl transition-all active:scale-95"
+      >
+        Edit
+      </Button>
+      <Button 
+        onClick={() => setShowFullAvatar(false)} 
+        variant="outline"
+        className="border-slate-700 text-slate-800 hover:bg-slate-800 font-semibold px-5 py-2 rounded-xl transition-all active:scale-95"
+      >
+        Back
+      </Button>
+    </div>
+  </div>
+)}
+
+</div>
+</div>
+);
 }
+
+
+
+
 function LiveHeartIcon({ postId, userId, firestore }: { postId: string; userId: string | undefined; firestore: any }) {
   const [isLiked, setIsLiked] = useState(false);
   useEffect(() => {

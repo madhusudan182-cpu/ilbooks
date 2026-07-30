@@ -312,18 +312,15 @@ return query(
         let nextMinor = minor + 1;
         
         if (nextMinor > 9) {
-            nextMajor++;
-            nextMinor = 0;
-        }
-        
-        // Skip level 1.x if transitioning from 0.9
-        if (nextMajor === 1) {
-            nextMajor = 2;
-            nextMinor = 0;
-        }
-        
-        const nextLevel = parseFloat((nextMajor + (nextMinor / 10)).toFixed(1));
-        const userRef = doc(firestore, 'users', user.uid);
+          nextMajor++;
+          nextMinor = 0;
+          }
+
+          const nextLevel = parseFloat((nextMajor + (nextMinor / 10)).toFixed(1));
+          const userRef = doc(firestore, 'users', user.uid);
+
+
+
         updateDoc(userRef, { level: nextLevel });
         toast({ title: "Level Up!", description: `Congratulations! You have reached Level ${nextLevel.toFixed(1)}.` });
     }
