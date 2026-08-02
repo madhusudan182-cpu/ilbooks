@@ -1,0 +1,78 @@
+350ba24 (Fri) 2026-07-31 04:00 PM : fixed something and it didn't fixed.
+5ac84b4 (Fri) 2026-07-31 12:36 AM : feat: add full screen avatar modal, chat long press menu, and social page load more pagination
+e842731 (Tue) 2026-07-28 11:24 PM : feat: implement infinite scroll and fix notification layout/UX issues
+6c658ad (Sun) 2026-07-26 07:32 PM : fix: resolve message history pagination query dependency array bug
+e0964fe (Sun) 2026-07-26 07:03 PM : fix: chat UI improvements, mobile keyboard scroll, icon toggles and ticks positioning
+464c72a (Sun) 2026-07-26 06:23 PM : feat: fix firebase messaging initialization error and add chat scroll effect
+e783a68 (Sun) 2026-07-26 03:58 PM : feat: finalized chat performance with pagination limits and responsive loading indicators
+4f7346b (Sun) 2026-07-26 02:17 PM : feat: integrated whatsapp-style recording panel, lightbox popup, and 3-color ticks
+74ccba9 (Sun) 2026-07-26 12:36 PM : feat: added real-time voice recorder and file attachment to chat
+fe9122f (Sat) 2026-07-25 10:47 AM : fix: resolve nextjs build bug and optimize question dashboard
+11eae05 (Sat) 2026-07-25 01:52 AM : fix: resolve nextjs build issue and add conditional level query
+900f485 (Fri) 2026-07-24 11:36 PM : feat: Add AI image moderation, clickable links with previews, and YouTube links for books
+e352eab (Thu) 2026-07-23 08:10 AM : feat: updated message status icons to show green for seen and red for unseen
+cb717b8 (Thu) 2026-07-23 02:16 AM : feat: image upload validation and responsive display fixed
+c5faa42 (Wed) 2026-07-22 12:25 PM : feat: add dynamic filters and back to admin panel buttons in admin dashboard
+b068239 (Sat) 2026-07-18 02:14 AM : fix: resolve admin chat visibility for non-friend users
+35296c6 (Sat) 2026-07-18 01:40 AM : fix: updated chat logic and dynamic profile view
+8dafd64 (Fri) 2026-07-17 10:34 AM : fix: transaction logs dashboard date filtering and responsive scroll
+7404292 (Thu) 2026-07-16 11:43 PM : fix: EPS live payment integration with alphanumeric txn ID and shortened order ID
+2833b15 (Thu) 2026-07-16 03:04 AM : fix: refactored bypass helper with native buffer chunks stream to eliminate live 500 auth crash
+f8f97c8 (Thu) 2026-07-16 02:54 AM : fix: successfully fully matched route implementation with official EPS merchant guide v0.5 specs
+636a70a (Thu) 2026-07-16 02:34 AM : fix: total checkout api alignment with eps merchant v0.5 specs and explicit context redirection
+63a68b3 (Thu) 2026-07-16 02:18 AM : fix: aligned checkout route implementation with official EPS merchant API guide v0.5
+67e6be7 (Thu) 2026-07-16 02:03 AM : fix: forced dynamic runtime configuration for checkout API route
+10dff90 (Thu) 2026-07-16 12:46 AM : fix: refactored ssl
+f4dc8e0 (Thu) 2026-07-16 12:26 AM : fix: replaced native fetch with https promise request to force resolve live SSL issues
+1208f72 (Thu) 2026-07-16 12:10 AM : fix: explicit global node tls reject override for live native fetch compliance
+ee36987 (Wed) 2026-07-15 11:58 PM : fix: removed unused broken webpack context
+ecd219e (Wed) 2026-07-15 11:49 PM : fix: removed unused broken webpack context from admin page
+5aa5e10 (Wed) 2026-07-15 11:36 PM : fix: remove typescript annotation from route.js file
+ce2f45f (Wed) 2026-07-15 11:23 PM : fix: updated firebase config initialization and EPS live API endpoint
+c22b487 (Wed) 2026-07-15 09:33 PM : chore: trigger deployment with updated variables
+2a5f695 (Wed) 2026-07-15 06:07 PM : fix: temporary backup of admin data structure before refactoring
+5f409d1 (Wed) 2026-07-15 04:06 PM : feat: updated dynamic seed script and fixed admin questions dashboard
+f562013 (Wed) 2026-07-15 11:53 AM : fix: question level counting and storage chunking logic
+61809d6 (Wed) 2026-07-15 10:25 AM : feat: fix messages layouts, add admin search by id, and make chat links clickable
+ecfcd9d (Tue) 2026-07-14 03:03 AM : chore: re-index project files after cache clear
+718862f (Mon) 2026-07-13 10:16 PM : profile
+46db20e (Sat) 2026-07-11 12:12 PM : fix: EPS payment gateway hash creation and domain mismatch error
+0a03318 (Fri) 2026-07-10 11:36 AM : feat: updated EPS payment gateway to version 5 with authorization
+3ef7203 (Fri) 2026-07-10 01:40 AM : fix: replaced checkout fallback code with actual live eps api fetch
+a06ef00 (Fri) 2026-07-10 01:19 AM : trigger: live environment deployment
+b62da89 (Fri) 2026-07-10 01:04 AM : feat: updated legal footer and eps live payment api config
+db62021 (Tue) 2026-07-07 10:00 PM : Fix content formatting issue in exam question
+0fee7be (Tue) 2026-07-07 10:33 AM : perf: optimize firebase caching, query limits, and remove production console logs
+00591cf (Tue) 2026-07-07 06:58 AM : add firebase auth rewrites
+e0c2621 (Mon) 2026-07-06 08:08 AM : updated chat layouts with new viewport settings and custom light blue bubble theme
+f2cd69a (Mon) 2026-07-06 07:48 AM : removed cross icon logic from chat bubbles
+2616b1e (Mon) 2026-07-06 07:32 AM : fixed mobile responsive header spacing and chat tick indicators
+a614a10 (Mon) 2026-07-06 07:05 AM : your message
+b48f2dd (Mon) 2026-07-06 01:19 AM : feat: fixed mobile chat layout, keyboard behavior, and hidden ocr trap for exam page
+a85a15f (Sun) 2026-07-05 03:39 AM : Finalized desktop and mobile enter behavior with accurate userAgent checks
+4317120 (Sun) 2026-07-05 02:40 AM : Fix chat bubble condition syntax and preserve whitespace
+2e88c13 (Sun) 2026-07-05 02:27 AM : Fix mobile keyboard layout compression and pin chat header2
+f433097 (Sun) 2026-07-05 12:31 AM : Fix chat box layout and textarea resizing
+14c5269 (Sat) 2026-07-04 01:42 AM : Add global user online tracking and fix ChatBox online indicators
+92ecd2b (Sat) 2026-07-04 01:23 AM : Fix mobile chat layout and text area enter key behavior
+ef02796 (Sat) 2026-07-04 12:34 AM : Fix custom domain redirect issue using x-forwarded-host
+43efe86 (Sat) 2026-07-04 12:07 AM : Fix admin panel empty order bug and add password reset logic
+333b2ae (Fri) 2026-07-03 01:34 AM : Fixed policy links and updated layout
+fcfa8e1 (Thu) 2026-07-02 10:48 AM : fix: updated newsfeed component to fetch user level in real-time
+eb00904 (Thu) 2026-07-02 10:14 AM : UI update: arranged counts below profile button names for mobile responsiveness
+340300f (Thu) 2026-07-02 02:20 AM : feat: enhance profile options, secure chat validation, and optimize book shop responsive layout
+1d2dc80 (Wed) 2026-07-01 07:27 PM : push notification complete
+3a19098 (Wed) 2026-07-01 06:32 PM : added backend cloud functions for push notifications
+0d54e93 (Wed) 2026-07-01 02:25 AM : profile page of user's individual id and other users' id
+9a109c5 (Tue) 2026-06-30 02:42 AM : feat: updated notification flow, profile 3-box design, and show more functionality
+d5e031a (Mon) 2026-06-29 12:55 AM : feat: fixed navbar desktop chat notification badge
+a39310f (Sat) 2026-06-27 12:47 AM : Fix: Adjust social tabs layout to perfectly fit mobile screens
+c685f50 (Sat) 2026-06-27 12:19 AM : Fix: final config change to standalone mode for firebase app hosting
+2e3e442 (Sat) 2026-06-27 12:01 AM : Deploy retry: force fresh firebase version release
+69613c0 (Fri) 2026-06-26 11:32 PM : Fix: Firebase Live Chat routing and dynamic build errors resolved
+5b4f8b7 (Thu) 2026-06-25 11:40 PM : fixed social tabs for mobile layout
+782ce0d (Thu) 2026-06-25 09:56 PM : updated configuration for deployment
+79bee9b (Tue) 2026-06-23 09:59 AM : feat: updated admin order panel and initialized firebase hosting setup
+04f6cca (Tue) 2026-06-23 09:37 AM : feat: fixed admin orders view, database mapping and date filtering
+0d6649d (Sun) 2026-06-21 02:53 PM : fix: ref callback function inside component body
+4c68e97 (Sun) 2026-06-21 02:49 PM : fix: explicit single line ref interpolation

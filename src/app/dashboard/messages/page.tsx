@@ -794,84 +794,134 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
   const rowBackground = conv.isAdminSupport ? isActive ? "bg-emerald-100/80 text-emerald-950 border-2 border-emerald-500 rounded-lg my-1 mx-2" : "bg-emerald-50/60 hover:bg-emerald-100/50 border-2 border-dashed border-emerald-400 rounded-lg my-1 mx-2 text-emerald-900 font-medium" : normalBackground;
   const nameToDisplay = conv.isAdminSupport ? "Admin Support" : (memberProfile?.name || "Loading name...");
 
-  // মোবাইল লং-ট্যাপ ট্র্যাকিং ( konflik মুক্ত লজিক )
-  const handleTouchStart = () => {
+  // স্ক্রোল করার সময় কোঅর্ডিনেট ট্র্যাকিংয়ের জন্য স্টেট ও রেফ
+  const touchStartXRef = useRef<number>(0);
+  const touchStartYRef = useRef<number>(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
     isLongPressRef.current = false;
+    // টাচ শুরুর পজিশন সেভ করা হচ্ছে
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+
     timerRef.current = setTimeout(() => {
       isLongPressRef.current = true;
       setOpenMenu(true);
-    }, 600); // 600ms চেপে রাখলে মোবাইলে মেনু আসবে
+    }, 600); // ৬০০ মিলি-সেকেন্ড চেপে রাখলে মেনু ট্রিগার হবে
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // ইউজার যদি ১৫ পিক্সেলের বেশি স্ক্রোল করে, তবে লং-প্রেস টাইমার বাতিল হবে (সমস্যা ২ ও ৩ ফিক্স)
+    const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
+    const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+    if (diffX > 15 || diffY > 15) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    // যদি লং-প্রেস না হয়ে শর্ট-ট্যাপ হয়, তবে সরাসরি চ্যাট ওপেন হবে
     if (!isLongPressRef.current) {
+      // স্ক্রোল না করে শুধুমাত্র আলতো ট্যাপ করলে চ্যাট বক্স খুলবে
       router.push(`/dashboard/messages?chatWith=${partnerId}`);
     } else {
-      e.preventDefault(); // লং-প্রেস হলে সাধারণ ক্লিক ইভেন্ট আটকে দেবে
+      e.preventDefault();
     }
   };
 
   const handlePCRowClick = (e: React.MouseEvent) => {
-    // মোবাইল টাচ ইভেন্ট হলে এই পিসি ক্লিক ইগনোর করবে
     if (isLongPressRef.current) return;
     router.push(`/dashboard/messages?chatWith=${partnerId}`);
   };
 
-  const handleDeleteChat = async () => {
-    if (window.confirm(`Are you sure you want to delete chat with ${nameToDisplay}?`)) {
-      toast({ title: "Chat Deleted", description: "Conversation history removed." });
-    }
-  };
 
-  const handleBlockUser = async () => {
-    if (window.confirm(`Block ${nameToDisplay}?`)) {
-      toast({ title: "User Blocked", variant: "destructive" });
+  const handleDeleteChat = async () => {
+  if (!firestore || !conv.id) return;
+  try {
+    // ব্রাউজার অ্যালার্ট ছাড়া সরাসরি টোস্ট নোটিফিকেশন (সমস্যা ৫ ফিক্স)
+    toast({ 
+      title: "Chat Deleted", 
+      description: "Conversation history removed.",
+      duration: 2000 // ২ সেকেন্ড পর টোস্ট একা একাই চলে যাবে (সমস্যা ৬ ফিক্স)
+    });
+    
+    // ডাটাবেজ থেকে কনভারসেশন ডকুমেন্ট ডিলিট করার কোড (সমস্যা ৭ ফিক্স)
+    const firebaseFirestore = await import("firebase/firestore");
+    if (!conv.id.startsWith('new_')) {
+      await firebaseFirestore.deleteDoc(firebaseFirestore.doc(firestore, 'conversations', conv.id));
     }
-  };
+    setOpenMenu(false);
+  } catch (err) {
+    console.error("Delete failed: ", err);
+  }
+};
+
+const handleBlockUser = async () => {
+  if (!firestore || !currentUserId || !partnerId) return;
+  try {
+    toast({ 
+      title: "User Blocked", 
+      variant: "destructive",
+      duration: 2000 // ২ সেকেন্ড অটো-ডিসমিস (সমস্যা Trolley 6 ফিক্স)
+    });
+
+    const firebaseFirestore = await import("firebase/firestore");
+    // ব্লকড লিস্টের জন্য ডাটাবেজে রেকর্ড সেভ করা হচ্ছে (সমস্যা ৭ ফিক্স)
+    await firebaseFirestore.setDoc(firebaseFirestore.doc(firestore, 'blocks', `${currentUserId}_${partnerId}`), {
+      blockedBy: currentUserId,
+      blockedUser: partnerId,
+      createdAt: firebaseFirestore.serverTimestamp()
+    });
+    setOpenMenu(false);
+  } catch (err) {
+    console.error("Block failed: ", err);
+  }
+};
+
 
   return (
     <DropdownMenu open={openMenu} onOpenChange={setOpenMenu}>
-      <div 
-        role="button"
-        onClick={handlePCRowClick} 
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", rowBackground)}
-      >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <div className="relative shrink-0">
-            <Avatar className="h-12 w-12 border">
-              <AvatarImage src={memberProfile?.avatarUrl || ""} />
-              <AvatarFallback>{nameToDisplay.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <span className={cn("absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-900", memberProfile?.isOnline ? "bg-green-500" : "bg-red-500")} />
-          </div>
-          
-          <div className="flex-1 text-left min-w-0">
-            <div className="flex items-baseline justify-between">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold truncate text-sm">{nameToDisplay}</p>
-                {isUnread && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{unreadCount}</span>}
-              </div>
-              <span className="text-[10px] text-muted-foreground shrink-0">{lastMsgTime}</span>
-            </div>
-            <p className={`text-xs truncate ${isUnread ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>{conv.lastMessage}</p>
-          </div>
+  {/* মোবাইলে লং-প্রেসের সময় এই এলিমেন্টের সাপেক্ষেই মেনু পপআপ হবে (সমস্যা ৪ ফিক্স) */}
+  <DropdownMenuTrigger asChild>
+    <div
+      role="button"
+      onClick={handlePCRowClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove} // স্ক্রোল ডিটেক্ট করার নতুন লজিক যুক্ত হলো
+      onTouchEnd={handleTouchEnd}
+      className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", rowBackground)}
+    >
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="relative shrink-0">
+          <Avatar className="h-12 w-12 border">
+            <AvatarImage src={memberProfile?.avatarUrl || ""} />
+            <AvatarFallback>{nameToDisplay.substring(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <span className={cn("absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-900", memberProfile?.isOnline ? "bg-green-500" : "bg-red-500")} />
         </div>
-
-        {/* ডেক্সটপ/পিসির জন্য ৩-ডট মেনু বাটন (মোবাইলে এটি ইনভিজিবল বা সেকেন্ডারি থাকবে) */}
-        <div className="ml-2 hidden md:block shrink-0" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuTrigger asChild>
-            <button className="p-1.5 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 rounded-full text-slate-500 transition-colors focus:outline-none">
-              <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12" />
-              </svg>
-            </button>
-          </DropdownMenuTrigger>
+        <div className="flex-1 text-left min-w-0">
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-center gap-2">
+              <p className="font-semibold truncate text-sm">{nameToDisplay}</p>
+              {isUnread && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{unreadCount}</span>}
+            </div>
+            <span className="text-[10px] text-muted-foreground shrink-0">{lastMsgTime}</span>
+          </div>
+          <p className={`text-xs truncate ${isUnread ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>{conv.lastMessage}</p>
         </div>
       </div>
+
+      {/* ডেস্কটপের জন্য ৩-ডট আইকন (মোবাইলে এটি হাইড থাকলেও পুরো রোটি ট্রিগার হিসেবে কাজ করবে) */}
+      <div className="ml-2 hidden md:block shrink-0" onClick={(e) => e.stopPropagation()}>
+        <button className="p-1.5 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 rounded-full text-slate-500 transition-colors focus:outline-none">
+          <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </DropdownMenuTrigger>
+
       
       <DropdownMenuContent align="end" className="w-48 bg-white border border-slate-200 text-slate-800 rounded-xl shadow-lg z-50 py-1 text-xs">
         <DropdownMenuItem 
