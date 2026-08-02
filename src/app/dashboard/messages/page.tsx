@@ -769,8 +769,10 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
   const { toast } = useToast();
 
   const [openMenu, setOpenMenu] = useState(false);
+  const [isLongPressActive, setIsLongPressActive] = useState(false); // নতুন স্টেট
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressRef = useRef<boolean>(false);
+
 
   useEffect(() => {
     if (!firestore || !partnerId) return;
@@ -800,34 +802,42 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
 
   const handleTouchStart = (e: React.TouchEvent) => {
     isLongPressRef.current = false;
-    // টাচ শুরুর পজিশন সেভ করা হচ্ছে
+     setIsLongPressActive(false);
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
-
     timerRef.current = setTimeout(() => {
-      isLongPressRef.current = true;
-      setOpenMenu(true);
-    }, 600); // ৬০০ মিলি-সেকেন্ড চেপে রাখলে মেনু ট্রিগার হবে
+    isLongPressRef.current = true;
+     setIsLongPressActive(true); // ব্যাকগ্রাউন্ড কালার পরিবর্তনের জন্য
+     setOpenMenu(true);
+    }, 2000); // ২ সেকেন্ড (2000ms) লং প্রেস টাইমার
   };
+
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // ইউজার যদি ১৫ পিক্সেলের বেশি স্ক্রোল করে, তবে লং-প্রেস টাইমার বাতিল হবে (সমস্যা ২ ও ৩ ফিক্স)
-    const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
-    const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
-    if (diffX > 15 || diffY > 15) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    }
-  };
+const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
+const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+// স্ক্রোল বা মুভমেন্ট বেশি হলে লং-প্রেস বাতিল হবে (হোয়াটসঅ্যাপ/মেসেঞ্জারের মতো স্ক্রোল হবে)
+if (diffX > 10 || diffY > 10) {
+if (timerRef.current) clearTimeout(timerRef.current);
+if (!isLongPressRef.current) {
+setIsLongPressActive(false);
+}
+}
+};
+const handleTouchEnd = (e: React.TouchEvent) => {
+if (timerRef.current) clearTimeout(timerRef.current);
+if (!isLongPressRef.current) {
+// সাধারণ ট্যাপে সরাসরি চ্যাট বক্স খুলবে
+router.push(`/dashboard/messages?chatWith=${partnerId}`);
+} else {
+e.preventDefault();
+}
+// মেনু বন্ধ হয়ে গেলে বা টাচ শেষ হলে কালার রিসেট করার জন্য সেফটি চেক
+if (!openMenu) {
+setIsLongPressActive(false);
+}
+};
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (!isLongPressRef.current) {
-      // স্ক্রোল না করে শুধুমাত্র আলতো ট্যাপ করলে চ্যাট বক্স খুলবে
-      router.push(`/dashboard/messages?chatWith=${partnerId}`);
-    } else {
-      e.preventDefault();
-    }
-  };
 
   const handlePCRowClick = (e: React.MouseEvent) => {
     if (isLongPressRef.current) return;
@@ -879,48 +889,64 @@ const handleBlockUser = async () => {
 };
 
 
-  return (
-    <DropdownMenu open={openMenu} onOpenChange={setOpenMenu}>
-  {/* মোবাইলে লং-প্রেসের সময় এই এলিমেন্টের সাপেক্ষেই মেনু পপআপ হবে (সমস্যা ৪ ফিক্স) */}
-  <DropdownMenuTrigger asChild>
-    <div
-      role="button"
-      onClick={handlePCRowClick}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove} // স্ক্রোল ডিটেক্ট করার নতুন লজিক যুক্ত হলো
-      onTouchEnd={handleTouchEnd}
-      className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", rowBackground)}
-    >
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <div className="relative shrink-0">
-          <Avatar className="h-12 w-12 border">
-            <AvatarImage src={memberProfile?.avatarUrl || ""} />
-            <AvatarFallback>{nameToDisplay.substring(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className={cn("absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-900", memberProfile?.isOnline ? "bg-green-500" : "bg-red-500")} />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold truncate text-sm">{nameToDisplay}</p>
-              {isUnread && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{unreadCount}</span>}
-            </div>
-            <span className="text-[10px] text-muted-foreground shrink-0">{lastMsgTime}</span>
-          </div>
-          <p className={`text-xs truncate ${isUnread ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>{conv.lastMessage}</p>
-        </div>
-      </div>
+  // ড্রপডাউন মেনু ওপেন চেঞ্জ হ্যান্ডলার যা লং-প্রেস স্টেটও রিসেট করবে
+const handleMenuOpenChange = (open: boolean) => {
+setOpenMenu(open);
+if (!open) {
+setIsLongPressActive(false);
+isLongPressRef.current = false;
+}
+};
 
-      {/* ডেস্কটপের জন্য ৩-ডট আইকন (মোবাইলে এটি হাইড থাকলেও পুরো রোটি ট্রিগার হিসেবে কাজ করবে) */}
-      <div className="ml-2 hidden md:block shrink-0" onClick={(e) => e.stopPropagation()}>
-        <button className="p-1.5 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 rounded-full text-slate-500 transition-colors focus:outline-none">
-          <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  </DropdownMenuTrigger>
+// লং-প্রেস অ্যাক্টিভ থাকলে ব্যাকগ্রাউন্ড কালার ভিন্ন (bg-purple-200) হবে
+const finalRowBackground = isLongPressActive 
+? "bg-purple-200 dark:bg-purple-900 text-purple-950" 
+: rowBackground;
+
+return (
+<DropdownMenu open={openMenu} onOpenChange={handleMenuOpenChange}>
+<div
+role="button"
+onClick={handlePCRowClick}
+onTouchStart={handleTouchStart}
+onTouchMove={handleTouchMove}
+onTouchEnd={handleTouchEnd}
+className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", finalRowBackground)}
+>
+<div className="flex items-center gap-2 min-w-0 flex-1">
+<div className="relative shrink-0">
+<Avatar className="h-12 w-12 border">
+<AvatarImage src={memberProfile?.avatarUrl || ""} />
+<AvatarFallback>{nameToDisplay.substring(0, 2).toUpperCase()}</AvatarFallback>
+</Avatar>
+<span className={cn("absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full border-2 border-white dark:border-slate-900", memberProfile?.isOnline ? "bg-green-500" : "bg-red-500")} />
+</div>
+<div className="flex-1 text-left min-w-0">
+<div className="flex items-baseline justify-between">
+<div className="flex items-center gap-2">
+<p className="font-semibold truncate text-sm">{nameToDisplay}</p>
+{isUnread && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{unreadCount}</span>}
+</div>
+<span className="text-[10px] text-muted-foreground shrink-0">{lastMsgTime}</span>
+</div>
+<p className={`text-xs truncate ${isUnread ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>{conv.lastMessage}</p>
+</div>
+</div>
+
+{/* ডেক্সটপের ৩-ডট আইকন যা এখন ড্রপডাউন ট্রিগার হিসেবে কাজ করবে */}
+<div className="ml-2 hidden md:block shrink-0" onClick={(e) => e.stopPropagation()}>
+<DropdownMenuTrigger asChild>
+<button className="p-1.5 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 rounded-full text-slate-500 transition-colors focus:outline-none">
+<svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+<path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+</svg>
+</button>
+</DropdownMenuTrigger>
+</div>
+</div>
+
+
+
 
       
       <DropdownMenuContent align="end" className="w-48 bg-white border border-slate-200 text-slate-800 rounded-xl shadow-lg z-50 py-1 text-xs">
