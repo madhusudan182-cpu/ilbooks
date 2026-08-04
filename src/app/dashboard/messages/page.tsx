@@ -810,7 +810,7 @@ const touchStartYRef = useRef<number>(0);
 const isScrollingRef = useRef<boolean>(false);
 
 const handleTouchStart = (e: React.TouchEvent) => {
-  isScrollingRef.current = false; // শুরুতে স্ক্রোলিং ফলস থাকবে
+  isScrollingRef.current = false;
   touchStartXRef.current = e.touches[0].clientX;
   touchStartYRef.current = e.touches[0].clientY;
 };
@@ -818,25 +818,26 @@ const handleTouchStart = (e: React.TouchEvent) => {
 const handleTouchMove = (e: React.TouchEvent) => {
   const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
   const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
-  
-  // যদি ব্যবহারকারী স্ক্রোল করেন (১০ পিক্সেলের বেশি নড়াচড়া হয়)
   if (diffX > 10 || diffY > 10) {
-    isScrollingRef.current = true; 
+    isScrollingRef.current = true;
   }
 };
 
-const handleTouchEnd = (e: React.TouchEvent) => {
-  // যদি স্ক্রোলিং না হয়ে থাকে, কেবল তখনই চ্যাট বক্স ওপেন হবে
-  if (!isScrollingRef.current) {
-    router.push(`/dashboard/messages?chatWith=${partnerId}`);
-  }
+// মোবাইল এবং পিসি উভয়ের জন্য একটি কম্বাইন্ড এবং ফিক্সড ফাংশন
+const handleChatSelect = (e: React.MouseEvent | React.TouchEvent) => {
+  // যদি মোবাইল ডিভাইস হয় এবং স্ক্রলিং চলতে থাকে, তবে একশন বন্ধ থাকবে
+  if (e.type === 'touchend' && isScrollingRef.current) return;
+
+  e.preventDefault();
+  
+  // পিসিতে ইউআরএল আপডেট করার সবচেয়ে নিরাপদ উপায় যা ফায়ারবেস স্ন্যাপশটকে ফোর্স ট্রিগার করবে
+  const targetUrl = `/dashboard/messages?chatWith=${partnerId}`;
+  window.history.pushState({}, '', targetUrl);
+  
+  // নেক্সট জেএস রাউটারকে সিনক্রোনাইজ করার জন্য বাধ্য করা
+  router.replace(targetUrl);
 };
 
-
-
- const handlePCRowClick = (e: React.MouseEvent) => {
-  router.push(`/dashboard/messages?chatWith=${partnerId}`);
-};
 
 
 
@@ -896,10 +897,10 @@ return (
   <DropdownMenu open={openMenu} onOpenChange={handleMenuOpenChange}>
     <div
       role="button"
-      onClick={handlePCRowClick}
+      onClick={handleChatSelect}       // পিসির মাউস ক্লিকের জন্য ১০০০% কাজ করবে
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onTouchEnd={handleChatSelect}     // মোবাইলের নিরাপদ টাচ ক্লিয়ারেন্সের জন্য
       className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", finalRowBackground)}
     >
 <div className="flex items-center gap-2 min-w-0 flex-1">
