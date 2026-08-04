@@ -769,9 +769,6 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
   const { toast } = useToast();
 
   const [openMenu, setOpenMenu] = useState(false);
-  const [isLongPressActive, setIsLongPressActive] = useState(false); // নতুন স্টেট
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const isLongPressRef = useRef<boolean>(false);
 
 
   useEffect(() => {
@@ -796,53 +793,40 @@ function ChatInboxRow({ partnerId, conv, lastMsgTime, firestore, router, activeC
   const rowBackground = conv.isAdminSupport ? isActive ? "bg-emerald-100/80 text-emerald-950 border-2 border-emerald-500 rounded-lg my-1 mx-2" : "bg-emerald-50/60 hover:bg-emerald-100/50 border-2 border-dashed border-emerald-400 rounded-lg my-1 mx-2 text-emerald-900 font-medium" : normalBackground;
   const nameToDisplay = conv.isAdminSupport ? "Admin Support" : (memberProfile?.name || "Loading name...");
 
-  // স্ক্রোল করার সময় কোঅর্ডিনেট ট্র্যাকিংয়ের জন্য স্টেট ও রেফ
-  const touchStartXRef = useRef<number>(0);
-  const touchStartYRef = useRef<number>(0);
+  // স্ক্রোল ট্র্যাকিংয়ের জন্য রেফ
+const touchStartXRef = useRef<number>(0);
+const touchStartYRef = useRef<number>(0);
+const isScrollingRef = useRef<boolean>(false);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    isLongPressRef.current = false;
-     setIsLongPressActive(false);
-    touchStartXRef.current = e.touches[0].clientX;
-    touchStartYRef.current = e.touches[0].clientY;
-    timerRef.current = setTimeout(() => {
-    isLongPressRef.current = true;
-     setIsLongPressActive(true); // ব্যাকগ্রাউন্ড কালার পরিবর্তনের জন্য
-     setOpenMenu(true);
-    }, 2000); // ২ সেকেন্ড (2000ms) লং প্রেস টাইমার
-  };
-
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
-const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
-// স্ক্রোল বা মুভমেন্ট বেশি হলে লং-প্রেস বাতিল হবে (হোয়াটসঅ্যাপ/মেসেঞ্জারের মতো স্ক্রোল হবে)
-if (diffX > 10 || diffY > 10) {
-if (timerRef.current) clearTimeout(timerRef.current);
-if (!isLongPressRef.current) {
-setIsLongPressActive(false);
-}
-}
+const handleTouchStart = (e: React.TouchEvent) => {
+  isScrollingRef.current = false; // শুরুতে স্ক্রোলিং ফলস থাকবে
+  touchStartXRef.current = e.touches[0].clientX;
+  touchStartYRef.current = e.touches[0].clientY;
 };
+
+const handleTouchMove = (e: React.TouchEvent) => {
+  const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
+  const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+  
+  // যদি ব্যবহারকারী স্ক্রোল করেন (১০ পিক্সেলের বেশি নড়াচড়া হয়)
+  if (diffX > 10 || diffY > 10) {
+    isScrollingRef.current = true; 
+  }
+};
+
 const handleTouchEnd = (e: React.TouchEvent) => {
-if (timerRef.current) clearTimeout(timerRef.current);
-if (!isLongPressRef.current) {
-// সাধারণ ট্যাপে সরাসরি চ্যাট বক্স খুলবে
-router.push(`/dashboard/messages?chatWith=${partnerId}`);
-} else {
-e.preventDefault();
-}
-// মেনু বন্ধ হয়ে গেলে বা টাচ শেষ হলে কালার রিসেট করার জন্য সেফটি চেক
-if (!openMenu) {
-setIsLongPressActive(false);
-}
+  // যদি স্ক্রোলিং না হয়ে থাকে, কেবল তখনই চ্যাট বক্স ওপেন হবে
+  if (!isScrollingRef.current) {
+    router.push(`/dashboard/messages?chatWith=${partnerId}`);
+  }
 };
 
 
-  const handlePCRowClick = (e: React.MouseEvent) => {
-    if (isLongPressRef.current) return;
-    router.push(`/dashboard/messages?chatWith=${partnerId}`);
-  };
+
+ const handlePCRowClick = (e: React.MouseEvent) => {
+  router.push(`/dashboard/messages?chatWith=${partnerId}`);
+};
+
 
 
   const handleDeleteChat = async () => {
@@ -889,30 +873,24 @@ const handleBlockUser = async () => {
 };
 
 
-  // ড্রপডাউন মেনু ওপেন চেঞ্জ হ্যান্ডলার যা লং-প্রেস স্টেটও রিসেট করবে
-const handleMenuOpenChange = (open: boolean) => {
-setOpenMenu(open);
-if (!open) {
-setIsLongPressActive(false);
-isLongPressRef.current = false;
-}
+  const handleMenuOpenChange = (open: boolean) => {
+  setOpenMenu(open);
 };
 
+
 // লং-প্রেস অ্যাক্টিভ থাকলে ব্যাকগ্রাউন্ড কালার ভিন্ন (bg-purple-200) হবে
-const finalRowBackground = isLongPressActive 
-? "bg-purple-200 dark:bg-purple-900 text-purple-950" 
-: rowBackground;
+const finalRowBackground = rowBackground; 
 
 return (
-<DropdownMenu open={openMenu} onOpenChange={handleMenuOpenChange}>
-<div
-role="button"
-onClick={handlePCRowClick}
-onTouchStart={handleTouchStart}
-onTouchMove={handleTouchMove}
-onTouchEnd={handleTouchEnd}
-className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", finalRowBackground)}
->
+  <DropdownMenu open={openMenu} onOpenChange={handleMenuOpenChange}>
+    <div
+      role="button"
+      onClick={handlePCRowClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className={cn("flex items-center justify-between p-3 border-b cursor-pointer transition-all duration-200 w-full outline-none select-none group relative", finalRowBackground)}
+    >
 <div className="flex items-center gap-2 min-w-0 flex-1">
 <div className="relative shrink-0">
 <Avatar className="h-12 w-12 border">
