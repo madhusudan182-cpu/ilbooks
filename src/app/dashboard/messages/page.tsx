@@ -558,11 +558,22 @@ useEffect(() => {
               <div className="p-2 border-b flex items-center gap-3 bg-background/95 backdrop-blur-sm sticky top-0 shrink-0 z-10 w-full">
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => router.push('/dashboard/messages')}><ArrowLeft className="h-5 w-5" /></Button>
                 <Avatar className="h-10 w-10 border"><AvatarImage src={otherUser.avatarUrl} alt={otherUser.name} /><AvatarFallback>{otherUser.name?.charAt(0)}</AvatarFallback></Avatar>
+                
+                
                 <div className="flex-grow">
-                  <h2 className="font-bold text-base leading-tight">
-                    {activeConversationId?.startsWith('new_') && chatWithId === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" ? "Admin Support" : otherUser.name}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">Level: {typeof otherUser?.level === 'number' ? otherUser.level.toFixed(1) : (Number(otherUser?.level) || 0).toFixed(1)}</p>
+                  {activeConversationId?.startsWith('new_') && chatWithId === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" ? (
+                    <h2 className="font-bold text-base leading-tight">Admin Support</h2>
+                  ) : (
+                    <Link 
+                      href={`/dashboard/user/${chatWithId}`}
+                      className="font-bold text-base leading-tight hover:underline cursor-pointer inline-block"
+                    >
+                      {otherUser?.name || "Loading name..."}
+                    </Link>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Level: {typeof otherUser?.level === 'number' ? otherUser.level.toFixed(1) : (Number(otherUser?.level) || 0).toFixed(1)}
+                  </p>
                 </div>
               </div>
 
