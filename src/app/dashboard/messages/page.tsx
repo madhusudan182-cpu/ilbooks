@@ -186,25 +186,45 @@ useEffect(() => {
   const [visibleConversationsCount, setVisibleConversationsCount] = useState(10);
   const [visibleMessagesCount, setVisibleMessagesCount] = useState(10);
 
-      const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // shadcnui এর ভেতরের আসল স্ক্রোল এলিমেন্টটি খুঁজে বের করা
-    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-    
-    if (!scrollElement) return;
+  // নতুন যুক্ত করুন: চ্যাট লিস্টের স্ক্রল ট্র্যাক করার জন্য স্টেট ও রেফ
+  const [showScrollTopChatList, setShowScrollTopChatList] = useState(false);
+  const chatListScrollRef = useRef<HTMLDivElement>(null);
 
-    const handleChatScrollNative = () => {
-      const target = scrollElement as HTMLDivElement;
-      // ১০০ পিক্সেল ওপরে উঠলেই বাটন শো করবে, নিচে নামলে হাইড হবে
-      const isUpScroll = target.scrollHeight - target.scrollTop - target.clientHeight > 100;
-      setShowScrollBottom(isUpScroll);
-    };
+ // ১. চ্যাট লিস্ট স্ক্রল ট্র্যাকিং (ইউজার নিচে নামলে তবেই ↑ বাটন আসবে)
+useEffect(() => {
+  const scrollElement = chatListScrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+  if (!scrollElement) return;
 
-    scrollElement.addEventListener('scroll', handleChatScrollNative);
-    return () => scrollElement.removeEventListener('scroll', handleChatScrollNative);
-  }, [activeConversationId]); // চ্যাট রুম চেঞ্জ হলেও এটি অটো-রিসেট হবে
+  const handleChatListScroll = () => {
+    const target = scrollElement as HTMLDivElement;
+    // যদি টপ থেকে ১০০ পিক্সেলের বেশি নিচে থাকে, তবে ট্রু হবে
+    setShowScrollTopChatList(target.scrollTop > 100);
+  };
+
+  scrollElement.addEventListener('scroll', handleChatListScroll);
+  return () => scrollElement.removeEventListener('scroll', handleChatListScroll);
+}, []);
+
+// ২. চ্যাট বক্স স্ক্রল ট্র্যাকিং (ইউজার ওপরে উঠলে অর্থাৎ নিচে গ্যাপ তৈরি হলে ↓ বাটন আসবে)
+useEffect(() => {
+  const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+  if (!scrollElement) return;
+
+  const handleChatScrollNative = () => {
+    const target = scrollElement as HTMLDivElement;
+    // স্ক্রলের নিচের অংশ থেকে ১০০ পিক্সেলের বেশি ওপরে উঠলে ↓ বাটন দেখাবে
+    const currentBottomGap = target.scrollHeight - target.scrollTop - target.clientHeight;
+    setShowScrollBottom(currentBottomGap > 100);
+  };
+
+  scrollElement.addEventListener('scroll', handleChatScrollNative);
+  return () => scrollElement.removeEventListener('scroll', handleChatScrollNative);
+}, [activeConversationId]);
+
+
 
   const handleScrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -513,7 +533,7 @@ useEffect(() => {
               />
             </div>
           </div>
-          <ScrollArea className="flex-1">
+          <ScrollArea ref={chatListScrollRef} className="flex-1 relative">
             {user?.uid === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" && adminSearchedUser && (
               <div className="p-2 bg-purple-50/50 border-b border-purple-200">
                 <p className="text-[10px] text-purple-600 font-bold px-2 mb-1">🎯 SEARCH RESULT (Click to Chat)</p>
@@ -537,8 +557,23 @@ useEffect(() => {
             {adminSearchLoading && <div className="p-4 text-center text-xs text-muted-foreground">Searching user by ID...</div>}
 
             {conversations.map((conv) => {
-              const lastMsgTime = conv.updatedAt?.seconds ? formatDistanceToNow(new Date(conv.updatedAt.seconds * 1000)) + ' ago' : '';
-              const partnerId = conv.participants?.find((p: string) => p !== user?.uid);
+            // ফায়ারবেস ডাটা সিঙ্ক হওয়ার ল্যাটেন্সি ব্যাকআপসহ নিখুঁত সময় বের করার লজিক
+            let msgDate = new Date();
+            if (conv.updatedAt?.seconds) {
+              msgDate = new Date(conv.updatedAt.seconds * 1000);
+            } else if (conv.updatedAt?.toDate && typeof conv.updatedAt.toDate === 'function') {
+              msgDate = conv.updatedAt.toDate();
+            } else if (conv.updatedAt instanceof Date) {
+              msgDate = conv.updatedAt;
+            }
+
+            // যদি ১ মিনিটের কম হয় তবে "Just now" দেখাবে, অন্যথায় সময় দেখাবে
+            const lastMsgTime = formatDistanceToNow(msgDate).includes('less than a minute') 
+              ? 'Just now' 
+              : formatDistanceToNow(msgDate) + ' ago';
+
+            const partnerId = conv.participants?.find((p: string) => p !== user?.uid);
+
               return (
                 <ChatInboxRow
                   key={`${conv.id}-${conv.partnerId}`}
@@ -560,22 +595,41 @@ useEffect(() => {
               </div>
             )}
             {convosLoading && <div className="p-4 space-y-4"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>}
-                      {/* স্ক্রল ডাউন করলে পরবর্তী ১০ জন লোড করার বাটন গেট */}
-          {rawConversations && rawConversations.length > visibleConversationsCount && (
-            <div className="p-3 text-center">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-xs rounded-full border-purple-500 text-purple-600 hover:bg-purple-50"
-                onClick={() => setVisibleConversationsCount(prev => prev + 10)}
-              >
-                Load More Chats
-              </Button>
-            </div>
-          )}
+            {/* / স্ক্রল ডাউন করলে পরবর্তী ১০ জন লোড করার বাটন গেট */ }
+            {rawConversations && rawConversations.length > visibleConversationsCount && (
+              <div className="p-3 text-left w-full block clear-both">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs rounded-full border-purple-500 text-purple-600 hover:bg-purple-50 block max-w-max"
+                  onClick={() => setVisibleConversationsCount(prev => prev + 10)}
+                >
+                  Load More Chats
+                </Button>
+              </div>
+            )}
+            </ScrollArea>
 
-          </ScrollArea>
-        </aside>
+            {/* ফিক্স: বাটনটিকে স্ক্রল এরিয়ার বাইরে নিয়ে আসা হলো যাতে এটি স্ক্রিনের ওপর ভেসে থাকে */}
+            {showScrollTopChatList && (
+              <div className="absolute bottom-4 right-4 z-50 block">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const scrollElement = chatListScrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+                    if (scrollElement) {
+                      scrollElement.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className="p-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg transition-all hover:scale-110 flex items-center justify-center cursor-pointer border border-purple-500/20"
+                >
+                  <span className="text-base font-bold leading-none">↑</span>
+                </button>
+              </div>
+            )}
+
+            </aside>
+
 
         <main className={cn("flex-1 flex flex-col relative", activeConversationId || otherUser ? "flex" : "hidden md:flex")}>
           {otherUser ? (
@@ -612,7 +666,7 @@ useEffect(() => {
               className="text-[10px] h-7 rounded-full text-purple-600 hover:bg-purple-100/50 transition-colors"
               onClick={() => setVisibleMessagesCount(prev => prev + 15)}
             >
-              🗘 Load Previous Messages
+              See old messages
             </Button>
           </div>
         )}
@@ -662,23 +716,22 @@ useEffect(() => {
           <div ref={messagesEndRef} />
         </div>
 
-            {/* === ডাউনওয়ার্ড বাটন লজিক (শুরু) === */}
+            </ScrollArea>
+
+            {/* ফিক্স: বাটনটিকে স্ক্রল এরিয়ার বাইরে মেইন কন্টেনারের সাপেক্ষে বসানো হলো */}
             {showScrollBottom && (
-              <div className="absolute bottom-6 right-6 z-50 animate-fade-in">
+              <div className="absolute md:bottom-6 md:right-6 md:top-auto md:left-auto md:translate-x-0 bottom-20 top-auto left-1/2 -translate-x-1/2 z-50 animate-fade-in">
                 <button
                   type="button"
-                  onClick={handleScrollToBottom}
+                  onClick={() => {
+                    handleScrollToBottom();
+                  }}
                   className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer border border-purple-500/20"
                 >
                   <span className="text-xl font-bold leading-none">↓</span>
                 </button>
               </div>
             )}
-            {/* === ডাউনওয়ার্ড বাটন লজিক (শেষ) === */}
-
-
-
-      </ScrollArea>
 
 
       <div className="p-3 border-t bg-background relative">
@@ -956,7 +1009,15 @@ return (
 </div>
 <span className="text-[10px] text-muted-foreground shrink-0">{lastMsgTime}</span>
 </div>
-<p className={`text-xs truncate ${isUnread ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>{conv.lastMessage}</p>
+<p className={`text-xs ${isUnread ? 'text-blue-600 font-semibold' : 'text-muted-foreground'}`}>
+  {(() => {
+    const text = conv.lastMessage || "";
+    const words = text.trim().split(/\s+/);
+    if (words.length <= 3) return text;
+    return words.slice(0, 3).join(" ") + " ....";
+  })()}
+</p>
+
 </div>
 </div>
 
