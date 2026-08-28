@@ -186,6 +186,31 @@ useEffect(() => {
   const [visibleConversationsCount, setVisibleConversationsCount] = useState(10);
   const [visibleMessagesCount, setVisibleMessagesCount] = useState(10);
 
+      const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // shadcnui এর ভেতরের আসল স্ক্রোল এলিমেন্টটি খুঁজে বের করা
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    
+    if (!scrollElement) return;
+
+    const handleChatScrollNative = () => {
+      const target = scrollElement as HTMLDivElement;
+      // ১০০ পিক্সেল ওপরে উঠলেই বাটন শো করবে, নিচে নামলে হাইড হবে
+      const isUpScroll = target.scrollHeight - target.scrollTop - target.clientHeight > 100;
+      setShowScrollBottom(isUpScroll);
+    };
+
+    scrollElement.addEventListener('scroll', handleChatScrollNative);
+    return () => scrollElement.removeEventListener('scroll', handleChatScrollNative);
+  }, [activeConversationId]); // চ্যাট রুম চেঞ্জ হলেও এটি অটো-রিসেট হবে
+
+  const handleScrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  };
+
+
 
   const [otherUser, setOtherUser] = useState<any>(null);
   const chatWithId = searchParams.get('chatWith');
@@ -577,38 +602,35 @@ useEffect(() => {
                 </div>
               </div>
 
-      <ScrollArea className="flex-1 p-4 bg-slate-50/50">
-        {/* উপরের দিকে স্ক্রল আপ করলে আরও ১০টি পুরনো মেসেজ লোড করার গেট বাটন */}
+      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 bg-slate-50/50 relative">
+        {/* উপরের দিকে স্ক্রোল আপ করলে আরও ১৫টি পুরোনো মেসেজ লোড করার গেট বাটন */}
         {messages.length >= visibleMessagesCount && (
           <div className="w-full flex justify-center py-2 bg-slate-50/10">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="text-[10px] h-7 rounded-full text-purple-600 hover:bg-purple-100/50 transition-colors"
               onClick={() => setVisibleMessagesCount(prev => prev + 15)}
             >
-              🔄 Load Previous Messages
+              🗘 Load Previous Messages
             </Button>
           </div>
         )}
         <div className="space-y-4">
-
           {messages.map((msg, index) => (
             <div key={`${msg.id}-${index}`} className={cn("flex w-full", msg.senderId === user?.uid ? "justify-end" : "justify-start")}>
-              <div className={cn("max-w-[80%] pt-1.5 px-3 pb-5 rounded-2xl shadow-sm relative", 
-              msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>
+              <div className={cn("max-w-[80%] pt-1.5 px-3 pb-5 rounded-2xl shadow-sm relative", msg.senderId === user?.uid ? "bg-blue-100 text-blue-950 rounded-tr-none" : "bg-card text-foreground rounded-tl-none")}>
                 <div className="text-sm break-words whitespace-pre-wrap flex flex-col gap-2">
                   {msg.fileUrl ? (
                     <>
                       {msg.fileType === 'image' && (
-                        <img 
-                          src={msg.fileUrl} 
-                          alt="Shared" 
-                          className="max-w-xs max-h-48 rounded-lg object-cover border cursor-pointer hover:opacity-90 transition-opacity" 
-                          onClick={() => setActiveLightboxImage(msg.fileUrl)} // ছবিতে ক্লিক করলে বড় হবে
+                        <img
+                          src={msg.fileUrl}
+                          alt="Shared"
+                          className="max-w-xs max-h-48 rounded-lg object-cover border cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => setActiveLightboxImage(msg.fileUrl)}
                         />
                       )}
-
                       {msg.fileType === 'video' && <video src={msg.fileUrl} controls className="max-w-xs max-h-48 rounded-lg" />}
                       {msg.fileType === 'pdf' && (
                         <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-white/10 rounded-lg text-blue-600 underline">
@@ -622,10 +644,8 @@ useEffect(() => {
                     <span>{renderMessageText(msg.text)}</span>
                   )}
                   
-                  {/* ৩ রঙের মেসেজ টিক্স সিস্টেম */}
                   {msg.senderId === user?.uid && (
                     <div className="absolute bottom-1 right-2 flex items-center shrink-0">
-
                       {msg.status === 'seen' ? (
                         <CheckCheck className="h-3.5 w-3.5 text-green-500 font-bold" />
                       ) : partnerUserProfile?.isOnline ? (
@@ -635,14 +655,31 @@ useEffect(() => {
                       )}
                     </div>
                   )}
-
                 </div>
               </div>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
+
+            {/* === ডাউনওয়ার্ড বাটন লজিক (শুরু) === */}
+            {showScrollBottom && (
+              <div className="absolute bottom-6 right-6 z-50 animate-fade-in">
+                <button
+                  type="button"
+                  onClick={handleScrollToBottom}
+                  className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer border border-purple-500/20"
+                >
+                  <span className="text-xl font-bold leading-none">↓</span>
+                </button>
+              </div>
+            )}
+            {/* === ডাউনওয়ার্ড বাটন লজিক (শেষ) === */}
+
+
+
       </ScrollArea>
+
 
       <div className="p-3 border-t bg-background relative">
         {showAttachMenu && (

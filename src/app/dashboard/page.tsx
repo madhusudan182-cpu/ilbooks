@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Heart, Share2, Image as ImageIcon, Film, Loader2 } from "lucide-react";
+import { MessageCircle, Heart, Share2, Image as ImageIcon, Film, Loader2, ArrowUp } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
@@ -50,6 +51,34 @@ export default function HomePage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const { toast } = useToast();
+
+  
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScrollVisibility = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScrollVisibility);
+    return () => window.removeEventListener('scroll', handleScrollVisibility);
+  }, []);
+
+  const handleScrollToTopAndRefresh = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    fetchInitialPosts();
+  }, [firestore]);
+
 
   useEffect(() => {
 window.scrollTo(0, 0);
@@ -399,8 +428,9 @@ useEffect(() => {
   const userName = profile?.name || user.displayName || user.email?.split('@')[0] || 'User';
   const userAvatar = profile?.avatarUrl || user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`;
 
+
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-50 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
+    <div className="relative max-w-md mx-auto min-h-screen bg-slate-50 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
       <Card id="post">
         <CardContent className="p-2 pt-4">
           <div className="flex items-start gap-3">
@@ -670,6 +700,16 @@ useEffect(() => {
                   </div>
                 )}
       </div>
+        {showScrollTop && (
+          <div className="sticky bottom-6 left-full flex justify-end pr-2 z-50 pointer-events-none">
+            <button
+              onClick={handleScrollToTopAndRefresh}
+              className="p-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer pointer-events-auto animate-fade-in"
+            >
+              <ArrowUp className="h-5 w-5" />
+            </button>
+          </div>
+        )}
     </div>
   );
 }
@@ -911,5 +951,4 @@ function LinkPreviewCard({ url }: { url: string }) {
     </a>
   );
 }
-// কোডের শেষ (Ending of the code)
 

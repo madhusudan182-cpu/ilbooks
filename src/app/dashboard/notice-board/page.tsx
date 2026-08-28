@@ -35,6 +35,30 @@ export default function NoticeBoardPage() {
   const [allNotifications, setAllNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+const [visibleCount, setVisibleCount] = useState<number>(10);
+
+const [showScrollTop, setShowScrollTop] = useState(false);
+
+useEffect(() => {
+  const handleScrollVisibility = () => {
+    if (window.scrollY > 300) {
+      setShowScrollTop(true);
+    } else {
+      setShowScrollTop(false);
+    }
+  };
+  window.addEventListener('scroll', handleScrollVisibility);
+  return () => window.removeEventListener('scroll', handleScrollVisibility);
+}, []);
+
+const handleScrollToTopAndRefresh = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => {
+    window.location.reload();
+  }, 500);
+};
+
+
   // ১. বর্তমান লগইন থাকা ইউজার আইডি ট্র্যাক করা
   useEffect(() => {
     const auth = getAuth();
@@ -163,24 +187,24 @@ export default function NoticeBoardPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
+    <div className="relative max-w-2xl mx-auto p-4 space-y-4">
       <h1 className="text-xl font-bold text-slate-800">Notifications</h1>
       
-      {!allNotifications || allNotifications.length === 0 ? (
+            {!allNotifications || allNotifications.length === 0 ? (
         <div className="p-8 text-center text-slate-400 bg-white rounded-lg border">
           No notifications yet.
         </div>
       ) : (
         <div className="space-y-2">
-          {allNotifications.map((notification: any) => {
-            const isSeen = notification.sourceCollection === 'user_notifications' 
+          {allNotifications.slice(0, visibleCount).map((notification: any) => {
+            const isSeen = notification.sourceCollection === 'user_notifications'
               ? notification.isRead 
               : notification.isSeen;
-
             return (
-              <div 
-                key={notification.id} 
-                className={`flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors ${
+              <div
+                key={notification.id}
+                className={`flex items-center justify-between p-4 border rounded-xl 
+                hover:bg-slate-50 transition-colors ${
                   !isSeen ? "bg-orange-50/40 border-l-4 border-l-orange-500" : "bg-white"
                 }`}
               >
@@ -189,11 +213,9 @@ export default function NoticeBoardPage() {
                     <AvatarImage src={notification.senderAvatar} alt={notification.senderName} />
                     <AvatarFallback>{notification.senderName ? notification.senderName.charAt(0) : 'U'}</AvatarFallback>
                   </Avatar>
-                  
                   <div>
                     <div className="text-sm text-slate-700">
                       {notification.title ? (
-                        // সিস্টেম/স্বাগতম/কমপ্লেন নোটিফিকেশনের জন্য
                         <div>
                           <span className="font-bold text-blue-600 block text-sm font-headline mb-0.5">
                             {notification.title}
@@ -203,22 +225,16 @@ export default function NoticeBoardPage() {
                           </p>
                         </div>
                       ) : (
-                        // সাধারণ সোশ্যাল ও ফলো/ব্লক নোটিফিকেশনের জন্য (১০০% ফিক্সড)
                         <>
-                          {/* ১. ইউজারের নাম যা ক্লিকেবল এবং অরেঞ্জ কালার */}
                           <span
                             onClick={(e) => handleUserClick(e, notification.senderId || '')}
                             className="font-bold text-orange-500 hover:text-orange-600 hover:underline cursor-pointer mr-1"
                           >
                             {notification.senderName || 'Someone'}
                           </span>
-
-                          {/* ২. সব কন্ডিশন চেক করে মেসেজ ইংরেজিতে কনভার্ট করা */}
                           {(() => {
                             const type = notification.type;
                             const textVal = notification.text || '';
-                            
-                            // লাইক (LIKE) নোটিফিকেশন
                             if (type === 'LIKE') {
                               return (
                                 <>
@@ -232,8 +248,6 @@ export default function NoticeBoardPage() {
                                 </>
                               );
                             }
-                            
-                            // কমেন্ট (COMMENT) নোটিফিকেশন
                             if (type === 'COMMENT') {
                               return (
                                 <>
@@ -247,44 +261,58 @@ export default function NoticeBoardPage() {
                                 </>
                               );
                             }
-                            
-                            // ফলো (FOLLOW) নোটিফিকেশন
-                            if (type === 'FOLLOW' || textVal.includes('ফলো করেছেন')) {
+                            if (type === 'FOLLOW' || textVal.includes('ফেলো করেছেন')) {
                               return 'is following you.';
                             }
-                            
-                            // ফলো ব্যাক (FOLLOW_BACK) নোটিফিকেশন
-                            if (type === 'FOLLOW_BACK' || textVal.includes('ফলো ব্যাক')) {
+                            if (type === 'FOLLOW_BACK' || textVal.includes('ব্যাক')) {
                               return 'is following you back.';
                             }
-                            
-                            // আনফলো (UNFOLLOW) নোটিফিকেশন
                             if (type === 'UNFOLLOW' || textVal.includes('আনফলো')) {
                               return 'has unfollowed you.';
                             }
-                            
-                            // ব্লক (BLOCK) নোটিফিকেশন
                             if (type === 'BLOCK' || textVal.includes('ব্লক')) {
                               return 'has blocked you.';
                             }
-
-                            // কোনো কন্ডিশন না মিললে ব্যাকআপ হিসেবে ডেটাবেজের লেখা দেখাবে
                             return textVal || notification.message || 'interacted with your profile.';
                           })()}
                         </>
                       )}
-
                     </div>
                   </div>
-                </div>                
+                </div>
                 {!isSeen && (
                   <span className="h-2 w-2 rounded-full bg-orange-500 shrink-0 ml-2" />
                 )}
               </div>
             );
           })}
+
+                    {allNotifications.length > visibleCount && (
+            <div className="text-center pt-4">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + 10)}
+                className="px-4 py-2 text-sm font-medium text-orange-500 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors border border-orange-200"
+              >
+                See older Notification
+              </button>
+            </div>
+          )}
         </div>
       )}
+
+      {/* === এইখানে নতুন আপওয়ার্ড বাটনটি যুক্ত হলো (শুরু) === */}
+      {showScrollTop && (
+        <div className="sticky bottom-6 left-full flex justify-end pr-2 z-50 pointer-events-none">
+          <button
+            onClick={handleScrollToTopAndRefresh}
+            className="p-3 bg-pink-500 hover:bg-pink-600 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center cursor-pointer pointer-events-auto"
+          >
+            <span className="text-lg font-bold">↑</span>
+          </button>
+        </div>
+      )}
+      {/* === নতুন বাটন যোগ করা শেষ === */}
+
     </div>
   );
 }
