@@ -728,7 +728,7 @@ function LivePostContent({ text }: { text: string }) {
   if (!text) return null;
 
   const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
-  const isLongText = sentences.length > 3 || text.length > 250;
+  const isLongText = sentences.length > 3 || text.length > 150;
 
   if (!isLongText) {
     return (
@@ -738,7 +738,7 @@ function LivePostContent({ text }: { text: string }) {
     );
   }
 
-  const truncatedText = text.length > 250 ? text.substring(0, 250) : sentences.slice(0, 3).join("");
+  const truncatedText = text.length > 150 ? text.substring(0, 150) : sentences.slice(0, 3).join("");
 
   return (
     <div className="text-left">

@@ -376,8 +376,11 @@ export default function UserProfilePage() {
         userPosts.map((post: any) => (
           <Card key={post.id} className="bg-slate-900 border-slate-800 mb-6 rounded-xl overflow-hidden text-left w-full">
             <div className="p-4 bg-slate-900 text-sm text-slate-300 border-b border-slate-800">
-              <p>{post.content}</p>
+              {/* পুরানো <p> ট্যাগের জায়গায় এটি ব্যবহার করুন */}
+              <LivePostContent text={post.content || post.text} />
+              
               {post.imageUrl && (
+
                 // এখানে ওন প্রোফাইলের মতো ফিক্সড max-h-[500px] এবং object-cover যুক্ত করা হলো
                 <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
                   <img src={post.imageUrl} alt="Post attachment" className="w-full h-auto object-cover max-h-[500px]" />
@@ -415,4 +418,38 @@ export default function UserProfilePage() {
 );
 }
 
+// ফাইলের একদম শেষে এই ফাংশনটি যুক্ত করুন
+function LivePostContent({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  if (!text) return null;
+
+  const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
+  const isLongText = sentences.length > 3 || text.length > 150;
+
+  if (!isLongText) {
+    return (
+      <p className="whitespace-pre-wrap font-normal leading-relaxed text-left text-slate-300">
+        {text}
+      </p>
+    );
+  }
+
+  const truncatedText = text.length > 150 ? text.substring(0, 150) : sentences.slice(0, 3).join("");
+
+  return (
+    <div className="text-left space-y-2">
+      <p className="whitespace-pre-wrap font-normal leading-relaxed text-slate-300">
+        {isExpanded ? text : truncatedText}
+        {!isExpanded && "..."}
+      </p>
+      <button 
+        type="button" 
+        onClick={() => setIsExpanded(!isExpanded)} 
+        className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-1 transition-colors cursor-pointer block"
+      >
+        {isExpanded ? "Show Less" : "Show More"}
+      </button>
+    </div>
+  );
+}
 

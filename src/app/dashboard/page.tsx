@@ -879,8 +879,8 @@ function LivePostContent({ text }: { text: string }) {
 
   const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
   // ৩টির বেশি বাক্য অথবা টেক্সট ২৫০ অক্ষরের বেশি হলে 'Show More' দেখাবে
-  const isLongText = sentences.length > 3 || text.length > 250;
-  const truncatedText = text.length > 250 ? text.substring(0, 250) : sentences.slice(0, 3).join("");
+  const isLongText = sentences.length > 3 || text.length > 150;
+  const truncatedText = text.length > 150 ? text.substring(0, 150) : sentences.slice(0, 3).join("");
 
 
 
