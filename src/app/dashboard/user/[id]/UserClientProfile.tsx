@@ -475,8 +475,11 @@ const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
                 {/* ২য় বক্স: বডি (পোস্টের মূল লেখা) */}
                 <div className="p-4 bg-white min-h-[60px]">
                   <div className="text-sm text-slate-700 leading-relaxed">
-                    {post.content}
+                    {/* কাস্টম কম্পোনেন্ট ইন্টিগ্রেশন */}
+                    <LivePostContent text={post.content || post.text} />
+                    
                     {post.imageUrl && (
+
                       <div className="px-4 pb-4 bg-white w-full flex items-center justify-center">
                         <div className="overflow-hidden rounded-lg border border-slate-100 max-h-[450px] w-full bg-slate-50 flex items-center justify-center">
                           <img src={post.imageUrl} alt="User post attachment" className="w-full h-auto object-contain max-h-[450px]" />
@@ -635,4 +638,41 @@ function LiveCommentCount({ postId, firestore }: { postId: string; firestore: an
   }, [postId, firestore]);
 
   return <span className="text-xs font-medium">{comments}</span>;
+}
+
+
+// ফাইলের একদম শেষে এই ফাংশনটি হুবহু রিপ্লেস করে দিন
+function LivePostContent({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  if (!text) return null;
+
+  // ইংরেজি ফুলস্টপ এবং বাংলা দাড়ি (।) এর সঠিক রেজেক্স স্প্লিট
+  const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
+  const isLongText = sentences.length > 3 || text.length > 250;
+
+  if (!isLongText) {
+    return (
+      <p className="whitespace-pre-wrap font-normal leading-relaxed text-left text-slate-700">
+        {text}
+      </p>
+    );
+  }
+
+  const truncatedText = text.length > 250 ? text.substring(0, 250) : sentences.slice(0, 3).join("");
+
+  return (
+    <div className="text-left space-y-2">
+      <p className="whitespace-pre-wrap font-normal leading-relaxed text-slate-700">
+        {isExpanded ? text : truncatedText}
+        {!isExpanded && "..."}
+      </p>
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-1 transition-colors cursor-pointer block"
+      >
+        {isExpanded ? "Show Less" : "Show More"}
+      </button>
+    </div>
+  );
 }
