@@ -69,9 +69,13 @@ export default function HomePage() {
 
   const handleScrollToTopAndRefresh = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // পুরো পেজ রিলোড না করে শুধু ডাটা রিলোড করা হচ্ছে
+    // নতুন ডাটা ফেচ করার আগে পুরানো স্টেট ক্লিয়ার করা হচ্ছে যেন স্পিনার ওভারল্যাপ না হয়
+    setPosts([]);
+    setLastVisible(null);
+    setHasMore(true);
     fetchInitialPosts(); 
   };
+
 
   
   useEffect(() => {
@@ -879,8 +883,8 @@ function LivePostContent({ text }: { text: string }) {
 
   const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
   // ৩টির বেশি বাক্য অথবা টেক্সট ২৫০ অক্ষরের বেশি হলে 'Show More' দেখাবে
-  const isLongText = sentences.length > 3 || text.length > 150;
-  const truncatedText = text.length > 150 ? text.substring(0, 150) : sentences.slice(0, 3).join("");
+  const isLongText = sentences.length > 3 || text.length > 200;
+  const truncatedText = text.length > 200 ? text.substring(0, 200) : sentences.slice(0, 3).join("");
 
 
 
