@@ -726,20 +726,34 @@ function LiveCommentsList({ postId, firestore }: { postId: string; firestore: an
 function LivePostContent({ text }: { text: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   if (!text) return null;
-  const sentences = text.split(/(?<=\n)|(?<=\. )/);
-  if (sentences.length <= 3) {
-    return <p className="whitespace-pre-wrap font-normal leading-relaxed text-left">{text}</p>;
+
+  const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
+  const isLongText = sentences.length > 3 || text.length > 250;
+
+  if (!isLongText) {
+    return (
+      <p className="whitespace-pre-wrap font-normal leading-relaxed text-left">
+        {text}
+      </p>
+    );
   }
-  const truncatedText = sentences.slice(0, 3).join("");
+
+  const truncatedText = text.length > 250 ? text.substring(0, 250) : sentences.slice(0, 3).join("");
+
   return (
     <div className="text-left">
       <p className="whitespace-pre-wrap font-normal leading-relaxed">
         {isExpanded ? text : truncatedText}
         {!isExpanded && "..."}
       </p>
-      <button type="button" onClick={() => setIsExpanded(!isExpanded)} className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-2 transition-colors cursor-pointer block">
+      <button 
+        type="button" 
+        onClick={() => setIsExpanded(!isExpanded)} 
+        className="text-sky-500 hover:text-sky-600 font-bold text-xs mt-2 transition-colors cursor-pointer block"
+      >
         {isExpanded ? "Show Less" : "Show More"}
       </button>
     </div>
   );
 }
+

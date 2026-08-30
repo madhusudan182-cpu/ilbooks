@@ -877,9 +877,12 @@ function LivePostContent({ text }: { text: string }) {
     });
   };
 
-  const sentences = text.split(/(?<=\n)|(?<=\. )/);
-  const isLongText = sentences.length > 3;
-  const truncatedText = sentences.slice(0, 3).join("");
+  const sentences = text.split(/(?<=\n)|(?<=\. )|(?<=। )|(?<=।)/);
+  // ৩টির বেশি বাক্য অথবা টেক্সট ২৫০ অক্ষরের বেশি হলে 'Show More' দেখাবে
+  const isLongText = sentences.length > 3 || text.length > 250;
+  const truncatedText = text.length > 250 ? text.substring(0, 250) : sentences.slice(0, 3).join("");
+
+
 
   return (
     <div className="text-left space-y-3">
