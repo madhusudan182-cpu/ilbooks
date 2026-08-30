@@ -320,7 +320,7 @@ useEffect(() => {
     finalConvos.unshift({
       id: adminConvo ? adminConvo.id : `new_${ADMIN_ID}`,
       participants: [user.uid, ADMIN_ID],
-      updatedAt: adminConvo?.updatedAt || { seconds: 9999999999 },
+      updatedAt: adminConvo?.updatedAt || { seconds: Math.floor(Date.now() / 1000) },
       lastMessage: adminConvo?.lastMessage || " ",
       partnerId: ADMIN_ID,
       isAdminSupport: true

@@ -69,10 +69,10 @@ export default function HomePage() {
 
   const handleScrollToTopAndRefresh = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    // পুরো পেজ রিলোড না করে শুধু ডাটা রিলোড করা হচ্ছে
+    fetchInitialPosts(); 
   };
+
   
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -80,11 +80,7 @@ export default function HomePage() {
   }, [firestore]);
 
 
-  useEffect(() => {
-window.scrollTo(0, 0);
-fetchInitialPosts();
-}, [firestore]);
-
+  
 // === নোটিফিকেশন থেকে আসা সিলেক্টেড পোস্টকে ইমেজের পরে অটো-স্ক্রোল করানোর লজিক ===
 useEffect(() => {
   const hash = window.location.hash;
