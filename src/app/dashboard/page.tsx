@@ -79,8 +79,23 @@ export default function HomePage() {
 
   
   useEffect(() => {
-    window.scrollTo(0, 0);
-    fetchInitialPosts();
+  window.scrollTo(0, 0);
+  fetchInitialPosts();
+
+    // কম্পোনেন্ট আনমাউন্ট হওয়ার সময় সব লিসেনার বন্ধ করার লজিক
+    return () => {
+      // ১. ইনিশিয়াল লিসেনার বন্ধ করা
+      if (unsubscribePostsRef.current) {
+        unsubscribePostsRef.current();
+      }
+
+      // ২. স্ক্রোল করে লোড হওয়া সব লিসেনার একে একে বন্ধ করা
+      if (unsubscribeMorePostsRef.current) {
+        Object.values(unsubscribeMorePostsRef.current).forEach(unsub => {
+          if (typeof unsub === 'function') unsub();
+        });
+      }
+    };
   }, [firestore]);
 
 
@@ -108,57 +123,97 @@ useEffect(() => {
   }
 }, [postsLoading]); // পেজের বেসিক পোস্ট লোড সম্পন্ন হলে রান করবে
 
+  // ১. লিসেনার আনসাবস্ক্রাইব করার জন্য একটি রেফ (Ref) ডিক্লেয়ার করুন (ফাইলের ওপরে বা স্টেটগুলোর সাথে রাখুন)
+const unsubscribePostsRef = useRef<(() => void) | null>(null);
+
 const fetchInitialPosts = async () => {
+if (!firestore) return;
+setPostsLoading(true);
+try {
+const firebaseFirestore = await import("firebase/firestore");
+const q = firebaseFirestore.query(
+firebaseFirestore.collection(firestore, 'posts'),
+firebaseFirestore.orderBy('createdAt', 'desc'),
+firebaseFirestore.limit(10)
+);
 
-    if (!firestore) return;
-    setPostsLoading(true);
-    try {
-      const firebaseFirestore = await import("firebase/firestore");
-      const q = firebaseFirestore.query(
-        firebaseFirestore.collection(firestore, 'posts'),
-        firebaseFirestore.orderBy('createdAt', 'desc'), // নতুন পোস্ট উপরে থাকবে
-        firebaseFirestore.limit(20) // প্রথমবারে ২০টি
-      );
-      const snapshot = await firebaseFirestore.getDocs(q);
-      const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      setPosts(fetchedPosts);
-      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-      setHasMore(snapshot.docs.length === 20);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-    } finally {
-      setPostsLoading(false);
-    }
-  };
+// আগের কোনো লিসেনার চালু থাকলে তা বন্ধ করে নিন
+if (unsubscribePostsRef.current) unsubscribePostsRef.current();
 
-  const fetchMorePosts = async () => {
-  if (!firestore || loadingMore || !hasMore || !lastVisible) return;
-  setLoadingMore(true);
-  try {
-    const firebaseFirestore = await import("firebase/firestore");
-    const q = firebaseFirestore.query(
-      firebaseFirestore.collection(firestore, 'posts'),
-      firebaseFirestore.orderBy('createdAt', 'desc'),
-      firebaseFirestore.startAfter(lastVisible),
-      firebaseFirestore.limit(10) // প্রতি স্ক্রোলে ১০টি করে
-    );
-    const snapshot = await firebaseFirestore.getDocs(q);
-    const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+// getDocs-এর বদলে onSnapshot ব্যবহার করা হলো রিয়েল-টাইম আপডেটের জন্য
+unsubscribePostsRef.current = firebaseFirestore.onSnapshot(q, (snapshot) => {
+const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+setPosts(fetchedPosts);
+setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+setHasMore(snapshot.docs.length === 10);
+setPostsLoading(false);
+}, (error) => {
+console.error("Error streaming posts:", error);
+setPostsLoading(false);
+});
 
-    if (fetchedPosts.length > 0) {
-      setPosts(prev => [...prev, ...fetchedPosts]);
-      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-      setHasMore(snapshot.docs.length === 10);
-    } else {
-      setHasMore(false);
-    }
-  } catch (error) {
-    console.error("Error fetching more posts:", error);
-  } finally {
-    setLoadingMore(false);
-  }
+} catch (error) {
+console.error("Error setting up post listener:", error);
+setPostsLoading(false);
+}
 };
+
+
+  // আরও পোস্টের রিয়েল-টাইম লিসেনার ট্র্যাক করার জন্য আরেকটি রেফ ডিক্লেয়ার করুন
+const unsubscribeMorePostsRef = useRef<{ [key: string]: () => void }>({});
+
+const fetchMorePosts = async () => {
+if (!firestore || loadingMore || !hasMore || !lastVisible) return;
+setLoadingMore(true);
+try {
+const firebaseFirestore = await import("firebase/firestore");
+const q = firebaseFirestore.query(
+firebaseFirestore.collection(firestore, 'posts'),
+firebaseFirestore.orderBy('createdAt', 'desc'),
+firebaseFirestore.startAfter(lastVisible),
+firebaseFirestore.limit(10)
+);
+
+const currentLastVisibleId = lastVisible.id;
+
+// আগের একই স্ক্রোল ট্রিগারের লিসেনার থাকলে তা বন্ধ করুন
+if (unsubscribeMorePostsRef.current[currentLastVisibleId]) {
+unsubscribeMorePostsRef.current[currentLastVisibleId]();
+}
+
+unsubscribeMorePostsRef.current[currentLastVisibleId] = firebaseFirestore.onSnapshot(q, (snapshot) => {
+const fetchedMore = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+if (fetchedMore.length > 0) {
+setPosts(prev => {
+// ডুপ্লিকেট পোস্ট এড়াতে Map ব্যবহার করে ইউনিক আইডি ফিল্টার লজিক
+const postMap = new Map();
+prev.forEach(p => postMap.set(p.id, p));
+fetchedMore.forEach(p => postMap.set(p.id, p));
+return Array.from(postMap.values()).sort((a, b) => {
+const timeA = a.createdAt?.seconds || 0;
+const timeB = b.createdAt?.seconds || 0;
+return timeB - timeA; // Descending অর্ডারে সর্ট রাখা
+});
+});
+
+setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+setHasMore(snapshot.docs.length === 10);
+} else {
+setHasMore(false);
+}
+setLoadingMore(false);
+}, (error) => {
+console.error("Error streaming more posts:", error);
+setLoadingMore(false);
+});
+
+} catch (error) {
+console.error("Error fetching more posts setup:", error);
+setLoadingMore(false);
+}
+};
+
 
 // ৪. অটোমেটিক স্ক্রোল ডিটেক্টর লিসেনার
 useEffect(() => {
