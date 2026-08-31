@@ -311,10 +311,18 @@ React.useEffect(() => {
                   <ScrollArea className="flex-1">
                     <nav className="grid gap-2 p-4 text-lg font-medium">
                       {allNavItems.filter(item => !item.adminOnly || isAdmin).map((item) => (
-                                          <Link
+                    
+                    <Link
                       key={item.href}
                       href={item.href}
-                      onClick={() => setIsSheetOpen(false)}
+                      onClick={(e) => {
+                        setIsSheetOpen(false);
+                        // যদি হোম আইকনে ক্লিক করা হয়, তবে জোরপূর্বক পেজ রিফ্রেশ হবে
+                        if (item.href === '/dashboard') {
+                          e.preventDefault();
+                          window.location.href = '/dashboard';
+                        }
+                      }}
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
                         pathname === item.href && "bg-muted text-primary"
@@ -367,12 +375,18 @@ React.useEffect(() => {
                       <DropdownMenuItem key={item.href} asChild>
                         <Link
                           href={item.href}
+                          onClick={(e) => {
+                            if (item.href === '/dashboard') {
+                              e.preventDefault();
+                              window.location.href = '/dashboard';
+                            }
+                          }}
                           className={cn(
                               "flex items-center gap-3",
                               pathname === item.href && "text-primary"
                           )}
                         >
-                                              <div className="relative">
+                    <div className="relative">
                       <item.icon className="h-5 w-5" />
                       
                       {/* Notifications-এর লাল ব্যাজ */}
@@ -502,14 +516,20 @@ React.useEffect(() => {
                   }
 
                     return (
-                    <Tooltip key={item.href}>
-                    <TooltipTrigger asChild>
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>
                         <Link
-                        href={item.href}
-                        className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-                            pathname === item.href && "bg-accent text-accent-foreground"
-                        )}
+                          href={item.href}
+                          onClick={(e) => {
+                            if (item.href === '/dashboard') {
+                              e.preventDefault();
+                              window.location.href = '/dashboard';
+                            }
+                          }}
+                          className={cn(
+                              "flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                              pathname === item.href && "bg-accent text-accent-foreground"
+                          )}
                         >
                           {/* ৪৪০ নম্বর লাইনের জায়গায় এটি বসান */}
                           <div className="relative">
