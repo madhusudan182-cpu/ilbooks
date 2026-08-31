@@ -275,7 +275,7 @@ useEffect(() => {
   const conversations = useMemo(() => {
     if (!user?.uid || !allFollows || !rawConversations) return [];
     const friendsMap = new Map<string, any>();
-    const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
+    const ADMIN_ID = "JboWosG0rzPoFtbeomzTWyjlVHq1";
     
     allFollows.forEach((f: any) => {
       const isMeFollower = f.followerId === user.uid && f.status === "ACTIVE";
@@ -335,7 +335,7 @@ useEffect(() => {
 
     // অ্যাডমিন যখন সার্চ বক্সে কোনো UID লিখবেন, তখন সরাসরি ইউজার ডক চেক করার লজিক
   useEffect(() => {
-    const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
+    const ADMIN_ID = "JboWosG0rzPoFtbeomzTWyjlVHq1";
     // ফিক্সড: !firestore এর বদলে ফায়ারবেস অবজেক্ট চেক করার জন্য সঠিক কন্ডিশন
     if (user?.uid !== ADMIN_ID || !firestore || !adminSearchTerm.trim()) {
       setAdminSearchedUser(null);
@@ -422,7 +422,7 @@ useEffect(() => {
   const handleSendMessage = async (e: React.FormEvent) => {
   e.preventDefault();
   const chatWithIdToCheck = searchParams.get('chatWith');
-  const ADMIN_ID = "vkKbRMMv86M1q2BBwCTX1pnSWAq1";
+  const ADMIN_ID = "JboWosG0rzPoFtbeomzTWyjlVHq1";
 
   // ১৮৭ নম্বর লাইনে `chatWithIdToCheck !== ADMIN_ID` কন্ডিশনটি যুক্ত করা হয়েছে
   if (user?.uid !== ADMIN_ID && chatWithIdToCheck !== ADMIN_ID && chatWithIdToCheck && allFollows && user?.uid) {
@@ -526,15 +526,15 @@ useEffect(() => {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input 
-                placeholder={user?.uid === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" ? "Admin: Enter User ID..." : "Search chats..."} 
+                placeholder={user?.uid === "JboWosG0rzPoFtbeomzTWyjlVHq1" ? "Admin: Enter User ID..." : "Search chats..."} 
                 className="pl-8 h-8 rounded-full" 
-                value={user?.uid === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" ? adminSearchTerm : ""}
-                onChange={(e) => user?.uid === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" && setAdminSearchTerm(e.target.value)}
+                value={user?.uid === "JboWosG0rzPoFtbeomzTWyjlVHq1" ? adminSearchTerm : ""}
+                onChange={(e) => user?.uid === "JboWosG0rzPoFtbeomzTWyjlVHq1" && setAdminSearchTerm(e.target.value)}
               />
             </div>
           </div>
           <ScrollArea ref={chatListScrollRef} className="flex-1 relative">
-            {user?.uid === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" && adminSearchedUser && (
+            {user?.uid === "JboWosG0rzPoFtbeomzTWyjlVHq1" && adminSearchedUser && (
               <div className="p-2 bg-purple-50/50 border-b border-purple-200">
                 <p className="text-[10px] text-purple-600 font-bold px-2 mb-1">🎯 SEARCH RESULT (Click to Chat)</p>
                 <ChatInboxRow
@@ -640,7 +640,7 @@ useEffect(() => {
                 
                 
                 <div className="flex-grow">
-                  {activeConversationId?.startsWith('new_') && chatWithId === "vkKbRMMv86M1q2BBwCTX1pnSWAq1" ? (
+                  {activeConversationId?.startsWith('new_') && chatWithId === "JboWosG0rzPoFtbeomzTWyjlVHq1" ? (
                     <h2 className="font-bold text-base leading-tight">Admin Support</h2>
                   ) : (
                     <Link 
