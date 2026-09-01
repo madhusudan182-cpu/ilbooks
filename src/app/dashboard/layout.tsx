@@ -282,7 +282,7 @@ React.useEffect(() => {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-       <header className="sticky top-0 z-10 border-b border-pink-100 bg-pink-50/95 backdrop-blur">
+       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="flex h-12 items-center gap-4 px-4 md:px-6">
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
@@ -324,9 +324,10 @@ React.useEffect(() => {
                         }
                       }}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                        pathname === item.href && "bg-muted text-primary"
+                        "flex items-center gap-3 rounded-xl px-3 py-2 text-slate-700 transition-all border border-pink-100 bg-pink-50/40 hover:bg-pink-50 hover:text-pink-600 shadow-sm",
+                        pathname === item.href && "bg-pink-100/70 border-pink-300 text-pink-700 font-medium"
                       )}
+
                     >
                       <div className="relative">
                         <item.icon className="h-5 w-5" />
@@ -364,7 +365,7 @@ React.useEffect(() => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="shrink-0 hidden md:inline-flex"
+                      className="shrink-0 hidden md:inline-flex border-pink-200 bg-pink-50/50 hover:bg-pink-100 text-pink-600 rounded-xl shadow-sm"
                     >
                       <Grid3x3 className="h-5 w-5" />
                       <span className="sr-only">Toggle Main Menu</span>
@@ -416,7 +417,8 @@ React.useEffect(() => {
               <div className="ml-auto flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button variant="outline" className="relative h-10 w-10 rounded-xl border-pink-200 bg-pink-50/50 hover:bg-pink-100 p-0 shadow-sm">
+
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={userAvatar} alt="User avatar" />
                         <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
@@ -444,10 +446,11 @@ React.useEffect(() => {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="border-red-100 bg-red-50/40 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-xl shadow-sm">
                       <LogOut className="mr-0 md:mr-2 h-4 w-4" />
                       <span className="hidden md:inline">Log Out</span>
                     </Button>
+
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -477,10 +480,11 @@ React.useEffect(() => {
                           <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="icon"
-                                className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+                                className="relative flex h-10 w-10 items-center justify-center rounded-xl border-pink-200 bg-pink-50/50 text-pink-600 transition-colors hover:bg-pink-100 cursor-pointer shadow-sm"
                               >
+
                                 <Bell className="h-8 w-8" />
                                 {globalNotifCount > 0 && (
                                   <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
@@ -527,8 +531,8 @@ React.useEffect(() => {
                             }
                           }}
                           className={cn(
-                              "flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-                              pathname === item.href && "bg-accent text-accent-foreground"
+                            "flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 border border-pink-200 bg-pink-50/40 transition-colors hover:bg-pink-50 hover:text-pink-600 shadow-sm",
+                            pathname === item.href && "bg-pink-100/80 border-pink-400 text-pink-700"
                           )}
                         >
                           {/* ৪৪০ নম্বর লাইনের জায়গায় এটি বসান */}
