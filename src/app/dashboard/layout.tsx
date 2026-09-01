@@ -282,7 +282,7 @@ React.useEffect(() => {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+       <header className="sticky top-0 z-10 border-b border-pink-100 bg-pink-50/95 backdrop-blur">
         <div className="flex h-12 items-center gap-4 px-4 md:px-6">
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
@@ -466,7 +466,7 @@ React.useEffect(() => {
         </div>
       </header>
 
-      <nav className="sticky top-12 z-10 w-full border-b bg-background/95 backdrop-blur-sm">
+      <nav className="sticky top-12 z-10 w-full border-b border-pink-100 bg-pink-50/95 backdrop-blur-sm">
           <div className="mx-auto flex h-10 items-center justify-center gap-1 p-2">
                 <TooltipProvider>
                 {[...iconNavItems, { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }].map((item) => {
