@@ -349,7 +349,7 @@ useEffect(() => {
               {isOwnProfile && (
                 <input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/*, image/jpeg, image/jpg, image/png, image/webp"
                   className="hidden" 
                   ref={avatarInputRef} 
                   onChange={handleProfilePictureChange} 

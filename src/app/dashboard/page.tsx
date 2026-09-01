@@ -552,7 +552,7 @@ useEffect(() => {
                 <input 
                   type="file" 
                   ref={imageInputRef} 
-                  accept="image/*" 
+                  accept="image/*, image/jpeg, image/jpg, image/png, image/webp"
                   className="hidden" 
                   onChange={(e) => {
                     const file = e.target.files?.[0];
