@@ -95,4 +95,11 @@ body {
   transition: all 0.3s ease;
 }
 
+@keyframes placeholderBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 
+.animate-placeholder-blink::placeholder {
+  animation: placeholderBlink 1.9s steps(1) infinite;
+}

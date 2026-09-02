@@ -289,7 +289,7 @@ React.useEffect(() => {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="shrink-0 md:hidden h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm"
+                    className="shrink-0 md:hidden h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 shadow-sm"
                   >
                     <Grid3x3 className="h-5 w-5" />
                     <span className="sr-only">Toggle navigation menu</span>
@@ -450,7 +450,7 @@ React.useEffect(() => {
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm"
+                      className="h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 shadow-sm"
                     >
                       <LogOut className="h-5 w-5" />
                     </Button>
@@ -485,7 +485,7 @@ React.useEffect(() => {
                         variant="outline"
                         size="icon"
                         className={cn(
-                          "relative flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 cursor-pointer shadow-sm",
+                          "relative flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 cursor-pointer shadow-sm",
                           pathname === '/dashboard/notice-board' && "bg-orange-500 border-orange-600 text-white hover:bg-orange-600"
                         )}
                       >
@@ -559,7 +559,7 @@ React.useEffect(() => {
                           }}
                           className={cn(
                             // স্বাভাবিক অবস্থায় পিঙ্ক (Pink) ব্যাকগ্রাউন্ড এবং হোভার ইফেক্ট
-                            "flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm",
+                            "flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 shadow-sm",
                             
                             // সিলেক্টেড বা একটিভ অবস্থায় অরেঞ্জ (Orange) ব্যাকগ্রাউন্ড ও টেক্সট কালার
                             pathname === item.href && "bg-orange-500 border-orange-600 text-white hover:bg-orange-600"

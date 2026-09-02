@@ -52,6 +52,45 @@ export default function HomePage() {
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
   const { toast } = useToast();
 
+
+
+  const fullPlaceholder = "What's on your mind, bookworm?";
+const [currentPlaceholder, setCurrentPlaceholder] = useState("");
+
+useEffect(() => {
+  // বাক্যটিকে স্পেস দিয়ে ভাগ করে শব্দগুলোর একটি অ্যারে তৈরি করা হলো
+  const words = fullPlaceholder.split(" ");
+  let wordIndex = 0;
+  let isDeleting = false;
+  let timer: NodeJS.Timeout;
+
+    const handleWordTyping = () => {
+      // এক এক করে পুরো শব্দ স্ক্রিনে যুক্ত হবে
+      setCurrentPlaceholder(words.slice(0, wordIndex + 1).join(" "));
+      wordIndex++;
+
+      // যখন সব শব্দ স্ক্রিনে চলে আসবে (বাক্যটি শেষ হবে)
+      if (wordIndex > words.length) {
+        wordIndex = 0; // ইন্ডেক্স রিসেট করে আবার শুরুতে নিয়ে যাওয়া হলো
+        setCurrentPlaceholder(""); // প্লেসহোল্ডার খালি করে দেওয়া হলো
+        
+        // বাক্যটি শেষ হওয়ার পর আবার নতুন করে শুরু হওয়ার মাঝখানের বিরতি (১.৫ সেকেন্ড)
+        timer = setTimeout(handleWordTyping, 1500); 
+        return;
+      }
+
+      // একটি শব্দ আসার পর পরবর্তী শব্দ আসার গতি (৩০০ মিলি-সেকেন্ড)
+      // তবে শেষ শব্দটির পর পুরো বাক্যটি স্ক্রিনে ৩ সেকেন্ড স্থির হয়ে থাকবে
+      const speed = wordIndex === words.length ? 3000 : 300;
+      timer = setTimeout(handleWordTyping, speed);
+    };
+
+
+  handleWordTyping();
+
+  return () => clearTimeout(timer); // কম্পোনেন্ট বন্ধ হলে টাইমার ক্লিয়ার হবে
+}, []);
+
   
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -484,7 +523,7 @@ useEffect(() => {
 
 
   return (
-    <div className="relative max-w-md mx-auto min-h-screen bg-slate-50 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
+    <div className="relative max-w-md mx-auto min-h-screen bg-blue-90 text-slate-800 p-1 md:max-w-3xl md:bg-blue-90 md:text-slate-800 space-y-3">
       <Card id="post">
         <CardContent className="p-2 pt-4">
           <div className="flex items-start gap-3">
@@ -497,14 +536,15 @@ useEffect(() => {
                 <Textarea
                   rows={1}
                   className={cn(
-                    "text-sm transition-all duration-200 ease-in-out p-1 border-0 focus-visible:ring-0 resize-none h-auto min-h-0",
+                    "text-sm transition-all duration-200 ease-in-out p-1 border-0 focus-visible:ring-0 resize-none h-auto min-h-0", 
                     isPosting ? "min-h-[60px] border rounded-md p-2 mt-1" : ""
                   )}
-                  placeholder="What's on your mind, bookworm?"
+                  placeholder={currentPlaceholder} //  এখানে ফিক্সড টেক্সটের বদলে currentPlaceholder বসানো হলো
                   onFocus={() => setIsPosting(true)}
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
                 />
+
                 {imagePreview && (
                   <div className="relative mt-2 w-full max-h-60 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/10 flex items-center justify-center">
                     <img 
@@ -618,9 +658,9 @@ useEffect(() => {
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
             
             return (
-              <Card key={post.id} className="mb-6 shadow-sm border border-slate-200/80 overflow-hidden bg-white rounded-xl">
+              <Card key={post.id} className="mb-4 shadow-sm border border-slate-200/80 overflow-hidden bg-white rounded-xl">
                 {/* 👤 পোস্ট হেডার */}
-                <CardHeader className="flex flex-row items-center gap-3 p-3 pb-2">
+                <CardHeader className="flex flex-row items-center gap-3 p-1.5 pb-1">
                   <Link href={profileUrl} className="active:scale-95 transition-transform shrink-0">
                     <LiveAuthorAvatar authorId={post.author.id} fallbackAvatar={authorAvatar} userName={authorName} />
 
@@ -809,7 +849,7 @@ function LiveAuthorAvatar({ authorId, fallbackAvatar, userName }: { authorId: st
   }, [firestore, authorId, fallbackAvatar]);
 
   return (
-    <Avatar className="h-9 w-9 border">
+    <Avatar className="h-11 w-11 border">
       <AvatarImage src={avatarUrl} alt={userName} />
       <AvatarFallback>{userName ? userName.charAt(0) : 'U'}</AvatarFallback>
     </Avatar>
