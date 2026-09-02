@@ -289,7 +289,7 @@ React.useEffect(() => {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="shrink-0 md:hidden"
+                    className="shrink-0 md:hidden h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm"
                   >
                     <Grid3x3 className="h-5 w-5" />
                     <span className="sr-only">Toggle navigation menu</span>
@@ -363,13 +363,14 @@ React.useEffect(() => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 hidden md:inline-flex border-pink-200 bg-pink-50/50 hover:bg-pink-100 text-pink-600 rounded-xl shadow-sm"
-                    >
-                      <Grid3x3 className="h-5 w-5" />
-                      <span className="sr-only">Toggle Main Menu</span>
-                    </Button>
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 hidden md:inline-flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-300 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm"
+                  >
+                    <Grid3x3 className="h-5 w-5" />
+                    <span className="sr-only">Toggle Main Menu</span>
+                  </Button>
+
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     {allNavItems.filter(item => !item.adminOnly || isAdmin).map((item) => (
@@ -446,10 +447,14 @@ React.useEffect(() => {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="border-red-100 bg-red-50/40 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-xl shadow-sm">
-                      <LogOut className="mr-0 md:mr-2 h-4 w-4" />
-                      <span className="hidden md:inline">Log Out</span>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm"
+                    >
+                      <LogOut className="h-5 w-5" />
                     </Button>
+
 
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -470,55 +475,77 @@ React.useEffect(() => {
       </header>
 
       <nav className="sticky top-12 z-10 w-full border-b border-pink-100 bg-pink-50/95 backdrop-blur-sm">
-          <div className="mx-auto flex h-10 items-center justify-center gap-1 p-2">
+          <div className="mx-auto flex h-12 items-center justify-center gap-3 p-2">
                 <TooltipProvider>
                 {[...iconNavItems, { href: '/dashboard/notice-board', title: 'Notifications', icon: Bell }].map((item) => {
                   if (item.title === 'Notifications') {
+                    // নোটিফিকেশন বাটনটির মূল ইন্টারফেস (UI) যা দুই ক্ষেত্রেই এক থাকবে
+                    const NotificationButton = (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className={cn(
+                          "relative flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 cursor-pointer shadow-sm",
+                          pathname === '/dashboard/notice-board' && "bg-orange-500 border-orange-600 text-white hover:bg-orange-600"
+                        )}
+                      >
+                        <Bell className="h-5 w-5" /> {/* আইকনের সাইজ অন্যান্য বাটনের মতো h-5 w-5 করা হলো */}
+                        {globalNotifCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
+                            {globalNotifCount}
+                          </span>
+                        )}
+                      </Button>
+                    );
+
                     return (
-                      <DropdownMenu key="notifications-dropdown">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="relative flex h-10 w-10 items-center justify-center rounded-xl border-pink-200 bg-pink-50/50 text-pink-600 transition-colors hover:bg-pink-100 cursor-pointer shadow-sm"
+                      <Tooltip key="notifications-tooltip">
+                        <TooltipTrigger asChild>
+                          <div> {/* Tooltip এবং Trigger এর সঠিক কাজের জন্য একটি wrapper div */}
+                            {globalNotifCount > 0 ? (
+                              // ১. নোটিফিকেশন থাকলে: ড্রপডাউন মেনু ওপেন হবে
+                              <DropdownMenu key="notifications-dropdown">
+                                <DropdownMenuTrigger asChild>
+                                  {NotificationButton}
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-80 bg-white border border-gray-100 p-2 shadow-lg rounded-md z-50">
+                                  <DropdownMenuLabel className="font-bold text-gray-800 px-2 py-1 text-sm">Notifications</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <LiveDropdownList
+                                    userId={user?.uid}
+                                    notifList={dropdownNotifs}
+                                    handleNotifClick={handleNotifClick}
+                                  />
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem asChild>
+                                    <Link href="/dashboard/notice-board" className="w-full text-center text-xs text-blue-600 justify-center font-medium">
+                                      View all notifications
+                                    </Link>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              // ২. নোটিফিকেশন না থাকলে: সরাসরি নোটিফিকেশন পেজে নিয়ে যাবে
+                              <Link
+                                href="/dashboard/notice-board"
+                                onClick={(e) => {
+                                  if (pathname === '/dashboard/notice-board') {
+                                    e.preventDefault();
+                                    window.location.href = '/dashboard/notice-board';
+                                  }
+                                }}
                               >
-
-                                <Bell className="h-8 w-8" />
-                                {globalNotifCount > 0 && (
-                                  <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-pulse z-50">
-                                    {globalNotifCount}
-                                  </span>
-                                )}
-                              </Button>
-                            </DropdownMenuTrigger>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Notifications</p>
-                          </TooltipContent>
-                        </Tooltip>
-
-                        <DropdownMenuContent align="end" className="w-80 bg-white border border-gray-100 p-2 shadow-lg rounded-md z-50">
-                          <DropdownMenuLabel className="font-bold text-gray-800 px-2 py-1 text-sm">Notifications</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                            <LiveDropdownList 
-                              userId={user?.uid} 
-                              notifList={dropdownNotifs} 
-                              handleNotifClick={handleNotifClick} 
-                            />
-
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link href="/dashboard/notice-board" className="w-full text-center text-xs text-blue-600 justify-center font-medium">
-                              View all notifications
-                            </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                                {NotificationButton}
+                              </Link>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>Notifications</p>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   }
-
                     return (
                       <Tooltip key={item.href}>
                         <TooltipTrigger asChild>
@@ -531,9 +558,13 @@ React.useEffect(() => {
                             }
                           }}
                           className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 border border-pink-200 bg-pink-50/40 transition-colors hover:bg-pink-50 hover:text-pink-600 shadow-sm",
-                            pathname === item.href && "bg-pink-100/80 border-pink-400 text-pink-700"
+                            // স্বাভাবিক অবস্থায় পিঙ্ক (Pink) ব্যাকগ্রাউন্ড এবং হোভার ইফেক্ট
+                            "flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-200 shadow-sm",
+                            
+                            // সিলেক্টেড বা একটিভ অবস্থায় অরেঞ্জ (Orange) ব্যাকগ্রাউন্ড ও টেক্সট কালার
+                            pathname === item.href && "bg-orange-500 border-orange-600 text-white hover:bg-orange-600"
                           )}
+
                         >
                           {/* ৪৪০ নম্বর লাইনের জায়গায় এটি বসান */}
                           <div className="relative">

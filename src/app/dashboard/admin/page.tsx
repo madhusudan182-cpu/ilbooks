@@ -45,16 +45,8 @@ export default function AdminPage() {
           <CardTitle className="flex items-center gap-3 text-3xl font-headline">
             <Shield className="w-8 h-8 text-primary" />
             Admin Panel
-          </CardTitle>
-          <CardDescription>
-            Welcome to the admin dashboard, Owner.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Here you can manage users, questions, and other site settings.
-          </p>
-        </CardContent>
+          </CardTitle>          
+        </CardHeader>        
       </Card>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

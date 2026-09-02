@@ -299,46 +299,45 @@ useEffect(() => {
       setIsSubmitting(false);
       return;
     }
-// কোডের শুরু (Beginning of the code)
-    // ==========================================
-    // এআই দিয়ে ছবির পিক্সেল স্ক্যান এবং নগ্নতা ফিল্টার করার লজিক (লাইন ১৪১ এর ঠিক ওপরে)
-    // ==========================================
+
     if (postImage) {
       try {
-        // ১. ক্লায়েন্ট-সাইড এআই মডেল ব্যাকগ্রাউন্ডে লোড করা
-        const model = await nsfwjs.load();
-        
-        // ২. আপলোড করা ফাইলটিকে মেমোরিতে একটি ইমেজ এলিমেন্টে রূপান্তর
-        const imgElement = document.createElement('img');
-        imgElement.src = URL.createObjectURL(postImage);
-        
-        // ইমেজ পুরোপুরি লোড হওয়া পর্যন্ত অপেক্ষা করা
-        await new Promise((resolve) => {
-          imgElement.onload = resolve;
-        });
+        // মোবাইল স্ক্রিন বা মোবাইল ব্রাউজার কি না তা ডিটেক্ট করার শর্ত (User Agent এবং Window Width চেক)
+        const isMobileDevice = /Mobi|Android|iPhone/i.test(navigator.userAgent) || window.innerWidth < 768;
 
-        // ৩. এআই মডেল দিয়ে ছবিটির পিক্সেল ক্লাসিফাই/স্ক্যান করা
-        const predictions = await model.classify(imgElement);
-        
-        // ৪. ছবিতে Porn বা Explicit Nudity এর উপস্থিতি চেক করা (কনফিডেন্স স্কোর ৭০% এর বেশি হলে)
-        const isNSFW = predictions.some(p => 
-          (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.7
-        );
-
-        if (isNSFW) {
-          toast({
-            variant: "destructive",
-            title: "অ্যাকশন ব্লক করা হয়েছে!",
-            description: "You can't post it here!",
+        // শুধুমাত্র ডেস্কটপ বা পিসির জন্য AI স্ক্যানিং রান করবে, মোবাইলে স্কিপ হবে
+        if (!isMobileDevice) {
+          // ১. ক্লায়েন্ট-সাইড এআই মডেল ব্যাকগ্রাউন্ডে লোড করা
+          const model = await nsfwjs.load();
+          // ২. ইমেজ এলিমেন্ট তৈরি
+          const imgElement = document.createElement('img');
+          imgElement.src = URL.createObjectURL(postImage);
+          
+          await new Promise((resolve) => {
+            imgElement.onload = resolve;
           });
-          setIsSubmitting(false);
-          return; // ফায়ারবেস স্টোরেজ ও ফায়ারস্টোরে ডাটা পাঠানো আটকে দেবে
+          // ৩. এআই মডেল দিয়ে ছবি স্ক্যান করা
+          const predictions = await model.classify(imgElement);
+          // ৪. কোনো নোংরা ছবি থাকলে তা ব্লক করা
+          const isNSFW = predictions.some(p =>
+            (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.7
+          );
+          if (isNSFW) {
+            toast({
+              variant: "destructive",
+              title: "অ্যাকশন ব্লক করা হয়েছে!",
+              description: "You can't post it here!",
+            });
+            setIsSubmitting(false);
+            return; 
+          }
+        } else {
+          console.log("Mobile device detected. Skipping NSFW AI image scanning for performance.");
         }
       } catch (error) {
         console.error("AI Image scanning failed:", error);
       }
     }
-
 
       let finalImageUrl = null;
 
@@ -633,7 +632,7 @@ useEffect(() => {
                           {authorName}
                         </span>
                       </Link>
-                      <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-purple-50 text-blue-600 border border-purple-100 rounded font-bold">
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-white-50 text-pink-600 border border-purple-100 rounded font-bold">
                         Level: <LiveAuthorLevel authorId={post.author.id} fallbackLevel={authorLevel} firestore={firestore} />
                       </Badge>
 

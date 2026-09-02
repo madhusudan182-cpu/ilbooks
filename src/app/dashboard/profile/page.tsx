@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useUser, useFirestore, useDoc, useCollection } from "@/firebase";
 import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment,
 setDoc, deleteDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Camera } from "lucide-react";
 import { useParams } from "next/navigation";
 
@@ -149,13 +150,10 @@ const { data: allFollows = [] } = useCollection<any>(followsRef);
   }, [allFollows, user?.uid]);
 // END OF CODE TO REPLACE
 
-
-
-
-  const avatarInputRef = useRef<HTMLInputElement>(null);
+const avatarInputRef = useRef<HTMLInputElement>(null);
 
 const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (e.target.files && e.target.files[0]) {
+  if (e.target.files && e.target.files[0] && user) {
     const file = e.target.files[0];
     
     // ১০ এমবি সাইজ ভ্যালিডেশন
@@ -168,18 +166,36 @@ const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (loadEvent) => {
-      const newAvatarUrl = loadEvent.target?.result as string;
+    try {
+      // টোস্ট মেসেজ দিয়ে ইউজারকে জানানো যে আপলোড হচ্ছে
+      toast({ title: "Uploading profile picture...", description: "Please wait a moment." });
+
+      // ফায়ারবেস স্টোরেজ ইনিশিয়েট করা
+      const storage = getStorage();
+      // স্টোরেজে একটি নির্দিষ্ট পাথ তৈরি করা (avatars/userId_timestamp)
+      const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}`);
+      
+      // ফাইলটি স্টোরেজে আপলোড করা
+      await uploadBytes(storageRef, file);
+      
+      // আপলোড করা ফাইলের লাইভ ডাউনলোড ইউআরএল (URL) নিয়ে আসা
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // ফায়ারস্টোর ডাটাবেসে নতুন ইমেজ ইউআরএলটি আপডেট করা
       if (userRef) {
-        await updateDoc(userRef, { avatarUrl: newAvatarUrl });
+        await updateDoc(userRef, { avatarUrl: downloadURL });
         toast({ title: "Profile picture updated successfully!" });
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error: any) {
+      console.error("Profile picture upload failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: "Something went wrong while uploading the image.",
+      });
+    }
   }
 };
-
 
 const toggleProfileLock = async () => {
   if (!userRef || !profile) return;
