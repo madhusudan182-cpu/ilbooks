@@ -283,13 +283,14 @@ React.useEffect(() => {
   return (
     <div className="flex min-h-screen w-full flex-col">
        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="flex h-12 items-center gap-4 px-4 md:px-6">
+        <div className="relative flex h-12 w-full items-center justify-between px-4 md:px-6">
+
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="shrink-0 md:hidden h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 shadow-sm"
+                    className="shrink-0 md:hidden h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-500 shadow-sm"
                   >
                     <Grid3x3 className="h-5 w-5" />
                     <span className="sr-only">Toggle navigation menu</span>
@@ -354,11 +355,16 @@ React.useEffect(() => {
                 </SheetContent>
               </Sheet>
               
+              <Link 
+                href="/dashboard" 
+                className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 text-pink-500 transition-transform active:scale-95 z-20"
+              >
+                <BookOpen className="w-6 h-6" />
+                <span className="font-headline font-semibold text-lg md:text-xl">ILBooks</span>
+              </Link>
+
               <div className="flex items-center gap-2">
-                <Link href="/dashboard" className="flex items-center gap-2 text-pink-500">
-                  <BookOpen className="w-6 h-6" />
-                  <span className="font-headline font-semibold">ILBooks</span>
-                </Link>
+
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -450,7 +456,7 @@ React.useEffect(() => {
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 shadow-sm"
+                      className="h-10 w-10 flex items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-purple-300 transition-colors hover:bg-pink-500 shadow-sm"
                     >
                       <LogOut className="h-5 w-5" />
                     </Button>
