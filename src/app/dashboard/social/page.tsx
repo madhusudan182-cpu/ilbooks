@@ -171,11 +171,16 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
         alert("Following successfully!");
       } 
       else if (actionType === 'unfollow') {
-        // আপনার ইউজার পেজের মতো ডকুমেন্টটি সম্পূর্ণ ডিলিট করে দেওয়া
-        // এটি করার সাথে সাথে ফায়ারবেস লিসেনার রিয়েল-টাইমে এই ইউজারকে ট্যাব থেকে সরিয়ে দেবে!
-        await deleteDoc(followRef);
+        // ডিলিট না করে স্ট্যাটাস 'UNFRIENDED' বা 'NONE' করে দিন
+        await setDoc(followRef, {
+          followerId: currentUser.uid,
+          followingId: targetUserId,
+          status: 'UNFRIENDED', // এটি স্ট্যাটাস চেঞ্জ করবে
+          createdAt: new Date().toISOString()
+        });
         alert("Unfollowed successfully.");
       }
+
     } catch (error) {
       console.error("Action error:", error);
       alert("Database operation failed.");

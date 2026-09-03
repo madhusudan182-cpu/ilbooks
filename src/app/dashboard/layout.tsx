@@ -359,8 +359,8 @@ React.useEffect(() => {
                 href="/dashboard" 
                 className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 text-pink-500 transition-transform active:scale-95 z-20"
               >
-                <BookOpen className="w-6 h-6" />
-                <span className="font-headline font-semibold text-lg md:text-xl">ILBooks</span>
+                <BookOpen className="w-8 h-8" />
+                <span className="font-headline font-semibold text-2xl md:text-3xl">ILBooks</span>
               </Link>
 
               <div className="flex items-center gap-2">

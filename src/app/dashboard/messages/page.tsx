@@ -56,6 +56,8 @@ const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 const audioChunksRef = useRef<Blob[]>([]);
 const fileInputRef = useRef<HTMLInputElement>(null);
 
+const isCancelledRef = useRef(false);
+
 // ফাইল আপলোড ও মেসেজ পাঠানোর মূল ফাংশন
 const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf') => {
   if (!firestore || !user || !activeConversationId) return;
@@ -92,27 +94,38 @@ const uploadAndSendFile = async (file: File, fileType: 'image' | 'video' | 'pdf'
 };
 
 const startRecording = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunksRef.current = [];
-
-    mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
-    mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(track => track.stop());
-      if (audioChunksRef.current.length > 0) {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
-        await uploadAndSendFile(audioFile, 'audio' as any);
-      }
+    try {
+      isCancelledRef.current = false; // শুরুতে ক্যানসেল 'false' থাকবে
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => { 
+        if (event.data.size > 0) audioChunksRef.current.push(event.data); 
+      };
+      
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        
+        // জাস্ট এই কন্ডিশনটি যুক্ত করুন: যদি ক্যানসেল করা হয়, তবে পাঠাবে না
+        if (isCancelledRef.current) {
+          audioChunksRef.current = []; // বাফার ক্লিয়ার
+          return; 
+        }
+        
+        if (audioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          const audioFile = new File([audioBlob], `voice_${Date.now()}.wav`, { type: 'audio/wav' });
+          await uploadAndSendFile(audioFile, 'audio' as any);
+        }
+        setRecordingSeconds(0);
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      setShowLeftIcons(false);
       setRecordingSeconds(0);
-    };
-
-    mediaRecorder.start();
-    setIsRecording(true);
-    setShowLeftIcons(false);
-    setRecordingSeconds(0);
 
     recordingTimerRef.current = setInterval(() => {
       setRecordingSeconds((prev) => {
@@ -142,13 +155,16 @@ const stopAndSendRecording = () => {
 const cancelAndDeleteRecording = () => {
   if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
   if (mediaRecorderRef.current && isRecording) {
-    audioChunksRef.current = []; // ডাটা ডিলিট করে দেওয়া হলো যাতে সেন্ড না হয়
-    mediaRecorderRef.current.stop();
+    isCancelledRef.current = true; // ১. প্রথমে ক্যানসেল ফ্ল্যাগ 'true' করুন
+    audioChunksRef.current = [];   // ২. ডাটা ক্লিয়ার করুন
+    mediaRecorderRef.current.stop(); // ৩. এবার রেকর্ডার স্টপ করুন
+    
     setIsRecording(false);
     setShowLeftIcons(true);
     setRecordingSeconds(0);
   }
 };
+
 
 const formatAudioTimer = (secs: number) => {
   const mins = Math.floor(secs / 60);
