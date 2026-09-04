@@ -424,9 +424,9 @@ React.useEffect(() => {
               <div className="ml-auto flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="relative h-10 w-10 rounded-xl border-pink-200 bg-pink-50/50 hover:bg-pink-100 p-0 shadow-sm">
+                    <Button variant="outline" className="relative h-10 w-10 rounded-full border-pink-600 bg-pink-50/50 hover:bg-pink-100 p-0 shadow-sm">
 
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-10 w-10">
                         <AvatarImage src={userAvatar} alt="User avatar" />
                         <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
                       </Avatar>
@@ -491,7 +491,7 @@ React.useEffect(() => {
                         variant="outline"
                         size="icon"
                         className={cn(
-                          "relative flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 cursor-pointer shadow-sm",
+                          "relative flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-100 bg-blue-200 transition-colors hover:bg-pink-500 cursor-pointer shadow-sm",
                           pathname === '/dashboard/notice-board' && "bg-orange-500 border-orange-600 text-white hover:bg-orange-600"
                         )}
                       >
@@ -565,7 +565,7 @@ React.useEffect(() => {
                           }}
                           className={cn(
                             // স্বাভাবিক অবস্থায় পিঙ্ক (Pink) ব্যাকগ্রাউন্ড এবং হোভার ইফেক্ট
-                            "flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-900 bg-pink-300 transition-colors hover:bg-pink-500 shadow-sm",
+                            "flex h-10 w-10 items-center justify-center rounded-xl text-pink-900 border border-purple-100 bg-blue-200 transition-colors hover:bg-pink-500 shadow-sm",
                             
                             // সিলেক্টেড বা একটিভ অবস্থায় অরেঞ্জ (Orange) ব্যাকগ্রাউন্ড ও টেক্সট কালার
                             pathname === item.href && "bg-orange-500 border-orange-600 text-white hover:bg-orange-600"

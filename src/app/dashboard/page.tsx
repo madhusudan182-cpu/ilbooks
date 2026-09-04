@@ -526,7 +526,7 @@ useEffect(() => {
     <div className="relative max-w-md mx-auto min-h-screen bg-sky-200 text-slate-800 p-1 md:max-w-3xl md:bg-sky-200 md:text-slate-800 space-y-3">
       <Card id="post">
         <CardContent className="p-2 pt-4">
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border">
               <AvatarImage src={userAvatar} alt={userName} />
               <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
