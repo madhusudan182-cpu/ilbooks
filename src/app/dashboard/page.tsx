@@ -683,11 +683,11 @@ useEffect(() => {
                 </CardHeader>
 
                   {/* 📄 ২য় বক্স: বডি (পোস্টের মূল লেখা - সাদা ব্যাকগ্রাউন্ড এবং মোটা হালকা নীল বর্ডার ডিজাইন) */}
-                  <CardContent className="p-4 bg-white min-h-[60px] border-t-2 border-b-2 border-sky-200/80 text-sm text-slate-700 text-left my-1.5 transition-all">
+                  <CardContent className="p-2 bg-white min-h-[60px] border-b-1 border-b-1 border-sky-200/80 text-sm text-slate-700 text-left my-1.5 transition-all">
 
                     <LivePostContent text={post.content || post.text} />
                       {post.imageUrl && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[400px] w-full bg-pink/95 flex items-center justify-center">
                         <img 
                           src={post.imageUrl} 
                           alt="Post attachment" 

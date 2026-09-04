@@ -591,7 +591,7 @@ useEffect(() => {
                       <LivePostContent text={post.content || post.text} />                      
                     )}
                     {post.imageUrl && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[400px] w-full bg-pink/95 flex items-center justify-center">
                         <img 
                           src={post.imageUrl} 
                           alt="Post attachment" 

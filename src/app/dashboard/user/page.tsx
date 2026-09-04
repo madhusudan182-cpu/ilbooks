@@ -382,7 +382,7 @@ export default function UserProfilePage() {
               {post.imageUrl && (
 
                 // এখানে ওন প্রোফাইলের মতো ফিক্সড max-h-[500px] এবং object-cover যুক্ত করা হলো
-                <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[500px] w-full bg-pink/95 flex items-center justify-center">
+                <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[400px] w-full bg-pink/95 flex items-center justify-center">
                   <img src={post.imageUrl} alt="Post attachment" className="w-full h-auto object-cover max-h-[500px]" />
                 </div>
               )}
