@@ -356,9 +356,9 @@ useEffect(() => {
   if (!user || !firestore) return null;
   const userName = profile?.name || user.displayName || 'User';
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-110 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
-      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-4">
-        <CardContent className="p-6">
+    <div className="max-w-md mx-auto min-h-screen bg-sky-200 text-slate-800 p-4 md:max-w-3xl md:bg-sky-50 md:text-slate-800 space-y-2">
+      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white mb-2">
+        <CardContent className="p-4">
           <div className="flex flex-col items-center text-center">
             <div className="relative group mb-4">
               {/* ইনপুট ফাইল ট্যাগ (লুকানো থাকবে) */}

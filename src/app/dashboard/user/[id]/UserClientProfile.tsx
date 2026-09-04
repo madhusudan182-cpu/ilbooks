@@ -319,7 +319,7 @@ const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
     );
   }
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-110 text-slate-800 p-4 md:max-w-3xl md:bg-blue-50 md:text-slate-800 space-y-6">
+    <div className="max-w-md mx-auto min-h-screen bg-sky-200 text-slate-800 p-4 md:max-w-3xl md:bg-sky-50 md:text-slate-800 space-y-6">
       {/* ব্যাক বাটন */}
       <Button onClick={() => router.back()} variant="ghost" size="sm" className="text-slate-400 hover:text-white">
         <ArrowLeft className="w-4 h-4 mr-2" /> Back
@@ -447,7 +447,7 @@ const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
       </Card>
 
       {/* ইউজারের করা পোস্টের লিস্ট */}
-      <div className="space-y-4 mt-6 text-left">
+      <div className="space-y-2 mt-6 text-left">
         <h3 className="text-lg font-bold text-purple-900 mb-4">Posts</h3>
         
         {postsLoading ? (

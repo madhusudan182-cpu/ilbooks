@@ -523,7 +523,7 @@ useEffect(() => {
 
 
   return (
-    <div className="relative max-w-md mx-auto min-h-screen bg-blue-90 text-slate-800 p-1 md:max-w-3xl md:bg-blue-90 md:text-slate-800 space-y-3">
+    <div className="relative max-w-md mx-auto min-h-screen bg-sky-200 text-slate-800 p-1 md:max-w-3xl md:bg-sky-200 md:text-slate-800 space-y-3">
       <Card id="post">
         <CardContent className="p-2 pt-4">
           <div className="flex items-start gap-3">
@@ -640,7 +640,7 @@ useEffect(() => {
         )}
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {postsLoading ? (
             <div className="flex flex-col items-center py-10 gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -658,7 +658,7 @@ useEffect(() => {
             const timeAgo = post.createdAt ? formatDistanceToNow(post.createdAt.toDate()) + ' ago' : 'Just now';
             
             return (
-              <Card key={post.id} className="mb-4 shadow-sm border border-slate-200/80 overflow-hidden bg-white rounded-xl">
+              <Card key={post.id} className="mb-2 shadow-sm border border-slate-200/80 overflow-hidden bg-white rounded-xl">
                 {/* 👤 পোস্ট হেডার */}
                 <CardHeader className="flex flex-row items-center gap-3 p-1.5 pb-1">
                   <Link href={profileUrl} className="active:scale-95 transition-transform shrink-0">
