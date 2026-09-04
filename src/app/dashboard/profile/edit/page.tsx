@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ArrowLeft, Pencil, User, Mail, FileText, MapPin } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function EditProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
   // সাইন-আপের সকল ফিল্ডের স্টেট
   const [formData, setFormData] = useState({
     name: '',
@@ -95,10 +96,10 @@ export default function EditProfilePage() {
     <div className="p-6 max-w-xl mx-auto text-white min-h-screen">
       {/* ব্যাক বাটন ও হেডার */}
       <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => router.back()} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
+        <button onClick={() => router.back()} className="p-2 hover:bg-slate-300 rounded-full transition-colors">
+          <ArrowLeft className="w-6 h-6 text-black" />
         </button>
-        <h1 className="text-2xl font-bold">Edit Profile</h1>
+        <h1 className="text-2xl font-bold text-black">Your Profile</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -107,22 +108,33 @@ export default function EditProfilePage() {
           <label className="block text-sm font-medium text-gray-400 mb-2">Full Name</label>
           <div className="relative">
             <User className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
+            
             <input
+              ref={nameInputRef} // ১. এখানে ref যুক্ত করা হয়েছে
               type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 pl-10 pr-10 focus:outline-none focus:border-purple-500"
+              className="w-full bg-slate-900 border border-slate-800 rounded-lg py-3 pl-10 pr-10 focus:outline-none focus:border-purple-500 text-white"
               placeholder="Your Name"
               required
             />
-            <Pencil className="absolute right-3 top-3.5 w-4 h-4 text-purple-400" />
+
+            {/* ২. পেন্সিল আইকনটিকে বাটনে রূপান্তর করা হয়েছে যাতে ক্লিক করা যায় */}
+            <button
+              type="button"
+              onClick={() => nameInputRef.current?.focus()} // ক্লিকে ইনপুট ফিল্ড ফোকাস হবে
+              className="absolute right-3 top-3.5 p-0.5 hover:bg-slate-800 rounded transition-colors"
+            >
+              <Pencil className="w-4 h-4 text-purple-400" />
+            </button>
           </div>
         </div>
 
+
         {/* ইউজারনেম ফিল্ড */}
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-400 mb-2">Username</label>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Username</label>
           <div className="relative">
             <span className="absolute left-3 top-3 text-gray-500 font-semibold">@</span>
             <input
@@ -140,7 +152,7 @@ export default function EditProfilePage() {
 
         {/* ইমেইল ফিল্ড (ডিজেবলড - সাইন আপের সিকিউরিটির জন্য) */}
         <div className="relative opacity-60">
-          <label className="block text-sm font-medium text-gray-400 mb-2">Email Address (Cannot be changed)</label>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Email Address (Cannot be changed)</label>
           <div className="relative">
             <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
             <input
@@ -154,7 +166,7 @@ export default function EditProfilePage() {
 
         {/* বায়ো ফিল্ড */}
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-400 mb-2">Bio</label>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Bio</label>
           <div className="relative">
             <FileText className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
             <textarea
@@ -171,7 +183,7 @@ export default function EditProfilePage() {
 
         {/* লোকেশন ফিল্ড */}
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-400 mb-2">Location</label>
+          <label className="block text-sm font-medium text-gray-600 mb-2">Location</label>
           <div className="relative">
             <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
             <input
