@@ -687,13 +687,14 @@ useEffect(() => {
 
                     <LivePostContent text={post.content || post.text} />
                       {post.imageUrl && (
-                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 max-h-[400px] w-full bg-pink/95 flex items-center justify-center">
-                        <img 
-                          src={post.imageUrl} 
-                          alt="Post attachment" 
-                          className="w-full h-auto object-contain max-h-[500px]" 
+                      <div className="mt-3 overflow-hidden rounded-lg border border-slate-100 h-[350px] w-full bg-slate-900/5 flex items-center justify-center">
+                        <img
+                          src={post.imageUrl}
+                          alt="Post attachment"
+                          className="max-w-full max-h-full object-contain"
                         />
                       </div>
+
                       )}
 
 

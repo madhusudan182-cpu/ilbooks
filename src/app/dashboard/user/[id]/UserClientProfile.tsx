@@ -479,12 +479,16 @@ const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
                     <LivePostContent text={post.content || post.text} />
                     
                     {post.imageUrl && (
-
                       <div className="px-4 pb-4 bg-white w-full flex items-center justify-center">
-                        <div className="overflow-hidden rounded-lg border border-slate-100 max-h-[400px] w-full bg-slate-50 flex items-center justify-center">
-                          <img src={post.imageUrl} alt="User post attachment" className="w-full h-auto object-contain max-h-[450px]" />
+                        <div className="overflow-hidden rounded-lg border border-slate-100 h-[350px] w-full bg-slate-900/5 flex items-center justify-center">
+                          <img 
+                          src={post.imageUrl} 
+                          alt="User post attachment" 
+                          className="max-w-full max-h-full object-contain" 
+                          />
                         </div>
                       </div>)}
+
                   </div>
                 </div>
 
