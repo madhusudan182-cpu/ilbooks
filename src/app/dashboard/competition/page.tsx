@@ -37,6 +37,9 @@ export default function CompetitionPage() {
 
     
     const getExamFee = (levelString: string): number => {
+        // যদি লেভেল 0.0 বা 0.1 হয়, তাহলে ফি 0 টাকা রিটার্ন করবে
+        if (levelString === "0.0" || levelString === "0.1") return 0;
+
         const [major] = levelString.split('.').map(Number);
         if (major >= 0 && major < 1) return 20;
         if (major >= 1 && major < 2) return 25;
@@ -175,32 +178,50 @@ export default function CompetitionPage() {
     };
     
     const handleStartExamClick = () => {
-        if (!competitionLevel) return;
+    if (!competitionLevel) return;
     
-        if (examHolds[competitionLevel]) {
-            router.push('/dashboard/competition/exam-held');
-            return;
-        }
-    
-        const hasQuestionsForLevel = competitionLevel === '0.0' || (questionsForLevel && questionsForLevel.length > 0);
-        if (hasQuestionsForLevel) {
-            setShowPayment(true);
-        } else {
-            toast({
-                title: "Exam Not Ready",
-                description: `Questions for Level ${competitionLevel} are not available yet. Please check back later.`,
-                variant: "destructive",
-            });
-        }
+    if (examHolds[competitionLevel]) {
+        router.push('/dashboard/competition/exam-held');
+        return;
     }
+    
+    const hasQuestionsForLevel = competitionLevel === '0.0' || (questionsForLevel && questionsForLevel.length > 0);
+    
+    if (hasQuestionsForLevel) {
+        // যদি লেভেল 0.0 বা 0.1 হয়, পেমেন্ট গেটওয়ে ছাড়া সরাসরি এক্সাম পেজে নিয়ে যাবে
+        if (competitionLevel === "0.0" || competitionLevel === "0.1") {
+        router.push(`/dashboard/competition/exam?level=${competitionLevel}`);
+        } else {
+        // অন্য পেইড লেভেলের জন্য আগের মতোই পেমেন্ট গেটওয়ে দেখাবে
+        setShowPayment(true);
+        }
+    } else {
+        toast({
+        title: "Exam Not Ready",
+        description: `Questions for Level ${competitionLevel} are not available yet. Please check back later.`,
+        variant: "destructive",
+        });
+    }
+    }
+
+
 
     if (authLoading || profileLoading) {
       return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
     const [majorLevel] = competitionLevel.split('.').map(Number);
-    const buttonText = majorLevel < 1 ? "Proceed to payment and Start Exam" : "Registration";
+
+    // লেভেল 0.0 বা 0.1 হলে বাটন টেক্সট "Start Exam" হবে
+    const isFreeLevel = competitionLevel === "0.0" || competitionLevel === "0.1";
+    const buttonText = isFreeLevel 
+    ? "Start Exam" 
+    : majorLevel < 1 
+        ? "Proceed to payment and Start Exam" 
+        : "Registration";
+
     const scheduleMessage = examScheduleMessages[majorLevel];
+
 
     return (
         <>
@@ -265,8 +286,8 @@ export default function CompetitionPage() {
                             <CardTitle className="flex items-center gap-3"><Award className="text-accent"/> Rules & Prizes</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
-                            <p className="flex items-start gap-2"><Percent className="w-4 h-4 mt-1 flex-shrink-0"/> লেভেল পাস করতে প্রতিটি সেকশনে 60% বা তার বেশি স্কোর করুন।</p>
-                            <p className="flex items-start gap-2"><Award className="w-4 h-4 mt-1 flex-shrink-0"/> পুরস্কারের জন্য এলিজিবল হতে আপনার প্রথম চেষ্টায় 80% বা তার বেশি স্কোর করুন।</p>
+                            <p className="flex items-start gap-2"><Percent className="w-4 h-4 mt-1 flex-shrink-0"/> লেভেল পাস করতে প্রতিটি সেকশনে 60% বা তার বেশি নম্বর পেতে হবে ।</p>
+                            <p className="flex items-start gap-2"><Award className="w-4 h-4 mt-1 flex-shrink-0"/> পুরস্কার জেতার জন্য আপনার প্রথম চেষ্টায় 80% বা তার বেশি নম্বর পেতে হবে ।</p>
                             <p className="flex items-start gap-2"><Edit className="w-4 h-4 mt-1 flex-shrink-0"/> প্রতিটি ভুল উত্তরের জন্য 0.5 মার্কস কাটা হবে।</p>
                             <p className="flex items-start gap-2"><Edit className="w-4 h-4 mt-1 flex-shrink-0"/> এক্সাম শুরু করার পর, দয়া করে ট্যাব পরিবর্তন করবেন না।</p>
                         </CardContent>
@@ -278,7 +299,21 @@ export default function CompetitionPage() {
                             <CardTitle className="flex items-center gap-3"><DollarSign className="text-accent"/> Exam Fee</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <p className="text-muted-foreground">এক্সামে অংশ নিতে প্রতিবারের জন্য আপনাকে <span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span> ফি প্রদান করতে হবে।</p>
+                            
+                            <p className="text-muted-foreground">
+                            {examFee === 0 ? (
+                                <span className="font-bold text-green-600">এই লেভেলের এক্সামটি ফ্রি!</span>
+                            ) : (
+                                <>
+                                এক্সামে অংশ নিতে প্রতিবারের জন্য আপনাকে{" "}
+                                <span className="font-bold text-foreground">BDT {examFee.toFixed(2)}</span>{" "}
+                                ফি প্রদান করতে হবে।
+                                </>
+                            )}
+                            </p>
+
+
+
                             <p className="font-semibold">Accepted Payment Methods:</p>
                             <div className="flex gap-4 items-center text-sm text-muted-foreground">
                                 <span className="font-bold text-pink-600">bKash, Rocket, Nagad, Visa Card etc.</span>
@@ -317,18 +352,30 @@ export default function CompetitionPage() {
                      {scheduleMessage && (
                         <p className="text-red-600 font-bold text-lg mb-4">{scheduleMessage}</p>
                     )}
-                     {(!isRegistered || majorLevel < 1) && (
-                        <Button 
-                            size="lg" 
-                            style={{ fontFamily: 'Times New Roman' }}
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-medium tracking-wide px-4 md:px-8 shadow-sm transition-all" 
-                            onClick={handleStartExamClick}
+                     
+                     
+                    {(!isRegistered || majorLevel < 1) && (
+                    <div className="flex flex-col items-center gap-2">
+                        {/* লেভেল 0.0 বা 0.1 হলে লাল রঙের নোট দেখাবে */}
+                        {(competitionLevel === "0.0" || competitionLevel === "0.1") && (
+                        <p className="text-red-600 font-bold text-sm animate-pulse">
+                            * This level is free! *
+                        </p>
+                        )}
+                        <Button
+                        size="lg"
+                        style={{ fontFamily: 'Times New Roman' }}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-medium 
+                        tracking-wide px-4 md:px-8 shadow-sm transition-all"
+                        onClick={handleStartExamClick}
                         >
-                            {buttonText} <ArrowRight className="ml-2 w-5 h-5"/>
+                        {buttonText} <ArrowRight className="ml-2 w-5 h-5"/>
                         </Button>
+                    </div>
+                    )}
 
 
-                     )}
+
                      <p className="text-xs text-muted-foreground mt-2">
                         {isRegistered && majorLevel >= 1
                             ? "You are registered. The 'Take the Exam' button will appear at your scheduled time."
