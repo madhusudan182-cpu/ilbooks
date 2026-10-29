@@ -13,6 +13,7 @@ interface UserData {
   level: string;
   avatarUrl?: string;
   isOnline?: boolean;
+  lastActive?: any;
 }
 
 export default function SocialCirclePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -72,7 +73,8 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
             name: data.name || 'Anonymous User',
             level: data.level || '0.0',
             avatarUrl: data.avatarUrl,
-             isOnline: data.isOnline,
+            isOnline: data.isOnline,
+            lastActive: data.lastActive,
           });
         }
       });
@@ -222,6 +224,7 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
                 avatarUrl={user.avatarUrl}
                 tabType={activeTab as any}
                 isOnline={user.isOnline}
+                lastActive={user.lastActive}
                 isFollowing={relations[user.id] === 'following' || relations[user.id] === 'friends'}
                 isFriend={relations[user.id] === 'friends'}
                 isFollower={relations[user.id] === 'follower'}
@@ -236,7 +239,7 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
                   onClick={() => setVisibleCount((prev) => prev + 20)}
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all active:scale-95"
                 >
-                  Load More
+                  See More
                 </button>
               )}
               <button

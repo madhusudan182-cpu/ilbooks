@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseAppProvider } from '@/firebase/client-provider';
 // নতুন তৈরি করা ইনশিয়ালাইজারটি এখানে ইমপোর্ট করা হলো
 import NotificationInitializer from '@/components/NotificationInitializer';
+import OnlineStatusTracker from "@/components/OnlineStatusTracker";
+
 
 const siteUrl = 'https://web.app';
 const siteTitle = 'ILBooks - The Social Network for Book Lovers';
@@ -64,9 +66,14 @@ export default function RootLayout({
         <FirebaseAppProvider>
           {/* নোটিফিকেশন লজিক এখানে যুক্ত করা হলো */}
           <NotificationInitializer />
+          
+          {/* ব্যাকগ্রাউন্ড অনলাইন ট্র্যাকার এখানে যুক্ত করা হলো */}
+          <OnlineStatusTracker /> 
+          
           {children}
           <Toaster />
         </FirebaseAppProvider>
+
       </body>
     </html>
   );

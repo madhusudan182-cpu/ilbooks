@@ -620,7 +620,7 @@ useEffect(() => {
                   className="text-xs rounded-full border-purple-500 text-purple-600 hover:bg-purple-50 block max-w-max"
                   onClick={() => setVisibleConversationsCount(prev => prev + 10)}
                 >
-                  Load More Chats
+                  See More Chats
                 </Button>
               </div>
             )}

@@ -15,9 +15,58 @@ interface UserRowProps {
   isFollower?: boolean; // 👈 সে আপনাকে ফলো করেছে কি না তা জানার জন্য নতুন প্রপস
   onAction: (actionType: 'chat' | 'unfollow' | 'block' | 'follow' | 'unblock', userId: string) => void;
   isOnline?: boolean;
+  lastActive?: any;
 }
 
-export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowing, isFriend, isFollower, onAction, isOnline }: UserRowProps) {
+// ফায়ারবেস টাইমস্ট্যাম্প থেকে সঠিকভাবে "time ago" হিসাব করার উন্নত ফাংশন
+function formatLastActive(lastActive: any): string {
+  if (!lastActive) return "Active long ago";
+  
+  let date: Date;
+
+  // ফায়ারবেস Timestamp অবজেক্ট (seconds, nanoseconds) চেক করার লজিক
+  if (lastActive && typeof lastActive === 'object' && 'seconds' in lastActive) {
+    date = new Date(lastActive.seconds * 1000);
+  } else if (lastActive instanceof Date) {
+    date = lastActive;
+  } else {
+    date = new Date(lastActive);
+  }
+
+  // যদি কোনো কারণে ইনভ্যালিড ডেট তৈরি হয়
+  if (isNaN(date.getTime())) {
+    return "Active long ago";
+  }
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  // যদি সময় নেগেটিভ বা ১ মিনিটের কম হয়
+  if (diffInSeconds < 60) {
+    return "Active Now";
+  }
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `Active ${diffInMinutes} minutes ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `Active ${diffInHours} hours ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `Active ${diffInDays} days ago`;
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `Active ${diffInMonths} months ago`;
+  
+  const diffInYears = Math.floor(diffInMonths / 12);
+  return `Active ${diffInYears} years ago`;
+}
+
+
+
+
+export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowing, isFriend, isFollower, onAction, isOnline, lastActive }: UserRowProps) {
+
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
   // 🎯 বুকওয়ার্মস ট্যাবে দেখানোর জন্য ডাইনামিক বাটন টেক্সট ও কালার নির্ধারণ
@@ -40,30 +89,38 @@ export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowi
     <div className="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
       
       {/* বামপাশ: প্রোফাইল ছবি, নাম এবং লেভেল (লিঙ্কসহ আপডেট করা হয়েছে) */}
-      <div className="flex items-center gap-3">
-        {/* প্রোফাইল ছবি লিঙ্ক */}
-        <Link href={`/dashboard/user/${id}`} className="shrink-0 active:scale-95 transition-transform">
-          <div className="w-11 h-11 bg-purple-100 rounded-full overflow-hidden flex items-center justify-center text-purple-600 font-bold border border-purple-200">
+      <div className="flex items-start gap-4 py-1">
+        <Link href={`/dashboard/user/${id}`} className="shrink-0 active:scale-95 transition-transform relative block">
+          {/* অ্যাভাটার সাইজ এখানে বড় করে w-16 h-16 করা হলো */}
+          <div className="w-16 h-16 bg-purple-100 rounded-full overflow-hidden flex items-center justify-center text-purple-600 text-xl font-bold border border-purple-200 shadow-sm">
             {avatarUrl ? <img src={avatarUrl} alt={name} className="w-full h-full object-cover" /> : name.charAt(0)}
           </div>
-          {/* ঠিক এইখানে নিচের ইন্ডিকেটর কোডটুকু পেস্ট করুন */}
-          <span className={`absolute bottom-0 right-0 block h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ring-0 ${
-            isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"
-          }`} />
         </Link>
-        
-        <div className="min-w-0">
-          {/* নাম লিঙ্ক */}
+
+        <div className="flex flex-col space-y-1 min-w-0">
+          {/* ১. প্রথম সেন্টেন্স: ইউজারের নাম */}
           <Link href={`/dashboard/user/${id}`}>
-            <h4 className="text-sm font-bold text-slate-800 truncate hover:text-purple-700 hover:underline cursor-pointer transition-all">
+            <h4 className="text-base font-bold text-slate-800 truncate hover:text-purple-700 hover:underline cursor-pointer transition-all leading-tight">
               {name}
             </h4>
           </Link>
-          <p className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5 font-medium">
-            Level: {level}
+
+          {/* ২. দ্বিতীয় সেন্টেন্স: ইউজারের লেভেল */}
+          <p className="text-xs text-slate-600 font-medium leading-none">
+            User Level: <span className="text-purple-700 font-bold">{level}</span>
           </p>
+
+          {/* ৩. তৃতীয় সেন্টেন্স: অনলাইন স্ট্যাটাস উইথ ফিল্ড সার্কেল */}
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <span className={`block h-2.5 w-2.5 rounded-full ${isOnline ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+            <span className="text-xs text-slate-500 font-medium">
+              {isOnline ? "Active Now" : formatLastActive(lastActive)} 
+            </span>
+          </div>
+
         </div>
       </div>
+
 
       {/* ডানপাশ: অ্যাকশন বাটনসমূহ */}
       <div className="flex items-center gap-2 relative shrink-0">
