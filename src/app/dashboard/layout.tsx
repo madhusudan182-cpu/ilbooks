@@ -432,23 +432,39 @@ React.useEffect(() => {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{userName}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
+
+                  <DropdownMenuContent className="w-64 bg-white border-2 border-purple-200 p-2 shadow-xl rounded-xl z-50" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal px-3 py-2 border-b border-slate-100 mb-1">
+                      <div className="flex flex-col space-y-1.5">
+                        <p className="text-base font-bold text-slate-800 leading-none">{userName}</p>
+                        <p className="text-sm leading-none text-muted-foreground">
                           {user.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                    
+                    {/* DropdownMenuItem-এর ভেতরের ক্লাসগুলো ঠিক করা হয়েছে এবং এটি এখন সঠিকভাবে একক চাইল্ড হিসেবে <Link> পাচ্ছে */}
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard/profile">Profile</Link>
+                      <Link 
+                        href="/dashboard/profile" 
+                        className="bg-pink-100 flex w-full items-center px-3 py-3 text-base font-semibold text-red-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Profile
+                      </Link>
                     </DropdownMenuItem>
+                    
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard/settings">Settings</Link>
+                      <Link 
+                        href="/dashboard/settings" 
+                        className="bg-pink-100 flex w-full items-center px-3 py-3 text-base font-semibold text-red-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer mt-1"
+                      >
+                        Settings
+                      </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
+
+
                 </DropdownMenu>
 
                 <AlertDialog>

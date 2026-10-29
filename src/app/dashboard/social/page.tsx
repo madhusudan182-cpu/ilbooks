@@ -252,7 +252,19 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
           </>
         ) : (
           <div className="flex flex-col flex-1 items-center justify-center text-slate-400 text-sm py-12">
-            No bookworms found in this tab.
+            <span>
+              No friends or followers found in this tab. Check out{" "}
+              <button
+                onClick={() => {
+                  setActiveTab('bookworms'); // স্টেট পরিবর্তন করে Bookworms ট্যাব সক্রিয় করবে
+                  setVisibleCount(20);       // কাউন্ট রিসেট করবে
+                }}
+                className="text-purple-600 font-bold underline hover:text-purple-800 transition-colors ml-0.5"
+              >
+                "Bookworms"
+              </button>
+              .
+            </span>
           </div>
         )}
         </div>
