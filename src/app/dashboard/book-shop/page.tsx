@@ -417,6 +417,20 @@ export default function BookShopPage() {
           </div>
 
           <div className="lg:col-span-1">
+            {activeCategory === 'level' && (
+                <div className="mb-4 p-4 bg-card border border-border rounded-xl flex flex-wrap items-center justify-start gap-x-3 gap-y-2">
+                  <span className="text-lg font-semibold text-foreground">
+                    পড়া শেষে, পরীক্ষায় অংশ নিতেঃ
+                  </span>
+                  <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-sm transition-all">
+                    <Link href="/dashboard/competition">
+                      Exam
+                    </Link>
+                  </Button>
+                </div>
+              )}
+
+
             <Card className="sticky top-20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

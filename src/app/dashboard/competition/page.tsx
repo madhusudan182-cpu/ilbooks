@@ -344,6 +344,17 @@ export default function CompetitionPage() {
                             ) : (
                                 <p className="text-muted-foreground">Syllabus for your current level ({competitionLevel}) is not available yet.</p>
                             )}
+                            <div className="mt-6 pt-4 border-t flex flex-wrap items-center justify-start gap-x-3 gap-y-2">
+                            <span className="text-lg font-semibold text-foreground">
+                                পরীক্ষা দেওয়ার আগে, বই গুলো পড়ুনঃ 
+                            </span>
+                            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-500 text-white">
+                                <Link href="/dashboard/book-shop">
+                                Book
+                                </Link>
+                            </Button>
+                            </div>
+
                         </CardContent>
                     </Card>
                 </div>
