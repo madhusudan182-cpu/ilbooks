@@ -25,7 +25,7 @@ import { useUser, useFirestore, useDoc, useAuth } from '@/firebase';
 // বাকি ইম্পোর্টগুলোর সাথে এগুলো যুক্ত করুন
 import { doc, collection, query, where, onSnapshot, orderBy, collectionGroup, updateDoc } from 'firebase/firestore'; 
 import { signOut } from 'firebase/auth';
-
+import { analytics } from "@/firebase/config"; 
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -216,7 +216,15 @@ React.useEffect(() => {
   };
 }, [user?.uid, firestore]);
 
-
+React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      analytics?.then((analyticsInstance) => {
+        if (analyticsInstance) {
+          console.log("Google Analytics tracking initialized on ilbooks!");
+        }
+      });
+    }
+  }, []);
     
   React.useEffect(() => {
     setIsClient(true);
@@ -444,7 +452,7 @@ React.useEffect(() => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-slate-100 my-1" />
                     
-                    {/* DropdownMenuItem-এর ভেতরের ক্লাসগুলো ঠিক করা হয়েছে এবং এটি এখন সঠিকভাবে একক চাইল্ড হিসেবে <Link> পাচ্ছে */}
+                    
                     <DropdownMenuItem asChild>
                       <Link 
                         href="/dashboard/profile" 
