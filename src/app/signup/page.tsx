@@ -1,3 +1,4 @@
+// // ফাইলের শুরু - প্রজেক্টের প্রয়োজনীয় প্যাকেজ ও হুক ইম্পোর্ট করা হলো
 'use client';
 import { useState } from 'react';
 import Link from "next/link";
@@ -27,7 +28,6 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -42,14 +42,13 @@ export default function SignupPage() {
       });
       return;
     }
-
     setIsLoading(true);
     try {
-      // ১. ফায়ারবেস অথ দিয়ে ইউজার তৈরি করা
+      // ১. ফায়ারবেস অথ দিয়ে ইউজার তৈরি করা
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // ২. ফায়ারস্টোরে ইউজারের মেইন প্রোফাইল তৈরি করা
+      // ২. ফায়ারস্টোরে ইউজারের মেইন প্রোফাইল তৈরি করা
       await setDoc(doc(firestore, "users", user.uid), {
         uid: user.uid,
         name: name,
@@ -71,7 +70,7 @@ export default function SignupPage() {
         createdAt: serverTimestamp()
       });
 
-      // ৪. ২য় নোটিফিকেশন (Rules) সরাসরি কালেকশনে তৈরি করা
+      // ৪. ২য় নোটিফিকেশন (Rules) সরাসরি কালেকশনে তৈরি করা
       const rulesRef = doc(collection(firestore, 'notifications'));
       await setDoc(rulesRef, {
         title: "Rules",
@@ -83,11 +82,11 @@ export default function SignupPage() {
 
       toast({
         title: "Account created successfully!",
-        description: "Welcome to Bookworm community. Let's complete your profile.",
+        description: "Welcome to Bookworm community.",
       });
 
-      // ডাটাবেজে নোটিফিকেশন সফলভাবে সেভ হওয়ার পর রিডাইরেক্ট হবে
-      router.push("/dashboard/profile/edit");
+      // ৫. প্রোফাইল এডিটের পরিবর্তে সরাসরি মূল ড্যাশবোর্ড পেজে রিডাইরেক্ট করা হলো
+      router.push("/dashboard");
 
     } catch (error: any) {
       console.error("Sign up error: ", error);
@@ -114,22 +113,22 @@ export default function SignupPage() {
           <form className="grid gap-4" onSubmit={handleSignup}>
             <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>
-              <Input 
-                id="name" 
-                placeholder="Your Name" 
-                required 
+              <Input
+                id="name"
+                placeholder="Your Name"
+                required
                 value={name}
-                onChange={(e) => setName(e.target.value)} 
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="mobile">Mobile Number</Label>
-              <Input 
-                id="mobile" 
-                type="tel" 
-                required 
-                value={mobile} 
-                onChange={(e) => setMobile(e.target.value)} 
+              <Input
+                id="mobile"
+                type="tel"
+                required
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -203,3 +202,4 @@ export default function SignupPage() {
     </main>
   );
 }
+// // ফাইলের কোড এখানেই শেষ হলো

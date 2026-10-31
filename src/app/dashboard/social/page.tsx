@@ -219,7 +219,8 @@ export default function SocialCirclePage({ searchParams }: { searchParams: Promi
                 key={user.id}
                 id={user.id}
                 name={user.name}
-                level={user.level}
+                // লেভেলকে সংখ্যায় রূপান্তর করে ১ দশমিক স্থান (যেমন: 1.0) নিশ্চিত করা হলো
+                level={isNaN(Number(user.level)) ? "0.0" : Number(user.level).toFixed(1)}
                 avatarUrl={user.avatarUrl}
                 tabType={activeTab as any}
                 isOnline={user.isOnline}
