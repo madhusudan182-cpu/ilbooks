@@ -86,10 +86,10 @@ export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowi
   const buttonConfig = getBookwormButtonConfig();
 
   return (
-    <div className="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+    <div className="flex items-center justify-between pl-0 pr-0 py-2 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
       
       {/* বামপাশ: প্রোফাইল ছবি, নাম এবং লেভেল (লিঙ্কসহ আপডেট করা হয়েছে) */}
-      <div className="flex items-start gap-4 py-1">
+      <div className="flex items-start gap-2 py-1">
         <Link href={`/dashboard/user/${id}`} className="shrink-0 active:scale-95 transition-transform relative block">
           {/* অ্যাভাটার সাইজ এখানে বড় করে w-16 h-16 করা হলো */}
           <div className="w-16 h-16 bg-purple-100 rounded-full overflow-hidden flex items-center justify-center text-purple-600 text-xl font-bold border border-purple-200 shadow-sm">
@@ -100,9 +100,10 @@ export default function UserRow({ id, name, level, avatarUrl, tabType, isFollowi
         <div className="flex flex-col space-y-1 min-w-0">
           {/* ১. প্রথম সেন্টেন্স: ইউজারের নাম */}
           <Link href={`/dashboard/user/${id}`}>
-            <h4 className="text-base font-bold text-slate-800 truncate hover:text-purple-700 hover:underline cursor-pointer transition-all leading-tight">
+            <h4 className="text-[14px] sm:text-base font-bold text-slate-800 break-words line-clamp-2 hover:text-purple-700 hover:underline cursor-pointer transition-all leading-tight">
               {name}
             </h4>
+
           </Link>
 
           {/* ২. দ্বিতীয় সেন্টেন্স: ইউজারের লেভেল */}
