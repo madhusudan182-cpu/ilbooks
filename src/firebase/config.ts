@@ -1,22 +1,23 @@
-// ফাইলের শুরু হবে প্রয়োজনীয় প্যাকেজ ইম্পোর্ট করার মাধ্যমে
+// // ফাইলের শুরু হবে প্রয়োজনীয় প্যাকেজ ইম্পোর্ট করার মাধ্যমে
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getMessaging } from "firebase/messaging";
-import { getAnalytics, isSupported } from "firebase/analytics"; // এই লাইনটি যোগ করা হয়েছে
+import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 
+// ফায়ারবেস কনসোল থেকে প্রাপ্ত একদম সঠিক কনফিগারেশন বসানো হলো
 export const firebaseConfig = {
   apiKey: "AIzaSyDpIIAxo4u932msHjCDXG357-UxZPmjmbo",
   authDomain: "://firebaseapp.com",
   projectId: "bd-job-preparation-59001-7613b",
   storageBucket: "bd-job-preparation-59001-7613b.firebasestorage.app",
   messagingSenderId: "371000081986",
-  appId: "1:371000081986:web:0cc4a0ffdd1c4c6c1437db",
-  measurementId: "G-VNWG69V64Z" // আপনার সঠিক মেজারমেন্ট আইডি এখানে বসানো হয়েছে
+  appId: "1:371000081986:web:cfdac1c1aef828cb1437db", // আপনার আসল অ্যাপ আইডি
+  measurementId: "G-SCJY1ZRQNN" // আপনার আসল মেজারমেন্ট আইডি
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// অফলাইন ক্যাশিং অন রেখে ফায়ারস্টোরের ডেটাবেজ ইনিশিয়ালাইজ করা হলো
+// অফলাইন ক্যাশিং অন রেখে ফায়ারস্টোরের ডেটাবেজ ইনিশিয়ালাইজ করা হলো
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
@@ -28,8 +29,15 @@ export const messaging = typeof window !== "undefined" && "Notification" in wind
   ? getMessaging(app)
   : null as any;
 
-// ক্লায়েন্ট-সাইড এনভায়রনমেন্ট চেক করে অ্যানালিটিক্স এক্সপোর্ট করার মূল কোড
-export const analytics = typeof window !== "undefined" 
-  ? isSupported().then((supported) => (supported ? getAnalytics(app) : null))
-  : null;
-// ফাইলের কোড এখানেই শেষ হলো
+// সরাসরি কোনো Promise না পাঠিয়ে ইনিশিয়ালাইজড অবজেক্ট রাখার জন্য ভেরিয়েবল
+export let analytics: Analytics | null = null;
+
+// ক্লায়েন্ট-সাইড এনভায়রনমেন্ট ও ব্রাউজার সাপোর্ট চেক করে অ্যানালিটিক্স সেটআপ
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  });
+}
+// // ফাইলের কোড এখানেই শেষ হলো

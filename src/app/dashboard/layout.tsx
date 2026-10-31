@@ -216,15 +216,23 @@ React.useEffect(() => {
   };
 }, [user?.uid, firestore]);
 
-React.useEffect(() => {
+  React.useEffect(() => {
     if (typeof window !== "undefined") {
-      analytics?.then((analyticsInstance) => {
-        if (analyticsInstance) {
-          console.log("Google Analytics tracking initialized on ilbooks!");
-        }
+      import("firebase/analytics").then(({ isSupported, logEvent }) => {
+        isSupported().then((supported) => {
+          if (supported) {
+            import("@/firebase/config").then(({ analytics }) => {
+              if (analytics) {
+                logEvent(analytics, "page_view", { page_path: "/dashboard" });
+              }
+            });
+          }
+        });
       });
     }
   }, []);
+
+
     
   React.useEffect(() => {
     setIsClient(true);
